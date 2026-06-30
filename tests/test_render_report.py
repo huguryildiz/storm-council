@@ -559,6 +559,68 @@ class RenderReportTest(unittest.TestCase):
         self.assertEqual(nums, [f"{i:02d}" for i in range(1, len(nums) + 1)])
         self.assertEqual(len(nums), 13)
 
+    def test_evidence_registry_renders_locators_and_excerpts(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "evidence": [
+                    {
+                        "evidence_id": "E-001",
+                        "source_id": "S-001",
+                        "locator": {"page": 5, "section": "4.2", "table": "Table 1"},
+                        "evidence_excerpt": "Latency improved by 12% on Benchmark A.",
+                    }
+                ],
+            }
+        )
+
+        self.assertIn("Evidence registry", html)
+        self.assertIn('id="ref-E-001"', html)
+        self.assertIn("page 5", html)
+        self.assertIn("section 4.2", html)
+        self.assertIn("Table 1", html)
+        self.assertIn("Latency improved by 12%", html)
+
+    def test_fold_in_artifacts_reads_evidence_jsonl(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / "03_evidence.jsonl").write_text(
+                json.dumps({
+                    "evidence_id": "E-001",
+                    "source_id": "S-001",
+                    "locator": {"section": "Abstract"},
+                    "evidence_excerpt": "A compact abstract excerpt.",
+                }) + "\n",
+                encoding="utf-8",
+            )
+            data = {}
+            render_report._fold_in_artifacts(data, base)
+            self.assertEqual(data["evidence"][0]["evidence_id"], "E-001")
+
+    def test_evidence_source_status_badges(self):
+        ev_abstract = {"evidence_id": "E-001", "source_id": "S-001", "extraction_method": "abstract"}
+        ev_retracted = {"evidence_id": "E-002", "source_id": "S-002", "extraction_method": "full_text"}
+        ev_corrected = {"evidence_id": "E-003", "source_id": "S-003", "extraction_method": "full_text"}
+        ev_superseded = {"evidence_id": "E-004", "source_id": "S-004", "extraction_method": "full_text"}
+        sources_by_id = {
+            "S-002": {"id": "S-002", "publication_identity": {"retraction_status": "retracted"}},
+            "S-003": {"id": "S-003", "publication_identity": {"correction_status": "corrected"}},
+            "S-004": {"id": "S-004", "publication_status": "superseded"},
+        }
+        self.assertIn("abstract-only", render_report._evidence_source_badges(ev_abstract, sources_by_id))
+        self.assertIn("retracted", render_report._evidence_source_badges(ev_retracted, sources_by_id))
+        self.assertIn("corrected", render_report._evidence_source_badges(ev_corrected, sources_by_id))
+        self.assertIn("superseded", render_report._evidence_source_badges(ev_superseded, sources_by_id))
+
+        html = render_report.build({
+            "title": "T",
+            "evidence": [{"evidence_id": "E-005", "source_id": "S-002",
+                          "extraction_method": "full_text", "evidence_excerpt": "x"}],
+            "sources": [{"id": "S-002", "title": "Retracted Paper",
+                         "publication_identity": {"retraction_status": "retracted"}}],
+        })
+        self.assertIn("retracted", html)
+
 
 if __name__ == "__main__":
     unittest.main()

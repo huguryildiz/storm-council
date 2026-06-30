@@ -65,10 +65,11 @@ into the output folder before the next begins.
    Charter each lens (see the table above): priority questions, expected evidence,
    blind spots, conflicts with other lenses, escalation triggers.
 3. **Evidence-Grounded Inquiry** → `03_evidence_plan.md`, `03_claims.jsonl`,
-   `03_sources.bib`, `03_source_registry.csv`
+   `03_sources.bib`, `03_source_registry.csv`, `03_evidence.jsonl`
    Each lens produces an evidence plan and source-grounded claims (fact / inference
-   / forecast / assumption / recommendation kept distinct; sources by ID). You may
-   dispatch each lens as its subagent so they reason in independent contexts.
+   / forecast / assumption / recommendation kept distinct; sources and exact
+   evidence locators by ID). You may dispatch each lens as its subagent so they
+   reason in independent contexts.
 4. **Contradiction Ledger** → `04_contradiction_ledger.md` + `04_contradictions.json`
    Compare claims across lenses and classify each conflict. In **Council Mode**, run
    bounded cross-examination and log it in `04_council_deliberation.md` / `.jsonl`.
@@ -123,7 +124,7 @@ Create these in the user's chosen output folder:
 | --- | --- |
 | 1 Decision Frame | `01_decision_frame.md` |
 | 2 Perspective Scan | `02_perspective_scan.md`, `02_perspective_scan.json` |
-| 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv` |
+| 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv`, `03_evidence.jsonl` |
 | 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.md`/`.jsonl` in Council Mode) |
 | 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` |
 | 6 Adversarial Review | `06_adversarial_review.md`, `06_quality_gate.json` |
@@ -140,7 +141,8 @@ neither is hand-asserted by the model. After stage 6:
 1. Write the consolidated run as **`report_data.json`** (bottom line, strongest
    findings, contradictions, decision options with evidence strength, next actions,
    gaps, sources, counts), alongside the structured stage artifacts
-   (`03_claims.jsonl`, `04_contradictions.json`, `03_source_registry.csv`). See
+   (`03_claims.jsonl`, `03_evidence.jsonl`, `04_contradictions.json`,
+   `03_source_registry.csv`). See
    [the example](../../examples/university_timetabling/expected_artifacts/report_data.json).
 
    For each entry in `strongest_findings`, optionally add perspective attribution:
@@ -185,9 +187,12 @@ neither is hand-asserted by the model. After stage 6:
    ```
 
    This checks reference integrity (IDs resolve, supported facts cite sources,
-   contradictions reference real claims), computes the four scores and the verdict,
-   writes `06_quality_gate.json`, and patches `report_data.json`. **Do not hand-set
-   the scores** — let `verify.py` compute them.
+   evidence IDs resolve, contradictions reference real claims), plus deterministic
+   publication/content guards: duplicate/malformed DOI, retracted or superseded
+   sources, direct-support locator requirements, abstract-only gating,
+   comparative-claim scope fields, and obvious overclaiming language. It computes
+   the four scores and the verdict, writes `06_quality_gate.json`, and patches
+   `report_data.json`. **Do not hand-set the scores** — let `verify.py` compute them.
 3. **Render** the report:
 
    ```bash
@@ -225,35 +230,49 @@ returned that evidence. If you have no retrieval tool, say so plainly, mark
 claims as `unsupported` or `partially_supported`, and do **not** invent sources
 or URLs. Fabricated citations are a hard failure.
 
-## 7.1 Use Semantic Scholar for academic retrieval
+## 7.1 Use academic MCP servers for retrieval
 
-When the `semantic-scholar` MCP is available in the session, prefer it over
-general web search for peer-reviewed evidence. It indexes 200M+ papers with no
-API key required. Prioritised tools:
+Two academic MCP servers ship with this project (`.mcp.json`). Prefer them over
+general web search whenever peer-reviewed evidence is needed. Both require no
+API key.
 
-| Goal | Tool |
-|---|---|
-| Find papers by topic | `paper_relevance_search` |
-| Bulk-fetch a set of papers | `paper_bulk_search` |
-| Get full metadata + abstract | `paper_details` |
-| Who cited this paper? | `paper_citations` |
-| What does this paper cite? | `paper_references` |
-| Find related work | `get_paper_recommendations_single` |
-| Find an author's output | `author_search` → `author_papers` |
+### Tool selection guide
+
+| Goal | Preferred MCP | Tool |
+|---|---|---|
+| Multi-source topic search (arXiv, OpenAlex, PubMed, CORE…) | `paper-search` | `search_papers` |
+| Download / full-text retrieval | `paper-search` | `download_with_fallback` |
+| Deep citation graph (who cites / what does it cite) | `semantic-scholar` | `paper_citations`, `paper_references` |
+| Paper recommendations from a seed | `semantic-scholar` | `get_paper_recommendations_single` |
+| Author profile + paper list | `semantic-scholar` | `author_search` → `author_papers` |
+| Exact paper metadata by ID | `semantic-scholar` | `paper_details` |
+
+**`paper-search`** (`uvx paper-search-mcp`) — unified interface over 20+ sources
+(arXiv, OpenAlex, PubMed, Semantic Scholar, CrossRef, bioRxiv, CORE, SSRN,
+Zenodo, DOAJ, Europe PMC, and more). Use `search_papers` as the default first
+call; it deduplicates results across sources automatically.
+
+**`semantic-scholar`** (`uvx semantic-scholar-fastmcp`) — 200M+ papers with
+richer graph tools: citation chains, author graphs, recommendations. Use when
+you need to trace evidence depth beyond a keyword hit.
 
 Usage notes:
-- Pass `fields=title,abstract,year,authors,citationCount,externalIds` to get
-  citable metadata in one call.
-- `externalIds` returns DOI, arXiv ID, PubMed ID — use these as the stable URL
-  in `03_source_registry.csv`.
-- If the MCP is absent, fall back to `WebSearch` / `WebFetch` and mark retrieval
-  quality accordingly in the status banner.
+- For `semantic-scholar`, pass `fields=title,abstract,year,authors,citationCount,externalIds`.
+- `externalIds` returns DOI, arXiv ID, PubMed ID — use these as identifiers to
+  verify via publisher/DOI resolver, Crossref, OpenAlex, or a domain-specific
+  index. Do not treat Semantic Scholar alone as publication truth.
+- If both MCPs are absent, fall back to `WebSearch` / `WebFetch` and mark
+  retrieval quality accordingly in the status banner (`ILLUSTRATIVE`).
 
 ## 8. Require source identifiers for external facts
 
 Any claim about the external world (`fact`/`inference`) presented as supported
 must reference at least one `S-###` source, with a URL when available. A
-supported claim with no source is invalid — downgrade it or cite it.
+supported claim with no source is invalid — downgrade it or cite it. A claim
+marked `direct_support` must also reference at least one `E-###` evidence record
+with an exact locator (page/section/table/figure/equation/clause/paragraph hint).
+Relevance is not entailment: a real paper or similar title is not proof that the
+source supports the specific atomic claim.
 
 ## 9. End with a quality gate
 
@@ -261,7 +280,10 @@ Run an independent review (do not let the synthesis grade itself). Check for:
 claims without sufficient evidence, citation mismatch, overconfident wording,
 missing stakeholder perspectives, source concentration, dependence on low-quality
 sources, unresolved contradictions hidden by the synthesis, recommendations not
-justified by evidence, missing time sensitivity, and hidden value judgements.
+justified by evidence, missing time sensitivity, hidden value judgements,
+abstract-only overclaiming, publication version/retraction warnings, missing
+evidence locators, and scope expansion (`some → all`, `simulation → deployment`,
+`associated with → causes`, `metric A → superior overall`).
 Emit one verdict in `06_quality_gate.json`:
 
 `PASS` · `PASS_WITH_CAVEATS` · `REVISE` · `BLOCKED_PENDING_EVIDENCE`

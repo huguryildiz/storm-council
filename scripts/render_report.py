@@ -218,7 +218,7 @@ _STRENGTH = {"strong": ("s-strong", "evidence: strong"), "moderate": ("s-mod", "
              "weak": ("s-weak", "evidence: weak"), "unsupported": ("s-none", "unsupported")}
 _CONFLICT = {"unresolved": ("open", "unresolved"), "partly": ("part", "partly"),
              "partially_resolved": ("part", "partly"), "resolved": ("done", "resolved")}
-_REF_RE = re.compile(r"\b[CSX]-\d{3}\b")
+_REF_RE = re.compile(r"\b[CSXE]-\d{3}\b")
 _EVIDENCE_TAG = {
     "supported": ("done", "supported"),
     "partially_supported": ("part", "partial"),
@@ -781,6 +781,68 @@ def _claims_table_html(claims) -> str:
             + rows + "</tbody></table>")
 
 
+def _locator_text(locator) -> str:
+    if not isinstance(locator, dict):
+        return ""
+    parts = []
+    labels = (("page", "page"), ("section", "section"), ("subsection", "subsection"),
+              ("table", "table"), ("figure", "figure"), ("equation", "equation"),
+              ("clause", "clause"), ("paragraph_hint", "paragraph"))
+    for key, label in labels:
+        val = locator.get(key)
+        if val is not None and str(val).strip() and str(val).lower() != "null":
+            parts.append(f"{label} {val}" if key in {"page", "section", "subsection", "clause"} else str(val))
+    return "; ".join(parts)
+
+
+def _evidence_source_badges(ev: dict, sources_by_id: dict) -> str:
+    badges = []
+    method = (ev.get("extraction_method") or "").lower()
+    if method == "abstract":
+        badges.append('<span class="tag kind">abstract-only</span>')
+    elif method == "metadata":
+        badges.append('<span class="tag kind">metadata-only</span>')
+    src = sources_by_id.get(ev.get("source_id") or "") if sources_by_id else None
+    if src:
+        pi = src.get("publication_identity") or {}
+        rs = (pi.get("retraction_status") or src.get("publication_status") or "").lower()
+        if "retract" in rs:
+            badges.append('<span class="tag open">retracted</span>')
+        elif "supersed" in rs:
+            badges.append('<span class="tag part">superseded</span>')
+        cs = (pi.get("correction_status") or "").lower()
+        if "corrected" in cs:
+            badges.append('<span class="tag part">corrected</span>')
+    return " ".join(badges)
+
+
+def _evidence_table_html(evidence, sources_by_id=None) -> str:
+    if not isinstance(evidence, list) or not evidence:
+        return ""
+    rows = ""
+    for ev in evidence:
+        if not isinstance(ev, dict):
+            continue
+        eid = ev.get("evidence_id") or ev.get("id") or ""
+        sid = ev.get("source_id") or ""
+        loc = _locator_text(ev.get("locator"))
+        excerpt = ev.get("evidence_excerpt") or ev.get("excerpt") or ""
+        method = ev.get("extraction_method") or ""
+        badges = _evidence_source_badges(ev, sources_by_id)
+        rows += (
+            '<tr id="ref-%s"><td class="mono">%s</td><td>%s</td><td>%s</td><td>%s</td>'
+            '<td><span class="tag kind">%s</span></td><td>%s</td></tr>'
+            % (e(eid), e(eid), refs([sid]) if sid else "—", text_refs(loc) if loc else "—",
+               text_refs(excerpt) if excerpt else "—", e(method or "—"), badges)
+        )
+    if not rows:
+        return ""
+    return (
+        '<table class="evidence-table"><thead><tr><th>ID</th><th>Source</th><th>Locator</th>'
+        '<th>Excerpt</th><th>Method</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    )
+
+
 def _deliberation_html(moves) -> str:
     if not isinstance(moves, list) or not moves:
         return ""
@@ -1065,6 +1127,10 @@ def build(data: dict) -> str:
         if cid:
             _ANCHORS.add(cid)
             _EMITTED_CLAIM_TARGETS.add(cid)
+    for ev in data.get("evidence", []) or []:
+        eid = ev.get("evidence_id") or ev.get("id")
+        if eid:
+            _ANCHORS.add(eid)
 
     a("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />")
     a('<meta name="viewport" content="width=device-width, initial-scale=1" />')
@@ -1182,6 +1248,11 @@ def build(data: dict) -> str:
     claims_html = _claims_table_html(data.get("claims"))
     if claims_html:
         sec("Claims & evidence ledger", claims_html)
+
+    _sources_by_id = {s.get("id"): s for s in (data.get("sources") or []) if isinstance(s, dict)}
+    evidence_html = _evidence_table_html(data.get("evidence"), _sources_by_id or None)
+    if evidence_html:
+        sec("Evidence registry", evidence_html)
 
     argmap_html = _argument_map_svg(data.get("argument_map"))
     if argmap_html:
@@ -1433,6 +1504,13 @@ def _fold_in_artifacts(data: dict, base: Path) -> None:
             claims = _read_jsonl(f)
             if claims:
                 data["claims"] = claims
+
+    if not data.get("evidence"):
+        f = base / "03_evidence.jsonl"
+        if f.exists():
+            evidence = _read_jsonl(f)
+            if evidence:
+                data["evidence"] = evidence
 
     if not data.get("argument_map"):
         f = base / "05_argument_map.mmd"

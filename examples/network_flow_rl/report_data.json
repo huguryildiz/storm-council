@@ -362,6 +362,8 @@
     "blocking": [],
     "major": [],
     "minor": [
+      "Overclaiming language to verify against evidence: C-020 [guaranteed]",
+      "Overclaiming language to verify against evidence: C-042 [all]",
       "Open contradictions remain for human review: X-003, X-004, X-005"
     ]
   }

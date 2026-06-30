@@ -30,7 +30,12 @@ contradiction IDs as evidence:
    overconfident wording, low-quality-source dependence, contradictions hidden
    by the synthesis, recommendations not justified by evidence, missing time
    sensitivity, smuggled value judgements.
-6. **Overall note** — if a tough external reviewer graded this brief, what grade
+6. **Publication/content verification audit** — identify any source that is only
+   metadata- or abstract-level, any missing DOI/version/retraction status, any
+   `direct_support` claim without a page/section/table/figure/equation/clause/
+   paragraph locator, any secondary citation used instead of a primary source,
+   and any claim whose wording exceeds the cited source's scope.
+7. **Overall note** — if a tough external reviewer graded this brief, what grade
    and what must be fixed first (the seed's "Stanford professor" check).
 
 Then compute the verdict **deterministically** — do not hand-set the scores:
@@ -39,7 +44,10 @@ Then compute the verdict **deterministically** — do not hand-set the scores:
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/verify.py" <output_dir> --write
 ```
 
-`verify.py` checks reference integrity, computes the four scores
+`verify.py` checks reference integrity plus deterministic publication/content
+guards (duplicate/malformed DOI, retracted/superseded source flags,
+direct-support locator requirements, abstract-only gating, comparative-claim
+scope fields, and obvious overclaiming language). It computes the four scores
 (coverage, traceability, contradiction-handling, recommendation-support), writes
 `06_quality_gate.json` with one verdict — `PASS` · `PASS_WITH_CAVEATS` ·
 `REVISE` · `BLOCKED_PENDING_EVIDENCE` — and patches `report_data.json`.

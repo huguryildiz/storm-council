@@ -1,12 +1,46 @@
 {
   "claim_id": "C-001",
   "perspective": "academic",
-  "claim_text": "One sentence stating the claim.",
+  "claim_text": "One atomic sentence stating a single proposition.",
+  "atomicity": {
+    "is_atomic": true,
+    "split_from": null,
+    "bundled_risk": []
+  },
   "claim_type": "fact|inference|forecast|recommendation|assumption",
+  "claim_strength": "descriptive|comparative|causal|quantitative|recommendation",
   "confidence": 0.0,
   "evidence_status": "supported|partially_supported|unsupported|contested",
   "source_ids": ["S-001"],
+  "evidence_ids": ["E-001"],
+  "content_verification": {
+    "status": "direct_support|partial_support|indirect_support|contradiction|out_of_scope|not_verifiable",
+    "full_text_status": "full_text|abstract_only|metadata_only",
+    "entailment_rationale": "Why the cited evidence supports or fails to support this claim.",
+    "evidence_locator": {
+      "page": null,
+      "section": null,
+      "table": null,
+      "figure": null,
+      "equation": null,
+      "clause": null,
+      "paragraph_hint": null
+    },
+    "adversarial_check": "passed|caveat|failed"
+  },
+  "support_scope": {
+    "population_or_domain": null,
+    "dataset_or_benchmark": null,
+    "conditions": null,
+    "comparison_baseline": null,
+    "metric": null,
+    "time_horizon": null,
+    "deployment_context": "deployment|simulation|unknown",
+    "statistical_significance": null,
+    "practical_significance": null,
+    "limitations": []
+  },
+  "scope_risk_flags": [],
   "counterevidence_ids": ["C-011"],
-  "limitations": ["What would weaken or scope this claim."],
   "created_at": "2026-01-01T00:00:00+00:00"
 }

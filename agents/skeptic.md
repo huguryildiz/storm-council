@@ -25,14 +25,27 @@ Reproductions and failures, baseline comparisons, negative results, disclosure o
 - For each claim, use the Storm Council claim shape: `claim_id` (e.g. `C-001`),
   `claim_type` (fact | inference | forecast | assumption | recommendation),
   `evidence_status` (supported | partially_supported | unsupported | contested),
-  `confidence` (0.0–1.0), `source_ids` (e.g. `S-001`), `counterevidence_ids`,
-  and `limitations`. See `skills/storm-council/templates/claim_record.json`.
+  `claim_strength`, `confidence` (0.0–1.0), `source_ids` (e.g. `S-001`),
+  `evidence_ids`, `content_verification`, `support_scope`,
+  `counterevidence_ids`, and `limitations`. See
+  `skills/storm-council/templates/claim_record.json`.
 - **Separate fact from inference from recommendation.** Never present a forecast
   or a value judgement as a fact.
 - **Cite a source ID for every factual claim.** If you did not actually retrieve
   a source, mark the claim `unsupported` or `partially_supported` and do **not**
   invent a citation or URL. Record any source with the source shape in
   `skills/storm-council/templates/source_record.json`.
+- **Audit entailment, not just relevance.** Challenge claims where the cited paper
+  is real or topically related but the exact evidence locator/excerpt does not
+  directly support the atomic claim.
+- **Attack scope drift.** Look for `some → all`, one benchmark → general case,
+  metric A → overall superiority, simulation → deployment, association →
+  causation, short-term → long-term, and statistical significance → practical
+  significance. Prefer a `scope_difference` contradiction over a smoothed
+  synthesis.
+- **Warn on weak publication status.** Retracted sources cannot support claims;
+  corrected/superseded/preprint-only/abstract-only sources require explicit
+  caveats. Secondary citations should trigger a request for the primary source.
 - **Name your own blind spot.** Yours: reflexive dismissal of genuinely novel methods.
 
 ## In Council Mode

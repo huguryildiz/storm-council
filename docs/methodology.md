@@ -31,6 +31,15 @@ Stage 3 records claims as structured data with an explicit `claim_type`
 stable source ID; unsupported claims are labelled, never silently upgraded into
 conclusions. Negative evidence and *absence* of evidence are recorded explicitly.
 
+Stage 3 also separates **publication identity** from **claim-to-source
+entailment**. A paper can exist and be topically relevant without supporting a
+specific claim. For direct support, Storm Council records an `evidence_id` with
+an exact locator (page/section/table/figure/equation/clause/paragraph hint), a
+short excerpt, a content-verification status, and the source scope
+(benchmark/dataset, metric, baseline, conditions, time horizon, and deployment
+vs simulation context). Abstract-only evidence cannot directly support strong
+empirical, causal, comparative, quantitative, or safety-critical claims.
+
 ## 4. Contradiction-ledger logic
 
 Stage 4 compares claims across lenses and classifies each conflict:
@@ -73,3 +82,11 @@ unjustified recommendations, missing time sensitivity, and smuggled value
 judgements. It issues `PASS`, `PASS_WITH_CAVEATS`, `REVISE`, or
 `BLOCKED_PENDING_EVIDENCE`, with explicit scores. Because the verdict is computed
 rather than generated, the reviewer cannot be talked into approving weak work.
+
+The deterministic verifier is intentionally limited: it checks structural and
+machine-checkable preconditions (IDs, source links, DOI shape, duplicate DOI,
+retracted/superseded flags, direct-support locators, abstract-only gating,
+comparative-claim scope fields, and obvious overclaiming language). It does not
+pretend to solve semantic entailment by itself; passage-to-claim judgement and
+scope interpretation remain model/human review tasks that must be documented in
+the artifacts.

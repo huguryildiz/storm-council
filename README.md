@@ -39,7 +39,7 @@ It runs as a **Claude Code plugin**: no API key, no separate billing. It uses yo
   - **Hub-and-Spoke** — lenses work independently; results assembled centrally. Fast; good for narrow, low-stakes lookups.
   - **Council Mode** — lenses cross-examine each other's claims in bounded rounds. Auto-selected for contested evidence, policy, finance, medicine, safety, security, and institutional decisions.
 
-- **Verified independently.** A separate `verify.py` script re-checks all reference integrity and computes quality-gate scores from raw artifacts — decoupled from the solver, so a prompt encoding bug cannot pass silently.
+- **Verified structurally, not magically.** A separate `verify.py` script re-checks artifact integrity and deterministic guardrails from raw artifacts — claim/source/evidence IDs resolve, supported facts cite registered sources, direct-support claims need evidence locators, abstract-only support is gated, duplicate/malformed DOI and retraction/version flags are surfaced, and recommendations point back to evidence. This is not the same as proving that a paper exists, supports a claim, or preserves scope; publication/content verification levels must be marked explicitly.
 
 - **Exports a shareable deliverable.** Sixteen stage artifacts plus a single self-contained `storm_council_report.html` — no dependencies, ready to share or archive.
 
@@ -58,6 +58,19 @@ It runs as a **Claude Code plugin**: no API key, no separate billing. It uses yo
 **5 · Source-Mapped Synthesis** 📊 — Strongest findings, confidence-ranked claims, decision options with honest evidence strength, a Mermaid argument map, and a concise decision brief. Disagreement is preserved.
 
 **6 · Adversarial Review** 🛡️ — An independent reviewer checks citation integrity, overconfidence, source bias, hidden contradictions, and unjustified recommendations, then issues a quality gate verdict.
+
+---
+
+## Verification levels
+
+Storm Council keeps these levels separate:
+
+1. **Traceable** — claim IDs, source IDs, evidence IDs, and contradiction IDs link consistently.
+2. **Publication-verified** — publisher/DOI resolver, Crossref, OpenAlex, or a domain index confirms source identity, version status, and retraction/correction status where available.
+3. **Content-verified** — a claim points to an exact page, section, table, figure, equation, clause, or paragraph excerpt.
+4. **Scope-audited** — the synthesis preserves the source's population/domain, benchmark, baseline, metric, conditions, time horizon, deployment context, and limitations.
+
+A citation is not proof by itself. A source can be real and relevant while still not supporting the specific claim. Title or abstract access may support discovery and weak relevance notes, but it cannot directly support strong empirical, causal, comparative, safety-critical, or quantitative claims.
 
 ---
 
@@ -127,6 +140,7 @@ All three require [uv](https://docs.astral.sh/uv/getting-started/installation/) 
 | `02_perspective_scan.md` / `.json` | 2 | Lens charters, questions, blind spots |
 | `03_evidence_plan.md` | 3 | Per-lens evidence plans + claims |
 | `03_claims.jsonl` | 3 | One JSON claim record per line |
+| `03_evidence.jsonl` | 3 | Exact evidence excerpts and locators (`E-###`) |
 | `03_sources.bib` | 3 | BibTeX of all sources |
 | `03_source_registry.csv` | 3 | Tabular source registry |
 | `04_contradiction_ledger.md` | 4 | Consensus, disagreements, gaps, unknowns |
@@ -153,7 +167,9 @@ All three require [uv](https://docs.astral.sh/uv/getting-started/installation/) 
 
 [`agents/`](agents/) — the five research lens subagents (`practitioner`, `academic`, `skeptic`, `economist`, `historian`). Each can be dispatched independently in Council Mode via `storm-council:<lens>`.
 
-[`examples/university_timetabling/`](examples/university_timetabling/) — a complete run with five lenses, five explicit contradictions, and a `PASS_WITH_CAVEATS` quality gate. Start with `05_decision_brief.md`.
+[`examples/university_timetabling/expected_artifacts/`](examples/university_timetabling/expected_artifacts/) — a complete run with five lenses, five explicit contradictions, and a `PASS_WITH_CAVEATS` quality gate. Start with `05_decision_brief.md`.
+
+[`examples/network_flow_rl/`](examples/network_flow_rl/) — a second complete run demonstrating the v2 evidence path (`03_evidence.jsonl` with locators). Start with `05_decision_brief.md`.
 
 > Storm Council is independently developed and is not affiliated with Stanford University, Stanford OVAL, the STORM project, Anthropic, Claude Code, or YouMind. See [`NOTICE.md`](NOTICE.md).
 

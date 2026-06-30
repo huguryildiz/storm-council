@@ -1,11 +1,42 @@
 {
   "source_id": "S-001",
   "title": "Exact title of the source.",
-  "url": "https://… or null",
+  "authors": ["Surname, Given"],
+  "year": 2023,
+  "venue": "Journal / conference / publisher venue or null",
   "publisher": "Publisher / venue or null",
   "publication_date": "YYYY-MM-DD or null",
   "source_type": "primary|peer_reviewed|government|standards|industry|news|blog|other",
+  "url": "https://… or null",
+  "identifiers": {
+    "doi_raw": "10.xxxx/xxxxx or null",
+    "doi_normalized": "10.xxxx/xxxxx or null",
+    "arxiv_id": null,
+    "pmid": null,
+    "pmcid": null,
+    "openalex_id": null,
+    "semantic_scholar_id": null,
+    "crossref_work_id": null,
+    "publisher_landing_page": null
+  },
+  "publication_identity": {
+    "status": "PUBLISHED_VERIFIED|PREPRINT_VERIFIED|METADATA_PARTIAL|RETRACTED|CORRECTED|SUPERSEDED|DUPLICATE_VERSION|UNRESOLVED",
+    "version": "publisher_version|accepted_manuscript|preprint|unknown",
+    "metadata_sources_checked": ["publisher", "crossref", "openalex"],
+    "metadata_consistency_score": 0.0,
+    "metadata_mismatches": [],
+    "duplicate_of": null,
+    "related_versions": [],
+    "retraction_status": "not_retracted|retracted|unknown",
+    "correction_status": "none|corrected|unknown",
+    "superseded_by": null
+  },
+  "access": {
+    "full_text_status": "full_text|abstract_only|metadata_only",
+    "retrieval_method": "publisher|crossref|openalex|semantic_scholar|manual|web",
+    "retrieval_log_id": null
+  },
   "accessed_at": "2026-01-01T00:00:00+00:00",
   "credibility_notes": "Why this source is (or is not) credible for this claim.",
-  "relevance_notes": "Why it is relevant to the question."
+  "relevance_notes": "Why it is relevant to the question — not why it entails a claim."
 }

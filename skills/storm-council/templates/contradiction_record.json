@@ -1,12 +1,14 @@
 {
   "conflict_id": "X-001",
+  "contradiction_id": "X-001",
   "topic": "Short label for what is in conflict.",
-  "claim_a_id": "C-001",
-  "claim_b_id": "C-014",
-  "relationship": "contradiction|tension|scope_difference|evidence_gap|definition_conflict",
+  "claim_ids": ["C-001", "C-014"],
+  "relationship": "contradiction|tension|scope_difference|evidence_gap|definition_conflict|evidence_conflict|version_conflict",
+  "scope_dimension": "dataset_or_benchmark|metric|comparison_baseline|deployment_context|time_horizon|population_or_domain|limitations|null",
   "why_it_matters": "Why this disagreement affects the decision.",
   "evidence_balance": "supports_a|supports_b|mixed|insufficient",
-  "resolution_status": "resolved|partially_resolved|unresolved",
+  "resolution_status": "resolved|partially_resolved|unresolved|open|leaning|unresolvable_now",
   "next_question": "The question that would move this forward.",
+  "decisive_missing_evidence": "Primary source, full-text passage, benchmark, or head-to-head comparison needed.",
   "human_review_required": true
 }

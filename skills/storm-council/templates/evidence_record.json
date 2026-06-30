@@ -1,0 +1,19 @@
+{
+  "evidence_id": "E-001",
+  "source_id": "S-001",
+  "locator": {
+    "page": null,
+    "section": null,
+    "subsection": null,
+    "table": null,
+    "figure": null,
+    "equation": null,
+    "clause": null,
+    "paragraph_hint": "Short pointer to the passage, e.g. 'paragraph beginning ...'."
+  },
+  "evidence_excerpt": "Short quoted or extracted passage that does the supporting.",
+  "extraction_method": "full_text|abstract|metadata|manual",
+  "extracted_by": "academic",
+  "supports_candidate_claims": ["C-001"],
+  "notes": "Candidate passage only; whether it entails the claim is judged separately."
+}
