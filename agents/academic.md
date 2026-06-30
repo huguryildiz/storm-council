@@ -47,7 +47,9 @@ standards bodies) where relevant.
 Use `externalIds` (DOI, arXiv ID, PubMed ID) as identifiers to verify through
 the hierarchy above, not as proof of support. If both MCPs are absent, fall back
 to `WebSearch` / `WebFetch` and note the reduced retrieval quality in the source
-record.
+record. Record which metadata source(s) were checked in
+`publication_identity.metadata_sources_checked`; if no metadata adapter or
+retrieval tool ran, keep publication identity `UNRESOLVED`.
 
 ## How to work
 

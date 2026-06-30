@@ -51,7 +51,7 @@ _SUPPORTED = {"supported", "partially_supported"}
 
 # Publication identity / version status enums (schema v2).
 _RETRACTED = {"retracted"}
-_DOWNGRADED_STATUS = {"superseded", "corrected"}
+_DOWNGRADED_STATUS = {"superseded", "corrected", "duplicate_version"}
 
 # Content verification statuses (schema v2).
 _DIRECT = "direct_support"
@@ -155,6 +155,11 @@ def _publication_status(s: dict) -> str:
     return val.lower()
 
 
+def _publication_flags(s: dict) -> dict:
+    flags = s.get("flags") if isinstance(s.get("flags"), dict) else {}
+    return flags
+
+
 def _full_text_status(s: dict) -> str:
     acc = s.get("access") if isinstance(s.get("access"), dict) else {}
     val = _source_field({**s, **acc}, "full_text_status")
@@ -229,6 +234,26 @@ def _load(d: Path):
     return claims, evidence, contradictions, sources, report
 
 
+def _load_source_versions(d: Path) -> dict:
+    rows = {}
+    for row in _read_jsonl(d / "source_versions.jsonl"):
+        sid = row.get("source_id")
+        if sid:
+            rows[sid] = row
+    return rows
+
+
+def _merge_source_versions(sources_by_id: dict, versions_by_id: dict) -> None:
+    for sid, version in versions_by_id.items():
+        if sid not in sources_by_id:
+            continue
+        src = sources_by_id[sid]
+        for key in ("identifiers", "publication_identity", "flags",
+                    "canonical_source_id", "duplicate_of"):
+            if key in version:
+                src[key] = version[key]
+
+
 def _pct(num: int, den: int) -> int:
     return round(100 * num / den) if den else 0
 
@@ -257,6 +282,7 @@ def verify(d: Path) -> dict:
     claim_ids = {c.get("claim_id") for c in claims}
     src_ids = {s.get("source_id") for s in sources}
     sources_by_id = {s.get("source_id"): s for s in sources}
+    _merge_source_versions(sources_by_id, _load_source_versions(d))
     evidence_by_id = {e.get("evidence_id"): e for e in evidence}
 
     blocking, major, minor = [], [], []
@@ -334,10 +360,15 @@ def verify(d: Path) -> dict:
             if not s:
                 continue
             status = _publication_status(s)
-            if status in _RETRACTED:
+            flags = _publication_flags(s)
+            if flags.get("retracted") or status in _RETRACTED:
                 blocking.append(f"{cid} relies on retracted source {sid}")
-            elif status in _DOWNGRADED_STATUS:
-                major.append(f"{cid} relies on {status} source {sid} (needs a visible warning)")
+            elif flags.get("superseded") or status == "superseded":
+                major.append(f"{cid} relies on superseded source {sid} (needs a visible warning)")
+            elif flags.get("corrected") or status == "corrected":
+                major.append(f"{cid} relies on corrected source {sid} (needs a visible warning)")
+            elif flags.get("duplicate_version") or status == "duplicate_version":
+                major.append(f"{cid} relies on duplicate_version source {sid} (needs canonical source warning)")
 
     # --- content verification (schema v2) ---------------------------------- #
     for c in claims:

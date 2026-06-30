@@ -816,6 +816,26 @@ def _evidence_source_badges(ev: dict, sources_by_id: dict) -> str:
     return " ".join(badges)
 
 
+def _source_identity_badges(src: dict) -> str:
+    pi = src.get("publication_identity") if isinstance(src.get("publication_identity"), dict) else {}
+    flags = src.get("flags") if isinstance(src.get("flags"), dict) else {}
+    status = (pi.get("status") or "UNRESOLVED").upper()
+    badges = []
+    if flags.get("retracted") or status == "RETRACTED" or (pi.get("retraction_status") or "").lower() == "retracted":
+        badges.append('<span class="tag open">retracted</span>')
+    elif flags.get("superseded") or status == "SUPERSEDED":
+        badges.append('<span class="tag part">superseded</span>')
+    elif flags.get("corrected") or status == "CORRECTED" or (pi.get("correction_status") or "").lower() == "corrected":
+        badges.append('<span class="tag part">corrected</span>')
+    elif flags.get("duplicate_version") or status == "DUPLICATE_VERSION":
+        badges.append('<span class="tag part">duplicate version</span>')
+    elif status in {"UNRESOLVED", "METADATA_PARTIAL"}:
+        badges.append(f'<span class="tag kind">{e(status)}</span>')
+    elif status:
+        badges.append(f'<span class="tag done">{e(status)}</span>')
+    return " ".join(badges)
+
+
 def _evidence_table_html(evidence, sources_by_id=None) -> str:
     if not isinstance(evidence, list) or not evidence:
         return ""
@@ -1353,8 +1373,10 @@ def build(data: dict) -> str:
                         val_html = text_refs(val)
                     meta_bits.append(f"<span>{label_name}: {val_html}</span>")
             source_meta = f'<span class="source-meta">{"".join(meta_bits)}</span>' if meta_bits else ""
-            items += ('<li id="ref-%s"><span class="sid">%s</span> %s <span class="ty">· %s</span>%s</li>' % (
-                e(sid), e(sid), display, e(s.get("type", "")), note + source_meta))
+            identity = _source_identity_badges(s)
+            identity_html = (" " + identity) if identity else ""
+            items += ('<li id="ref-%s"><span class="sid">%s</span> %s <span class="ty">· %s</span>%s%s</li>' % (
+                e(sid), e(sid), display, e(s.get("type", "")), identity_html, note + source_meta))
         source_body = '<ul class="src">' + items + "</ul>"
         if data.get("source_bibtex"):
             source_body += (
@@ -1542,6 +1564,24 @@ def _fold_in_artifacts(data: dict, base: Path) -> None:
         f = base / "03_evidence_plan.md"
         if f.exists():
             data["evidence_plan"] = f.read_text(encoding="utf-8")
+
+    f = base / "source_versions.jsonl"
+    if f.exists():
+        versions = {
+            row.get("source_id"): row
+            for row in _read_jsonl(f)
+            if isinstance(row, dict) and row.get("source_id")
+        }
+        if versions and data.get("sources"):
+            for src in data.get("sources") or []:
+                sid = src.get("id") or src.get("source_id")
+                version = versions.get(sid)
+                if not version:
+                    continue
+                for key in ("identifiers", "publication_identity", "flags",
+                            "canonical_source_id", "duplicate_of"):
+                    if key in version and not src.get(key):
+                        src[key] = version[key]
 
 
 def main(argv=None) -> int:

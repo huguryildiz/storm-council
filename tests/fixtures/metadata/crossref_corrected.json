@@ -1,0 +1,16 @@
+{
+  "status": "ok",
+  "message": {
+    "DOI": "10.5555/corrected.paper",
+    "title": ["Corrected Metadata Adapter Paper"],
+    "author": [{"family": "Khan", "given": "Ira"}],
+    "container-title": ["Journal of Adapter Tests"],
+    "publisher": "Example Publisher",
+    "published-online": {"date-parts": [[2022, 8, 9]]},
+    "type": "journal-article",
+    "URL": "https://doi.org/10.5555/corrected.paper",
+    "relation": {
+      "is-corrected-by": [{"id": "10.5555/correction.notice"}]
+    }
+  }
+}

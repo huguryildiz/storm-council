@@ -193,6 +193,18 @@ neither is hand-asserted by the model. After stage 6:
    comparative-claim scope fields, and obvious overclaiming language. It computes
    the four scores and the verdict, writes `06_quality_gate.json`, and patches
    `report_data.json`. **Do not hand-set the scores** — let `verify.py` compute them.
+   Optionally, before this step, run the Phase-3 publication metadata adapters:
+
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/metadata_adapters.py" <output_dir>
+   ```
+
+   This writes `metadata_verification.jsonl`, `source_versions.jsonl`, and
+   `retrieval_log.jsonl`. The adapters verify publication identity only
+   (DOI/version/retraction/correction/supersession/duplicates), not passage to
+   claim support. They are opt-in and cache-backed; `--no-retrieve` uses only
+   cached responses. If no adapter run occurred, publication identity remains
+   `UNRESOLVED` and must not be described as verified.
 3. **Render** the report:
 
    ```bash

@@ -1,0 +1,16 @@
+{
+  "status": "ok",
+  "message": {
+    "DOI": "10.5555/retracted.paper",
+    "title": ["Retracted Metadata Adapter Paper"],
+    "author": [{"family": "Diaz", "given": "Mina"}],
+    "container-title": ["Journal of Adapter Tests"],
+    "publisher": "Example Publisher",
+    "published-print": {"date-parts": [[2020, 1, 1]]},
+    "type": "journal-article",
+    "URL": "https://doi.org/10.5555/retracted.paper",
+    "relation": {
+      "is-retracted-by": [{"id": "10.5555/retraction.notice"}]
+    }
+  }
+}

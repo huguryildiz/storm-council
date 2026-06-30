@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "message": {
+    "DOI": "10.5555/Example.Duplicate",
+    "title": ["A Duplicate Metadata Adapter Paper"],
+    "author": [
+      {"family": "Nguyen", "given": "Ada"},
+      {"family": "Singh", "given": "Ravi"}
+    ],
+    "container-title": ["Journal of Adapter Tests"],
+    "publisher": "Example Publisher",
+    "published-print": {"date-parts": [[2024, 5, 2]]},
+    "type": "journal-article",
+    "URL": "https://doi.org/10.5555/example.duplicate",
+    "relation": {}
+  }
+}

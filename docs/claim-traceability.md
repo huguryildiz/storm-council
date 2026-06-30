@@ -39,6 +39,20 @@ retraction/correction/supersession status, and full-text availability. Semantic
 Scholar is useful for discovery and citation graphs, but it is not the sole
 source of truth for publication identity.
 
+Optional Phase-3 metadata adapters may add three local artifacts beside the run:
+
+| Artifact | Meaning |
+| --- | --- |
+| `metadata_verification.jsonl` | Per-source record of which metadata adapters were checked and what identity status resulted. |
+| `source_versions.jsonl` | Canonical source/version map with DOI identifiers, duplicate linkage, and retracted/corrected/superseded flags. |
+| `retrieval_log.jsonl` | Cache/network audit log for adapter requests, including cache hits, offline failures, and timestamps. |
+
+The publication metadata hierarchy is publisher / DOI resolver first, then
+Crossref, then OpenAlex. Semantic Scholar is discovery and citation-graph
+support only; by itself it must not set a source to `PUBLISHED_VERIFIED`.
+If no adapter ran, source identity stays `UNRESOLVED` rather than implicitly
+verified.
+
 ## Evidence records
 
 Direct support must pass through an `evidence_id` (`E-001`) rather than only a
