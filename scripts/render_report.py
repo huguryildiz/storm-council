@@ -79,6 +79,13 @@ CSS = """
   .howto{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:0 0 34px; }
   .howto h3{ margin:0 0 10px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:700; }
   .howto ul{ margin:0; padding-left:18px; } .howto li{ font-size:14px; color:var(--muted); margin:6px 0; } .howto b{ color:var(--ink); }
+  .kpi-card{ display:flex; gap:14px; align-items:flex-start; background:var(--card); border:1px solid var(--line);
+    border-radius:10px; padding:16px 20px; margin:0 0 16px; }
+  .kpi-icon{ font-size:20px; line-height:1; flex:none; }
+  .kpi-title{ display:block; font-size:13px; color:var(--ink); margin:0 0 4px; }
+  .kpi-desc{ margin:0; font-size:13.5px; line-height:1.55; color:var(--muted); }
+  .kpi-desc code{ font-family:ui-monospace,Menlo,monospace; font-size:.92em; background:#eef0f3; color:var(--ink);
+    padding:1px 5px; border-radius:4px; }
   section{ margin:0 0 30px; }
   h2{ font-size:20px; font-weight:750; letter-spacing:-.01em; margin:0 0 12px; padding-top:10px; }
   h2 .num{ font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--brand); margin-right:10px; }
@@ -226,6 +233,11 @@ CSS = """
   .cx-detail p{ margin:8px 0 0; font-size:13px; color:var(--muted); line-height:1.5; }
   .cx-detail .cx-why{ color:var(--ink); }
   .cx-detail .cx-meta{ font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--faint); }
+  .field-detail{ margin-top:8px; }
+  .field-detail summary{ cursor:pointer; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--brand); }
+  .field-detail dl{ margin:8px 0 0; display:grid; grid-template-columns:minmax(92px,max-content) 1fr; gap:5px 10px; }
+  .field-detail dt{ font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--faint); }
+  .field-detail dd{ margin:0; font-size:12.5px; color:var(--muted); line-height:1.45; min-width:0; }
   .moves{ display:flex; flex-direction:column; gap:11px; margin:0 0 6px; }
   .round-h{ font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:700; margin:16px 0 8px; }
   .round-h:first-child{ margin-top:0; }
@@ -532,6 +544,46 @@ def refs(ids) -> str:
     for i in (ids or []):
         out.append(f" {_ref_chip(str(i))}")
     return "".join(out)
+
+
+def _detail_value(value) -> str:
+    if value is None or value == "" or value == [] or value == {}:
+        return ""
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    if isinstance(value, (int, float)):
+        return e(value)
+    if isinstance(value, str):
+        return text_refs(value)
+    if isinstance(value, list):
+        vals = [v for v in value if v is not None and v != ""]
+        if not vals:
+            return ""
+        if all(isinstance(v, str) and re.fullmatch(r"[CSXE]-\d{3}", v) for v in vals):
+            return refs(vals).strip()
+        return "; ".join(_detail_value(v) for v in vals)
+    if isinstance(value, dict):
+        parts = []
+        for k, v in value.items():
+            rendered = _detail_value(v)
+            if rendered:
+                parts.append(f"{e(k)}: {rendered}")
+        return "; ".join(parts)
+    return text_refs(value)
+
+
+def _field_details(rows, summary: str = "Details") -> str:
+    rendered = []
+    for label, value in rows:
+        val = _detail_value(value)
+        if val:
+            rendered.append(f"<dt>{e(label)}</dt><dd>{val}</dd>")
+    if not rendered:
+        return ""
+    return (
+        f'<details class="field-detail"><summary>{e(summary)}</summary>'
+        f'<dl>{"".join(rendered)}</dl></details>'
+    )
 
 
 def _rich_text(value) -> str:
@@ -1065,8 +1117,6 @@ def _claims_table_html(claims) -> str:
         text = text_refs(c.get("claim_text") or c.get("text", ""))
         cev = c.get("counterevidence_ids")
         cev_html = f'<span class="cev">counters{refs(cev)}</span>' if cev else ""
-        lims = c.get("limitations") or []
-        lim_html = f'<span class="lim">{text_refs(lims[0])}</span>' if lims else ""
         meta_chips = []
         if c.get("confidence") is not None:
             meta_chips.append(f'<span class="claim-chip">⚡ {e(str(c.get("confidence")))}</span>')
@@ -1080,14 +1130,40 @@ def _claims_table_html(claims) -> str:
             meta_chips.append(f'<span class="claim-chip">🕐 {e(local_date)}</span>')
         meta_html = f'<span class="claim-meta">{"".join(meta_chips)}</span>' if meta_chips else ""
         src_html = refs(c.get("source_ids")) or "—"
+        verification = c.get("content_verification")
+        if isinstance(verification, dict):
+            locator = verification.get("evidence_locator")
+            verification = {
+                "status": verification.get("status"),
+                "full_text_status": verification.get("full_text_status"),
+                "entailment_rationale": verification.get("entailment_rationale"),
+                "evidence_locator": _locator_text(locator) if isinstance(locator, dict) else locator,
+                "adversarial_check": verification.get("adversarial_check"),
+            }
+        atom = c.get("atomicity")
+        if isinstance(atom, dict):
+            atom = {
+                "is_atomic": atom.get("is_atomic"),
+                "split_from": atom.get("split_from"),
+                "bundled_risk": atom.get("bundled_risk"),
+            }
+        detail_html = _field_details((
+            ("strength", c.get("claim_strength")),
+            ("evidence", c.get("evidence_ids")),
+            ("support_scope", c.get("support_scope")),
+            ("scope_risk_flags", c.get("scope_risk_flags")),
+            ("limitations", c.get("limitations")),
+            ("atomicity", atom),
+            ("content_verification", verification),
+        ), "Claim details")
         rows += ('<tr id="ref-%s"><td class="mono">%s</td><td style="text-transform:capitalize">%s</td>'
                  '<td><span class="tag kind">%s</span></td>'
                  '<td><span class="tag %s">%s</span></td>'
-                 '<td>%s%s%s%s</td><td>%s</td></tr>') % (
+                 '<td>%s%s%s%s</td><td>%s</td><td>%s</td></tr>') % (
                      e(cid), e(cid), e(persp), e(ctype), scls, e(slbl),
-                     text, cev_html, lim_html, meta_html, src_html)
+                     text, cev_html, meta_html, "", src_html, detail_html)
     return ('<table class="claims-table"><thead><tr><th>ID</th><th>Lens</th><th>Type</th>'
-            '<th>Status</th><th>Claim</th><th>Sources</th></tr></thead><tbody>'
+            '<th>Status</th><th>Claim</th><th>Sources</th><th>Details</th></tr></thead><tbody>'
             + rows + "</tbody></table>")
 
 
@@ -1170,6 +1246,7 @@ def _verdict_badge_html(v: dict) -> str:
         cls = "verdict-ok"
     claim = v.get("claim_id")
     rationale = v.get("rationale") or ""
+    judged = v.get("judged_claim") or ""
     review = " · review" if v.get("human_review_required") else ""
     return (
         '<div class="verdict-row">%s'
@@ -1181,7 +1258,10 @@ def _verdict_badge_html(v: dict) -> str:
             e(verdict or "—"),
             e(scope or "—"),
             review,
-            f'<span class="verdict-rationale">{text_refs(rationale)}</span>' if rationale else "",
+            (
+                (f'<span class="verdict-rationale">Judged: {text_refs(judged)}</span>' if judged else "")
+                + (f'<span class="verdict-rationale">{text_refs(rationale)}</span>' if rationale else "")
+            ),
         )
     )
 
@@ -1208,17 +1288,23 @@ def _evidence_table_html(evidence, sources_by_id=None, verdicts=None) -> str:
         method = ev.get("extraction_method") or ""
         badges = _evidence_source_badges(ev, sources_by_id)
         verdict_html = _evidence_verdicts_html(eid, verdicts_by_eid)
+        detail_html = _field_details((
+            ("supports_claims", ev.get("supports_candidate_claims")),
+            ("extracted_by", ev.get("extracted_by")),
+            ("notes", ev.get("notes")),
+        ), "Evidence details")
         rows += (
             '<tr id="ref-%s"><td class="mono">%s</td><td>%s</td><td>%s</td>'
-            '<td class="excerpt">%s</td><td>%s</td><td><span class="tag kind">%s</span></td><td>%s</td></tr>'
+            '<td class="excerpt">%s</td><td>%s</td><td><span class="tag kind">%s</span></td><td>%s</td><td>%s</td></tr>'
             % (e(eid), e(eid), refs([sid]) if sid else "—", text_refs(loc) if loc else "—",
-               text_refs(excerpt) if excerpt else "—", verdict_html, e(method or "—"), badges)
+               text_refs(excerpt) if excerpt else "—", verdict_html, e(method or "—"), badges, detail_html)
         )
     if not rows:
         return ""
     return (
         '<table class="evidence-table"><thead><tr><th>ID</th><th>Source</th><th>Locator</th>'
-        '<th>Excerpt</th><th>Verdict</th><th>Method</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table>'
+        '<th>Excerpt</th><th>Verdict</th><th>Method</th><th>Status</th><th>Details</th></tr></thead><tbody>'
+        + rows + '</tbody></table>'
     )
 
 
@@ -1251,11 +1337,16 @@ def _deliberation_html(moves) -> str:
                     tparts.append(refs([m[key]]).strip())
             target = " ".join(p for p in tparts if p)
             text = m.get("text") or m.get("statement") or ""
+            meta = _field_details((
+                ("round", m.get("round")),
+                ("move", m.get("move") or m.get("move_type")),
+                ("created_at", m.get("created_at")),
+            ), "Move metadata")
             out += ('<div class="move"><div class="mv-side">'
                     f'<span class="mv-lens">{e(lens)}</span>'
                     f'<span class="tag {mcls}">{e(mlbl)}</span>'
                     f'<span class="mv-target">{target}</span></div>'
-                    f'<div class="mv-text">{text_refs(text)}</div></div>')
+                    f'<div class="mv-text">{text_refs(text)}{meta}</div></div>')
         out += "</div>"
     return out
 
@@ -1281,6 +1372,12 @@ def _cx_detail_html(detail: dict, claim_by_id: dict) -> str:
         meta.append("Human review required: " + ("yes" if detail.get("human_review_required") else "no"))
     if meta:
         inner += f'<p class="cx-meta">{e(" · ".join(meta))}</p>'
+    if detail.get("contradiction_id") and detail.get("contradiction_id") != detail.get("conflict_id"):
+        inner += f'<p class="cx-meta">Contradiction ID: {refs([detail.get("contradiction_id")]).strip()}</p>'
+    if detail.get("claim_ids"):
+        inner += f'<p class="cx-pos">Claims: {refs(detail.get("claim_ids")).strip()}</p>'
+    if detail.get("scope_dimension"):
+        inner += f'<p class="cx-meta">Scope dimension: {text_refs(detail.get("scope_dimension"))}</p>'
     why = detail.get("why_it_matters") or detail.get("topic")
     if why:
         inner += f'<p class="cx-why">{text_refs(why)}</p>'
@@ -1292,6 +1389,8 @@ def _cx_detail_html(detail: dict, claim_by_id: dict) -> str:
         inner += f'<p class="cx-bal">Evidence balance: <b>{e(detail["evidence_balance"])}</b></p>'
     if detail.get("next_question"):
         inner += f'<p class="cx-nq">Next question: {text_refs(detail["next_question"])}</p>'
+    if detail.get("decisive_missing_evidence"):
+        inner += f'<p class="cx-nq">Decisive missing evidence: {text_refs(detail["decisive_missing_evidence"])}</p>'
     if not inner:
         return ""
     return f'<details class="cx-detail"><summary>Positions &amp; detail</summary>{inner}</details>'
@@ -1896,7 +1995,17 @@ def build(data: dict) -> str:
 
     claims_html = _claims_table_html(data.get("claims"))
     if claims_html:
-        sec("Claims & evidence ledger", claims_html)
+        confidence_kpi = (
+            '<div class="kpi-card"><span class="kpi-icon">⚡</span><div>'
+            '<b class="kpi-title">Confidence score (0.0–1.0)</b>'
+            '<p class="kpi-desc">The number next to the lightning-bolt icon is the lens’s own subjective '
+            'strength of belief in that claim &mdash; e.g. <code>0.88</code> means the lens is fairly but not '
+            'fully certain. It is intentionally <b>separate from the Status column</b>: a high-confidence forecast '
+            'is still a forecast, not evidence. As a rule of thumb, the Stage 6 adversarial review flags '
+            'confidence ≥ 0.8 on any claim whose status is not <code>supported</code> as possible '
+            'overconfidence &mdash; worth a second look.</p></div></div>'
+        )
+        sec("Claims & evidence ledger", confidence_kpi + claims_html)
 
     _sources_by_id = {
         (s.get("id") or s.get("source_id")): s
@@ -1994,9 +2103,16 @@ def build(data: dict) -> str:
             note = f'<span class="note">{text_refs(s["note"])}</span>' if s.get("note") else ""
             meta_bits = []
             for label_name, key in (
+                ("Authors", "authors"),
+                ("Year", "year"),
+                ("Venue", "venue"),
                 ("Publisher", "publisher"),
                 ("Published", "publication_date"),
                 ("Accessed", "accessed_at"),
+                ("DOI", "doi"),
+                ("arXiv", "arxiv_id"),
+                ("Publication status", "publication_status"),
+                ("Full text", "full_text_status"),
                 ("Credibility", "credibility_notes"),
                 ("Relevance", "relevance_notes"),
             ):
@@ -2038,8 +2154,12 @@ def build(data: dict) -> str:
                 issues += f'<p class="lead"><b>{label}:</b></p><ul class="clean">' + \
                     "".join(f"<li>{text_refs(v)}</li>" for v in vals) + "</ul>"
         verdict = rev.get("verdict", "")
+        summary = (
+            f'<p class="lead">{text_refs(rev["summary"])}</p>'
+            if rev.get("summary") else ""
+        )
         body = (f'<div class="scores">{chips}</div>'
-                f'<p class="lead">Verdict <b>{e(verdict)}</b>.</p>{issues}')
+                f'<p class="lead">Verdict <b>{e(verdict)}</b>.</p>{summary}{issues}')
         sec("Independent review", body)
 
     a('<footer><p><b>Storm Council</b> is inspired by research-first knowledge-curation systems, '
@@ -2106,7 +2226,11 @@ def _enrich_source_urls(data: dict, base: Path) -> None:
             ty = (row.get("source_type") or "").strip()
             if ty and ty.lower() != "null":
                 s["type"] = ty
-        for key in ("publisher", "publication_date", "accessed_at", "credibility_notes", "relevance_notes"):
+        for key in (
+            "authors", "year", "venue", "doi", "arxiv_id", "publication_status",
+            "full_text_status", "publisher", "publication_date", "accessed_at",
+            "credibility_notes", "relevance_notes",
+        ):
             val = (row.get(key) or "").strip()
             if val and val.lower() != "null" and not s.get(key):
                 s[key] = val
@@ -2206,6 +2330,19 @@ def _fold_in_artifacts(data: dict, base: Path) -> None:
         f = base / "03_evidence_plan.md"
         if f.exists():
             data["evidence_plan"] = f.read_text(encoding="utf-8")
+
+    if not data.get("quality_gate"):
+        f = base / "06_quality_gate.json"
+        if f.exists():
+            try:
+                qgate = json.loads(f.read_text(encoding="utf-8"))
+            except ValueError:
+                qgate = None
+            if isinstance(qgate, dict):
+                data["quality_gate"] = qgate
+                if qgate.get("review_summary"):
+                    review = data.setdefault("review", {})
+                    review.setdefault("summary", qgate["review_summary"])
 
     f = base / "source_versions.jsonl"
     if f.exists():

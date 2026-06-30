@@ -252,6 +252,97 @@ class RenderReportTest(unittest.TestCase):
         self.assertIn("0.88", html)
         self.assertIn("2026-06-30", html)
 
+    def test_claims_ledger_renders_structured_details(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "claims": [
+                    {
+                        "claim_id": "C-001",
+                        "perspective": "academic",
+                        "claim_type": "fact",
+                        "claim_strength": "comparative",
+                        "evidence_status": "supported",
+                        "claim_text": "Benchmark gains are scoped.",
+                        "evidence_ids": ["E-001"],
+                        "support_scope": "Trace replay only.",
+                        "scope_risk_flags": ["simulation_to_production"],
+                        "atomicity": {"is_atomic": True},
+                        "content_verification": {
+                            "status": "direct_support",
+                            "full_text_status": "full_text",
+                            "entailment_rationale": "The section states the scoped result.",
+                            "evidence_locator": {"section": "Evaluation"},
+                            "adversarial_check": "passed",
+                        },
+                    }
+                ],
+            }
+        )
+
+        self.assertIn("Claim details", html)
+        self.assertIn("comparative", html)
+        self.assertIn("E-001", html)
+        self.assertIn("Trace replay only.", html)
+        self.assertIn("simulation_to_production", html)
+        self.assertIn("direct_support", html)
+        self.assertIn("section Evaluation", html)
+
+    def test_evidence_registry_renders_record_details_and_judged_claim(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "evidence": [
+                    {
+                        "evidence_id": "E-001",
+                        "source_id": "S-001",
+                        "locator": {"section": "Methods"},
+                        "evidence_excerpt": "The method uses a solver.",
+                        "extraction_method": "full_text",
+                        "extracted_by": "academic",
+                        "supports_candidate_claims": ["C-001"],
+                        "notes": "Used for content verification.",
+                    }
+                ],
+                "evidence_verdicts": [
+                    {
+                        "evidence_id": "E-001",
+                        "claim_id": "C-001",
+                        "judged_claim": "The method uses a solver.",
+                        "verdict": "entails",
+                        "scope_preserved": "yes",
+                        "rationale": "Directly stated.",
+                    }
+                ],
+            }
+        )
+
+        self.assertIn("Evidence details", html)
+        self.assertIn("academic", html)
+        self.assertIn("Used for content verification.", html)
+        self.assertIn("Judged: The method uses a solver.", html)
+
+    def test_source_registry_metadata_is_merged_and_rendered(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            (base / "03_source_registry.csv").write_text(
+                "source_id,title,authors,year,venue,publisher,source_type,url,doi,arxiv_id,"
+                "publication_status,full_text_status,credibility_notes,relevance_notes\n"
+                "S-001,Paper,A. Author,2025,SIGCOMM,ACM,peer_reviewed,https://example.test,"
+                "10.1000/test,2501.00001,active,full_text,Strong venue,Direct support\n",
+                encoding="utf-8",
+            )
+            data = {"title": "A decision", "sources": [{"id": "S-001", "title": "Paper"}]}
+            render_report._enrich_source_urls(data, base)
+
+        html = render_report.build(data)
+        self.assertIn("A. Author", html)
+        self.assertIn("SIGCOMM", html)
+        self.assertIn("10.1000/test", html)
+        self.assertIn("2501.00001", html)
+        self.assertIn("active", html)
+        self.assertIn("full_text", html)
+
     def test_argument_map_renders_inline_svg_with_links(self):
         mmd = (
             "flowchart TD\n"
@@ -417,7 +508,30 @@ class RenderReportTest(unittest.TestCase):
         self.assertIn('class="move"', html)
         self.assertIn('<span class="tag open">challenge</span>', html)
         self.assertIn('<span class="tag done">support</span>', html)
+        self.assertIn("Move metadata", html)
         self.assertIn("Do not generalize", html)
+
+    def test_council_deliberation_keeps_raw_move_value(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "deliberation": [
+                    {
+                        "round": "round_2",
+                        "lens": "academic",
+                        "move": "request_for_evidence",
+                        "target_id": "X-008",
+                        "statement": "Find production evidence.",
+                        "created_at": "2026-06-30T16:36:32+00:00",
+                    }
+                ],
+            }
+        )
+
+        self.assertIn("request evidence", html)
+        self.assertIn("request_for_evidence", html)
+        self.assertIn("round_2", html)
+        self.assertIn("2026-06-30T16:36:32+00:00", html)
 
     def test_council_deliberation_omitted_when_absent(self):
         html = render_report.build({"title": "A decision"})
@@ -477,6 +591,31 @@ class RenderReportTest(unittest.TestCase):
         self.assertIn("Resolution: partially_resolved", html)
         self.assertIn("Human review required: yes", html)
 
+    def test_contradiction_detail_renders_all_structured_fields(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "contradictions": [
+                    {"id": "X-001", "kind": "tension", "stake": "speed vs safety", "status": "partly"}
+                ],
+                "contradiction_detail": {
+                    "X-001": {
+                        "conflict_id": "X-001",
+                        "contradiction_id": "X-001",
+                        "claim_ids": ["C-001", "C-002"],
+                        "scope_dimension": "deployment_context",
+                        "decisive_missing_evidence": "Shadow-mode trial.",
+                    }
+                },
+            }
+        )
+
+        self.assertIn("Claims:", html)
+        self.assertIn("C-001", html)
+        self.assertIn("C-002", html)
+        self.assertIn("Scope dimension: deployment_context", html)
+        self.assertIn("Decisive missing evidence: Shadow-mode trial.", html)
+
     def test_evidence_plan_renders_markdown_subset(self):
         html = render_report.build(
             {
@@ -499,6 +638,28 @@ class RenderReportTest(unittest.TestCase):
         self.assertIn('<span class="cid">S-002</span>', html)
         # The markdown top-level title is dropped (the section carries its own).
         self.assertNotIn("03 - Evidence", html)
+
+    def test_quality_gate_summary_is_folded_into_review(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            (base / "06_quality_gate.json").write_text(
+                json.dumps(
+                    {
+                        "status": "PASS_WITH_CAVEATS",
+                        "coverage_score": 100,
+                        "traceability_score": 100,
+                        "contradiction_handling_score": 50,
+                        "recommendation_support_score": 100,
+                        "review_summary": "PASS_WITH_CAVEATS computed by verify.py.",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            data = {"title": "A decision", "review": {"verdict": "PASS_WITH_CAVEATS"}}
+            render_report._fold_in_artifacts(data, base)
+
+        html = render_report.build(data)
+        self.assertIn("PASS_WITH_CAVEATS computed by verify.py.", html)
 
     def test_artifact_markdown_sections_render_missing_research_context(self):
         html = render_report.build(
