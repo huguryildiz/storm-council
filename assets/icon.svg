@@ -84,13 +84,13 @@
   <!-- Zeus lightning bolt — top tip exactly at pentagon vertex (32,9) -->
   <!-- Shape: classic angled Z-bolt, wider and bolder for Zeus feel -->
   <path
-    d="M32,9 L43,30 L36,30 L44,50 L21,31 L29,31 Z"
+    d="M32,9 L45,30 L36,30 L32,50 L28,30 L19,30 Z"
     fill="url(#bolt)"
     filter="url(#bolt-glow)"/>
 
   <!-- Bright specular highlight running down the bolt spine -->
   <path
-    d="M32,9 L39,27 L35,27 L42,47"
+    d="M32,9 L40,26 L35,26 L32,47"
     stroke="rgba(255,255,255,0.5)" stroke-width="0.7"
     fill="none" stroke-linecap="round"/>
 

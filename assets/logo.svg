@@ -82,13 +82,13 @@
 
     <!-- Zeus bolt — tip at (32,9) -->
     <path
-      d="M32,9 L43,30 L36,30 L44,50 L21,31 L29,31 Z"
+      d="M32,9 L45,30 L36,30 L32,50 L28,30 L19,30 Z"
       fill="url(#bolt-l)"
       filter="url(#bolt-glow-l)"/>
 
     <!-- Specular highlight -->
     <path
-      d="M32,9 L39,27 L35,27 L42,47"
+      d="M32,9 L40,26 L35,26 L32,47"
       stroke="rgba(255,255,255,0.45)" stroke-width="0.9"
       fill="none" stroke-linecap="round"/>
 
