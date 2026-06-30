@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
 <p align="center">
-  <img src="assets/icon.svg" alt="Storm Council" width="120" height="120">
+  <img src="assets/logo.png" alt="Storm Council" width="200" height="200">
 </p>
 
 <h1 align="center">Storm Council</h1>
