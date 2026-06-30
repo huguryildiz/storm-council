@@ -48,10 +48,22 @@ Optional Phase-3 metadata adapters may add three local artifacts beside the run:
 | `retrieval_log.jsonl` | Cache/network audit log for adapter requests, including cache hits, offline failures, and timestamps. |
 
 The publication metadata hierarchy is publisher / DOI resolver first, then
-Crossref, then OpenAlex. Semantic Scholar is discovery and citation-graph
-support only; by itself it must not set a source to `PUBLISHED_VERIFIED`.
-If no adapter ran, source identity stays `UNRESOLVED` rather than implicitly
-verified.
+Crossref, then OpenAlex, with native domain indexes when the source carries a
+domain identifier:
+
+| Source identifier | Native index |
+| --- | --- |
+| `doi` / `doi_normalized` | DOI resolver, Crossref, OpenAlex |
+| `arxiv_id` | arXiv |
+| `pmid` | PubMed |
+| `pmcid` | PMC / PubMed E-utilities |
+| IEEE Xplore / ACM DL / SSRN / NBER / RePEc / standards identifiers or URLs | Logged stub until the adapter is wired |
+
+Semantic Scholar is discovery and citation-graph support only; by itself it
+must not set a source to `PUBLISHED_VERIFIED`. If no adapter ran, source
+identity stays `UNRESOLVED` rather than implicitly verified. Stubbed or missing
+domain identifiers are logged in `retrieval_log.jsonl`; they do not fabricate a
+version, retraction status, or canonical identity.
 
 ## Evidence records
 

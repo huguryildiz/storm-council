@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article>
+  <front>
+    <journal-meta>
+      <journal-title-group><journal-title>Open Biomedical Storms</journal-title></journal-title-group>
+    </journal-meta>
+    <article-meta>
+      <article-id pub-id-type="pmc">PMC3333333</article-id>
+      <article-id pub-id-type="pmid">33333333</article-id>
+      <article-id pub-id-type="doi">10.1000/pmc.record</article-id>
+      <title-group><article-title>PMC Indexed Study</article-title></title-group>
+      <contrib-group>
+        <contrib><name><surname>Meitner</surname><given-names>Lise</given-names></name></contrib>
+      </contrib-group>
+      <pub-date><year>2020</year><month>07</month><day>20</day></pub-date>
+    </article-meta>
+  </front>
+</article>

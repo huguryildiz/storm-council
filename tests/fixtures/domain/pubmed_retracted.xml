@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE">
+      <PMID>11111111</PMID>
+      <Article>
+        <Journal>
+          <Title>Journal of Biomedical Storms</Title>
+          <JournalIssue><PubDate><Year>2022</Year><Month>Jun</Month><Day>15</Day></PubDate></JournalIssue>
+        </Journal>
+        <ArticleTitle>Retracted Biomedical Study</ArticleTitle>
+        <AuthorList>
+          <Author><LastName>Curie</LastName><ForeName>Marie</ForeName></Author>
+        </AuthorList>
+        <PublicationTypeList>
+          <PublicationType>Retracted Publication</PublicationType>
+        </PublicationTypeList>
+      </Article>
+      <CommentsCorrectionsList>
+        <CommentsCorrections RefType="RetractionIn">
+          <RefSource>Journal of Biomedical Storms. 2023</RefSource>
+          <PMID>11111112</PMID>
+        </CommentsCorrections>
+      </CommentsCorrectionsList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">11111111</ArticleId>
+        <ArticleId IdType="doi">10.1000/retracted.pubmed</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+</PubmedArticleSet>

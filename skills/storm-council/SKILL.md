@@ -209,8 +209,11 @@ neither is hand-asserted by the model. After stage 6:
    `retrieval_log.jsonl`. The adapters verify publication identity only
    (DOI/version/retraction/correction/supersession/duplicates), not passage to
    claim support. They are opt-in and cache-backed; `--no-retrieve` uses only
-   cached responses. If no adapter run occurred, publication identity remains
-   `UNRESOLVED` and must not be described as verified.
+   cached responses. Domain adapters additionally resolve `arxiv_id` through
+   arXiv and `pmid`/`pmcid` through PubMed/PMC; IEEE Xplore, ACM DL, SSRN,
+   NBER, RePEc, and standards sources are logged as not yet wired when no
+   native adapter exists. If no adapter run occurred, publication identity
+   remains `UNRESOLVED` and must not be described as verified.
 3. **Render** the report:
 
    ```bash
@@ -276,9 +279,10 @@ you need to trace evidence depth beyond a keyword hit.
 
 Usage notes:
 - For `semantic-scholar`, pass `fields=title,abstract,year,authors,citationCount,externalIds`.
-- `externalIds` returns DOI, arXiv ID, PubMed ID — use these as identifiers to
-  verify via publisher/DOI resolver, Crossref, OpenAlex, or a domain-specific
-  index. Do not treat Semantic Scholar alone as publication truth.
+- `externalIds` returns DOI, arXiv ID, PubMed ID — map `doi` /
+  `doi_normalized` to DOI resolver, Crossref, and OpenAlex; `arxiv_id` to
+  arXiv; `pmid` to PubMed; and `pmcid` to PMC / PubMed E-utilities. Do not
+  treat Semantic Scholar alone as publication truth.
 - If both MCPs are absent, fall back to `WebSearch` / `WebFetch` and mark
   retrieval quality accordingly in the status banner (`ILLUSTRATIVE`).
 

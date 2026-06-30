@@ -51,6 +51,20 @@ record. Record which metadata source(s) were checked in
 `publication_identity.metadata_sources_checked`; if no metadata adapter or
 retrieval tool ran, keep publication identity `UNRESOLVED`.
 
+Identifier mapping for source records:
+
+| Identifier | Native index |
+| --- | --- |
+| `doi` / `doi_normalized` | DOI resolver, Crossref, OpenAlex |
+| `arxiv_id` | arXiv |
+| `pmid` | PubMed |
+| `pmcid` | PMC / PubMed E-utilities |
+
+For preprints, record `arxiv_id`; for biomedical literature, record `pmid`
+and/or `pmcid` when available. IEEE Xplore, ACM DL, SSRN, NBER, RePEc, and
+standards sources should still record the best stable identifier or URL; their
+domain adapters are currently logged as not yet wired rather than fabricated.
+
 ## How to work
 
 - Produce 3–6 claims about the question from your lens.

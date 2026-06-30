@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE">
+      <PMID>22222222</PMID>
+      <Article>
+        <Journal>
+          <Title>Journal of Biomedical Storms</Title>
+          <JournalIssue><PubDate><Year>2021</Year><Month>12</Month><Day>5</Day></PubDate></JournalIssue>
+        </Journal>
+        <ArticleTitle>Corrected Biomedical Study</ArticleTitle>
+        <AuthorList>
+          <Author><LastName>Franklin</LastName><ForeName>Rosalind</ForeName></Author>
+        </AuthorList>
+        <PublicationTypeList>
+          <PublicationType>Journal Article</PublicationType>
+        </PublicationTypeList>
+      </Article>
+      <CommentsCorrectionsList>
+        <CommentsCorrections RefType="ErratumIn">
+          <RefSource>Journal of Biomedical Storms. 2022</RefSource>
+          <PMID>22222223</PMID>
+        </CommentsCorrections>
+      </CommentsCorrectionsList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">22222222</ArticleId>
+        <ArticleId IdType="doi">10.1000/corrected.pubmed</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+</PubmedArticleSet>
