@@ -70,6 +70,14 @@ It runs as a **Claude Code plugin**: no API key, no separate billing. It uses yo
 
 To install from a local clone:
 
+```bash
+git clone https://github.com/huguryildiz/storm-council
+cd storm-council
+bash setup.sh          # installs uv if needed, pre-fetches MCP servers, checks Python
+```
+
+Then in Claude Code:
+
 ```text
 /plugin marketplace add /absolute/path/to/storm-council
 /plugin install storm-council@huguryildiz
