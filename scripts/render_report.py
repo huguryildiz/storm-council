@@ -158,7 +158,8 @@ CSS = """
   .charter .ch-block p{ margin:0; font-size:13px; color:var(--muted); line-height:1.55; }
   .claims-table td .lim{ display:block; color:var(--faint); font-size:12px; margin-top:4px; }
   .claims-table td .cev{ display:block; font-size:12px; color:var(--muted); margin-top:4px; }
-  .claims-table td .claim-meta{ display:block; color:var(--faint); font:12px ui-monospace,Menlo,monospace; margin-top:5px; }
+  .claims-table td .claim-meta{ display:block; margin-top:6px; }
+  .claim-chip{ display:inline-flex; align-items:center; gap:4px; font:11px ui-monospace,Menlo,monospace; padding:2px 8px; border-radius:999px; background:#eef0f3; color:var(--muted); margin-right:4px; }
   .artifact{ border:1px solid var(--line); border-radius:10px; background:var(--card); padding:16px 18px; }
   .artifact h4{ margin:14px 0 7px; font-size:14.5px; }
   .artifact h4:first-child{ margin-top:0; }
@@ -281,6 +282,177 @@ _MMD_NODE_RE = re.compile(
 _MMD_EDGE_RE = re.compile(
     r'([A-Za-z0-9_]+)\s*(-\.->|-->)\s*(?:\|[^|]*\|\s*)?([A-Za-z0-9_]+)'
 )
+# Matches BibTeX field assignments; handles up to two levels of nested braces in values.
+_BIB_FIELD_RE = re.compile(
+    r'(\w+)\s*=\s*(?:\{((?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)\}|"([^"]*)")',
+    re.DOTALL,
+)
+
+
+def _bib_normalize_id(key: str) -> str:
+    """Convert BibTeX key like S001 -> S-001 to match JSON source IDs."""
+    m = re.match(r'^([A-Za-z]+)(\d+)$', key.strip())
+    if m:
+        return f"{m.group(1).upper()}-{int(m.group(2)):03d}"
+    return key.strip().upper()
+
+
+def _parse_bibtex(bibtex: str) -> dict:
+    """Parse BibTeX string to {normalized_id: {_type, field: value, ...}}."""
+    entries: dict = {}
+    text = str(bibtex)
+    i = 0
+    while i < len(text):
+        at = text.find('@', i)
+        if at == -1:
+            break
+        brace = text.find('{', at)
+        if brace == -1:
+            break
+        etype = text[at + 1:brace].strip().lower()
+        if etype in ('comment', 'string', 'preamble'):
+            i = brace + 1
+            continue
+        depth, j = 1, brace + 1
+        while j < len(text) and depth > 0:
+            if text[j] == '{':
+                depth += 1
+            elif text[j] == '}':
+                depth -= 1
+            j += 1
+        body = text[brace + 1:j - 1]
+        i = j
+        comma = body.find(',')
+        if comma == -1:
+            continue
+        key = body[:comma].strip()
+        rest = body[comma + 1:]
+        fields: dict = {'_type': etype}
+        for fm in _BIB_FIELD_RE.finditer(rest):
+            fname = fm.group(1).lower()
+            fval = fm.group(2) if fm.group(2) is not None else (fm.group(3) or '')
+            if fname == 'author':
+                # Keep inner braces intact — {Name} marks a corporate/literal author.
+                fval = re.sub(r'\s+', ' ', fval).strip()
+            else:
+                fval = re.sub(r'\{\{([^{}]*)\}\}', r'\1', fval)
+                fval = re.sub(r'\{([^{}]*)\}', r'\1', fval)
+                fval = re.sub(r'\s+', ' ', fval).strip()
+            fields[fname] = fval
+        entries[_bib_normalize_id(key)] = fields
+    return entries
+
+
+def _bib_initials(name: str) -> str:
+    return ' '.join(p[0].upper() + '.' for p in name.split() if p)
+
+
+def _bib_author_apa(author_str: str) -> str:
+    """Convert BibTeX author string to APA 7 author list."""
+    if not author_str:
+        return ''
+    raw = re.split(r'\s+and\s+', author_str, flags=re.IGNORECASE)
+    formatted: list = []
+    has_et_al = False
+    for a in raw:
+        a = a.strip()
+        if not a:
+            continue
+        if a.lower() in ('others', 'et al.', 'et al'):
+            has_et_al = True
+            continue
+        # Braced name {Organization} = corporate/literal — don't reformat.
+        if re.match(r'^\{[^{}]+\}$', a):
+            formatted.append(a[1:-1])
+        elif ',' in a:
+            last, _, first = a.partition(',')
+            initials = _bib_initials(first.strip())
+            formatted.append(f"{last.strip()}, {initials}" if initials else last.strip())
+        else:
+            parts = a.split()
+            if len(parts) == 1:
+                formatted.append(parts[0])
+            else:
+                initials = _bib_initials(' '.join(parts[:-1]))
+                formatted.append(f"{parts[-1]}, {initials}" if initials else parts[-1])
+    if not formatted:
+        return ''
+    if has_et_al:
+        return formatted[0] + ', et al.'
+    if len(formatted) == 1:
+        return formatted[0]
+    if len(formatted) == 2:
+        return f"{formatted[0]}, & {formatted[1]}"
+    return ', '.join(formatted[:-1]) + ', & ' + formatted[-1]
+
+
+def _format_apa_html(fields: dict, url: str = '') -> str:
+    """Render BibTeX entry fields as an APA 7 HTML citation fragment."""
+    etype = fields.get('_type', 'misc')
+    author = _bib_author_apa(fields.get('author', ''))
+    year = fields.get('year', 'n.d.')
+    title = fields.get('title', '')
+    use_url = url or fields.get('url', '')
+    parts: list = []
+    if author:
+        author_esc = html.escape(author)
+        # Initials already end with "."; corporate names don't — add period only when needed.
+        parts.append(author_esc if author.endswith('.') else author_esc + '.')
+    parts.append(f'({html.escape(year)}).')
+    if etype == 'article':
+        parts.append(html.escape(title) + '.')
+        j = fields.get('journal', '')
+        vol = fields.get('volume', '')
+        num = fields.get('number', '')
+        pages = fields.get('pages', '')
+        if j:
+            jstr = f'<em>{html.escape(j)}</em>'
+            if vol:
+                jstr += f', <em>{html.escape(vol)}</em>'
+                if num:
+                    jstr += f'({html.escape(num)})'
+            if pages:
+                jstr += f', {html.escape(pages)}'
+            parts.append(jstr + '.')
+    elif etype in ('inproceedings', 'conference', 'incollection'):
+        parts.append(html.escape(title) + '.')
+        bt = fields.get('booktitle', '')
+        if bt:
+            parts.append(f'In <em>{html.escape(bt)}</em>.')
+    elif etype == 'book':
+        parts.append(f'<em>{html.escape(title)}</em>.')
+        pub = fields.get('publisher', '')
+        if pub:
+            parts.append(html.escape(pub) + '.')
+    elif etype == 'techreport':
+        parts.append(f'<em>{html.escape(title)}</em>.')
+        inst = fields.get('institution', '')
+        num = fields.get('number', '')
+        detail = inst
+        if num:
+            detail = f'{detail} (No. {num})' if detail else f'(No. {num})'
+        if detail:
+            parts.append(html.escape(detail) + '.')
+    else:
+        parts.append(html.escape(title) + '.')
+        pub = fields.get('publisher', '') or fields.get('organization', '')
+        if pub:
+            parts.append(html.escape(pub) + '.')
+    result = ' '.join(p for p in parts if p)
+    if use_url:
+        result += (
+            f' <a class="slink" href="{html.escape(use_url)}"'
+            f' target="_blank" rel="noopener">{html.escape(use_url)}</a>'
+        )
+    return result
+
+
+def _fmt_datetime_html(val: str) -> str:
+    """Wrap ISO datetime strings in a <time> element for JS local-time conversion."""
+    s = str(val).strip()
+    if re.search(r'[T ]\d{2}:\d{2}', s):
+        return f'<time class="ts-local" data-ts="{html.escape(s)}">{html.escape(s)}</time>'
+    return html.escape(s)
 
 
 def e(x) -> str:
@@ -585,12 +757,18 @@ def _claims_table_html(claims) -> str:
         cev_html = f'<span class="cev">counters{refs(cev)}</span>' if cev else ""
         lims = c.get("limitations") or []
         lim_html = f'<span class="lim">{text_refs(lims[0])}</span>' if lims else ""
-        meta = []
+        meta_chips = []
         if c.get("confidence") is not None:
-            meta.append(f"confidence {c.get('confidence')}")
+            meta_chips.append(f'<span class="claim-chip">⚡ {e(str(c.get("confidence")))}</span>')
         if c.get("created_at"):
-            meta.append(f"created {c.get('created_at')}")
-        meta_html = f'<span class="claim-meta">{e(" · ".join(meta))}</span>' if meta else ""
+            try:
+                from datetime import datetime, timezone
+                dt = datetime.fromisoformat(c["created_at"])
+                local_date = dt.astimezone().strftime("%Y-%m-%d %H:%M")
+            except Exception:
+                local_date = c["created_at"]
+            meta_chips.append(f'<span class="claim-chip">🕐 {e(local_date)}</span>')
+        meta_html = f'<span class="claim-meta">{"".join(meta_chips)}</span>' if meta_chips else ""
         src_html = refs(c.get("source_ids")) or "—"
         rows += ('<tr id="ref-%s"><td class="mono">%s</td><td style="text-transform:capitalize">%s</td>'
                  '<td><span class="tag kind">%s</span></td>'
@@ -791,7 +969,7 @@ def _argument_map_svg(mmd) -> str:
     layers = [lst for lst in layers if lst]
 
     parts = {nid: _node_parts(nodes[nid]) for nid in nodes}
-    wrapped = {nid: _wrap(parts[nid][0], 30, 3) for nid in nodes}
+    wrapped = {nid: _wrap(parts[nid][0], 24, 3) for nid in nodes}
     max_lines = max((len(wrapped[nid]) for nid in nodes), default=1)
     any_refs = any(parts[nid][1] for nid in nodes)
 
@@ -815,11 +993,23 @@ def _argument_map_svg(mmd) -> str:
         for s, d in grp if s in pos and d in pos
     )
 
+    # Per-node clip paths so text is always contained within the box.
+    clip_defs = ""
+    for nid in nodes:
+        if nid not in pos:
+            continue
+        nx, ny = pos[nid]
+        safe = re.sub(r"[^a-zA-Z0-9]", "_", nid)
+        clip_defs += (f'<clipPath id="amc-{safe}">'
+                      f'<rect x="{nx + 2:.1f}" y="{ny + 2:.1f}" '
+                      f'width="{w - 4:.1f}" height="{h - 4:.1f}" /></clipPath>')
+
     node_svg = ""
     for nid in nodes:
         if nid not in pos:
             continue
         x, y = pos[nid]
+        safe = re.sub(r"[^a-zA-Z0-9]", "_", nid)
         tspans = ""
         ty = y + pad + 10
         for ln in wrapped[nid]:
@@ -834,7 +1024,8 @@ def _argument_map_svg(mmd) -> str:
                 break
         node_svg += (f'<g><rect class="am-node {_am_node_class(nid)}" x="{x:.1f}" y="{y:.1f}" '
                      f'width="{w:.1f}" height="{h:.1f}" rx="9" ry="9" />'
-                     f'<text class="am-desc">{tspans}</text>{ref_svg}</g>')
+                     f'<g clip-path="url(#amc-{safe})">'
+                     f'<text class="am-desc">{tspans}</text>{ref_svg}</g></g>')
 
     legend = "Solid arrows flow toward conclusions"
     if dotted:
@@ -846,7 +1037,7 @@ def _argument_map_svg(mmd) -> str:
         f'height="{svg_h:.0f}" role="img" aria-label="Argument map of the council decision">'
         '<defs><marker id="am-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" '
         'markerHeight="7" orient="auto-start-reverse">'
-        '<path d="M0,0 L10,5 L0,10 z" fill="#9aa0ab" /></marker></defs>'
+        f'<path d="M0,0 L10,5 L0,10 z" fill="#9aa0ab" /></marker>{clip_defs}</defs>'
         f"{edges}{node_svg}</svg></div>"
         f'<p class="am-cap">{e(legend)}</p>'
     )
@@ -892,7 +1083,6 @@ def build(data: dict) -> str:
     a("</header>")
 
     meta = []
-    if data.get("date"): meta.append(f'<span><b>Date</b> {e(data["date"])}</span>')
     if data.get("mode"): meta.append(f'<span><b>Mode</b> {e(data["mode"])}</span>')
     if data.get("audience"): meta.append(f'<span><b>Audience</b> {e(data["audience"])}</span>')
     if counts:
@@ -1060,13 +1250,21 @@ def build(data: dict) -> str:
 
     srcs = data.get("sources", [])
     if srcs:
+        bib_entries = _parse_bibtex(data.get("source_bibtex") or "")
         items = ""
         for s in srcs:
-            label = e(s.get("title", ""))
+            sid = s.get("id", "")
             url = s.get("url")
-            if url and not s.get("synthetic"):
-                label = f'<a class="slink" href="{e(url)}" target="_blank" rel="noopener">{label}</a>'
-            title = f'<span class="syn">{label}</span>' if s.get("synthetic") else label
+            bib = bib_entries.get(sid)
+            if bib:
+                display = _format_apa_html(bib, url or "")
+                if s.get("synthetic"):
+                    display = f'<span class="syn">{display}</span>'
+            else:
+                label = e(s.get("title", ""))
+                if url and not s.get("synthetic"):
+                    label = f'<a class="slink" href="{e(url)}" target="_blank" rel="noopener">{label}</a>'
+                display = f'<span class="syn">{label}</span>' if s.get("synthetic") else label
             note = f'<span class="note">{text_refs(s["note"])}</span>' if s.get("note") else ""
             meta_bits = []
             for label_name, key in (
@@ -1078,10 +1276,14 @@ def build(data: dict) -> str:
             ):
                 val = s.get(key)
                 if val and str(val).lower() != "null":
-                    meta_bits.append(f"<span>{label_name}: {text_refs(val)}</span>")
+                    if key in ("publication_date", "accessed_at"):
+                        val_html = _fmt_datetime_html(str(val))
+                    else:
+                        val_html = text_refs(val)
+                    meta_bits.append(f"<span>{label_name}: {val_html}</span>")
             source_meta = f'<span class="source-meta">{"".join(meta_bits)}</span>' if meta_bits else ""
             items += ('<li id="ref-%s"><span class="sid">%s</span> %s <span class="ty">· %s</span>%s</li>' % (
-                e(s.get("id","")), e(s.get("id","")), title, e(s.get("type","")), note + source_meta))
+                e(sid), e(sid), display, e(s.get("type", "")), note + source_meta))
         source_body = '<ul class="src">' + items + "</ul>"
         if data.get("source_bibtex"):
             source_body += (
@@ -1142,6 +1344,10 @@ def build(data: dict) -> str:
           'document.addEventListener("scroll",u,{passive:true});'
           'window.addEventListener("resize",u);u();})();</script>')
 
+    a('<script>(function(){document.querySelectorAll("time.ts-local").forEach(function(el){'
+      'var d=new Date(el.dataset.ts);if(!isNaN(d.getTime())){'
+      'el.textContent=d.toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",'
+      'hour:"2-digit",minute:"2-digit",timeZoneName:"short"});}});})();</script>')
     a("</body>\n</html>\n")
     return "\n".join(p)
 

@@ -248,8 +248,9 @@ class RenderReportTest(unittest.TestCase):
             }
         )
 
-        self.assertIn("confidence 0.88", html)
-        self.assertIn("created 2026-06-30T00:01:00+03:00", html)
+        self.assertIn("claim-chip", html)
+        self.assertIn("0.88", html)
+        self.assertIn("2026-06-30", html)
 
     def test_argument_map_renders_inline_svg_with_links(self):
         mmd = (
@@ -263,7 +264,7 @@ class RenderReportTest(unittest.TestCase):
         self.assertIn("Argument map", html)
         self.assertIn('<svg class="argmap"', html)
         self.assertNotIn("mermaid", html.lower())
-        self.assertIn("Use the classical baseline", html)
+        self.assertIn("Use the classical", html)
         # C-### references inside node labels become clickable anchors.
         self.assertIn('<a href="#ref-C-001"><text class="am-ref"', html)
         # The dotted counter edge renders as a dashed path.
@@ -519,12 +520,18 @@ class RenderReportTest(unittest.TestCase):
             render_report._fold_in_artifacts(data, base)
             html = render_report.build(data)
 
+        # APA citation rendered from BibTeX
+        self.assertIn("Google Developers. (2026). OR-Tools.", html)
         self.assertIn('href="https://example.test/flow"', html)
+        # Source registry metadata
         self.assertIn("Publisher: Google Developers", html)
         self.assertIn("Published: 2026-01-02", html)
-        self.assertIn("Accessed: 2026-06-30T00:00:00+03:00", html)
+        # accessed_at has a time component → wrapped in <time class="ts-local">
+        self.assertIn('data-ts="2026-06-30T00:00:00+03:00"', html)
+        self.assertIn('class="ts-local"', html)
         self.assertIn("Credibility: Official solver documentation", html)
         self.assertIn("Relevance: Establishes mature tooling.", html)
+        # Raw BibTeX still available in the accordion
         self.assertIn("BibTeX records", html)
         self.assertIn("author = {{Google Developers}}", html)
 

@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
 <p align="center">
-  <img src="assets/logo.png" alt="Storm Council" width="200" height="200">
+  <img src="assets/logo.png" alt="Storm Council" width="300">
 </p>
 
 <h1 align="center">Storm Council</h1>
@@ -117,6 +117,8 @@ Both scripts are pure standard library — no network, no LLM, no API key.
 ---
 
 ## 📚 Reference
+
+**Inspiration:** This workflow was sparked by [this post](https://x.com/heynavtoor/status/2067194761446920264) by [@heynavtoor](https://x.com/heynavtoor).
 
 [`docs/methodology.md`](docs/methodology.md) — evidence taxonomy, contradiction types, quality-gate criteria, hub-and-spoke vs council tradeoffs, and design rationale.
 
