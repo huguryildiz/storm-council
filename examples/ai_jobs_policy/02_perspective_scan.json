@@ -1,0 +1,132 @@
+[
+  {
+    "lens": "practitioner",
+    "role_focus": "Tests whether a tax or slowdown can be defined, measured, enforced, and updated without blocking useful AI. Privileges implementation detail, compliance costs, and agency capacity.",
+    "priority_questions": [
+      "What is the taxable event?",
+      "How are augmentation and substitution separated?",
+      "What exemptions or safe harbors are needed?",
+      "Can worker support be delivered faster than a new tax regime?"
+    ],
+    "expected_evidence_types": [
+      "administrative guidance",
+      "policy evaluations",
+      "institutional reports",
+      "implementation case studies"
+    ],
+    "likely_blind_spot": "May underweight long-run social harm if the immediate mechanism is hard to administer.",
+    "conflicts_with": [
+      "economist on model-based tax design",
+      "skeptic on whether weak implementation evidence blocks action"
+    ],
+    "unique_contribution": "A policy can fail because the tax base is vague even when the economic concern is real.",
+    "escalation_triggers": [
+      "no evaluated AI tax exists",
+      "policy depends on measuring task substitution"
+    ]
+  },
+  {
+    "lens": "academic",
+    "role_focus": "Separates exposure, displacement, complementarity, and task creation. Privileges peer-reviewed estimates and careful scope preservation.",
+    "priority_questions": [
+      "What does robot evidence actually establish?",
+      "What does AI exposure measure?",
+      "Which claims are forecasts rather than facts?",
+      "How should task creation enter the answer?"
+    ],
+    "expected_evidence_types": [
+      "peer-reviewed labor economics",
+      "task-based models",
+      "systematic reviews",
+      "institutional exposure reports"
+    ],
+    "likely_blind_spot": "Can underweight urgent administrative and political constraints.",
+    "conflicts_with": [
+      "practitioner on implementation sufficiency",
+      "historian on analogy strength"
+    ],
+    "unique_contribution": "Exposure metrics are useful for preparation but weak evidence for an immediate broad slowdown.",
+    "escalation_triggers": [
+      "exposure is treated as realized job loss",
+      "robot evidence is mapped directly to generative AI"
+    ]
+  },
+  {
+    "lens": "skeptic",
+    "role_focus": "Looks for overclaiming, missing counterevidence, vague value judgments, and whether a source entails the exact policy recommendation. Privileges negative evidence and external validity.",
+    "priority_questions": [
+      "What did this run fail to retrieve?",
+      "Are model results being sold as implementation evidence?",
+      "Does laissez-faire hide value judgments?",
+      "Does a tax proposal have a real tax base?"
+    ],
+    "expected_evidence_types": [
+      "null-result logs",
+      "scope audits",
+      "policy evaluations",
+      "contradictory evidence"
+    ],
+    "likely_blind_spot": "May discount useful directional theory when direct evaluation is unavailable.",
+    "conflicts_with": [
+      "economist on robot-tax model use",
+      "historian on analogies"
+    ],
+    "unique_contribution": "The absence of evaluated broad AI-tax evidence is itself a decision-relevant finding.",
+    "escalation_triggers": [
+      "recommendation rests on abstract-only evidence",
+      "policy evidence is missing"
+    ]
+  },
+  {
+    "lens": "economist",
+    "role_focus": "Evaluates incentives, incidence, productivity, tax neutrality, and redistribution. Privileges models, fiscal-policy guidance, and opportunity cost.",
+    "priority_questions": [
+      "Does the tax correct a distortion or suppress productivity?",
+      "Who bears the incidence?",
+      "What alternative fiscal tools exist?",
+      "How large is the transition externality?"
+    ],
+    "expected_evidence_types": [
+      "tax-incidence models",
+      "IMF/OECD fiscal guidance",
+      "labor-market estimates",
+      "welfare models"
+    ],
+    "likely_blind_spot": "May focus on efficiency metrics and understate institutional trust or job-quality concerns.",
+    "conflicts_with": [
+      "historian on social legitimacy",
+      "practitioner on feasible tax bases"
+    ],
+    "unique_contribution": "The strongest tax case is narrow tax-neutrality reform and transition funding, not a blanket AI brake.",
+    "escalation_triggers": [
+      "broad tax is proposed without incidence analysis",
+      "transition support is unfunded"
+    ]
+  },
+  {
+    "lens": "historian",
+    "role_focus": "Compares AI to earlier automation waves while checking the limits of analogy. Privileges long-run adjustment, institutional complements, and place-based harms.",
+    "priority_questions": [
+      "Which past transitions created new work?",
+      "Where did adjustment fail?",
+      "What institutions changed outcomes?",
+      "What makes generative AI different?"
+    ],
+    "expected_evidence_types": [
+      "historical labor studies",
+      "institutional reports",
+      "systematic reviews",
+      "regional adjustment evidence"
+    ],
+    "likely_blind_spot": "May assume new technology will resemble earlier waves too closely.",
+    "conflicts_with": [
+      "academic on novelty and measurement",
+      "skeptic on analogy limits"
+    ],
+    "unique_contribution": "Neither panic nor laissez-faire follows from history; institutions determine whether adaptation is tolerable.",
+    "escalation_triggers": [
+      "aggregate adaptation is used to dismiss harmed workers",
+      "AI novelty is used to dismiss past evidence"
+    ]
+  }
+]

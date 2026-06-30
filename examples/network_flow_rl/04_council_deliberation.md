@@ -1,25 +1,14 @@
-# 04 - Council Deliberation
+# Council Deliberation
 
-## Mode
+Mode: bounded Council Mode. Two rounds were run and stopped because no new high-impact contradiction appeared after X-008.
 
-Council Mode, bounded to two rounds. Each lens challenged or qualified high-impact claims before synthesis.
-
-## Round 1
-
-- **Academic -> C-004 / X-001:** RL promise is credible only for specific traffic-engineering tasks. Do not generalize from critical-flow rerouting to all network-flow optimization.
-- **Practitioner -> C-012 / X-002:** Keeping solvers as default is right for offline planning, but online control can need second-scale or subsecond decisions.
-- **Skeptic -> C-011 / X-003:** Require evidence on unseen traffic matrices, topology changes, and failures.
-- **Economist -> C-020 / X-004:** Safety constraints are binding, but a shielded RL selector could still be worthwhile if it measurably improves high-frequency decisions.
-- **Historian -> C-041 / X-001:** Prior adoption patterns favor hybridization before replacement.
-
-## Round 2
-
-- **Academic -> C-013 / X-001:** Learning-accelerated optimization best matches the evidence.
-- **Practitioner -> C-023 / X-004:** Shadow mode and fallback are mandatory.
-- **Skeptic -> C-031 / X-005:** Economic upside depends on proof under traffic volatility and failures.
-- **Economist -> C-032 / X-005:** Benchmark instrumentation is the first shared investment.
-- **Historian -> C-043 / X-001:** Advisory or bounded deployment should precede control-plane authority.
-
-## Resulting synthesis constraint
-
-The council rejected the broad claim "use RL for network flow optimization" if it means solver replacement. It accepted a narrower, evidence-backed recommendation: evaluate RL only as a bounded augmentation for dynamic traffic engineering or as a learning-accelerated optimization component, with solver-backed constraint enforcement.
+- round_1 · academic · qualification on C-002: Teal is strong benchmark evidence, but it supports augmentation unless production authority is tested.
+- round_1 · practitioner · support on C-011: B4 and SWAN both make fallback and update safety first-class production requirements.
+- round_1 · skeptic · challenge on C-016: Simulation and trace replay cannot settle failure-mode behavior for an RL-primary controller.
+- round_1 · economist · qualification on C-019: Runtime gains matter only where the current solver misses a real control-loop or planning deadline.
+- round_1 · historian · support on C-024: Past TE adoption patterns favored layering and fallback over replacement.
+- round_2 · academic · request_for_evidence on X-008: Find a production RL-primary TE deployment before recommending replacement.
+- round_2 · practitioner · support on C-027: A pilot without ECMP or shortest-path fallback is outside the stated risk tolerance.
+- round_2 · skeptic · qualification on C-012: Null retrieval is not proof of absence, but it blocks a replacement recommendation.
+- round_2 · economist · reframing on C-021: The first investment should be measurement and replay infrastructure, which benefits every option.
+- round_2 · historian · support on C-026: The analogy points to constrained subsystems, not autonomous replacement.

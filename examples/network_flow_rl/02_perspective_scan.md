@@ -1,91 +1,81 @@
-# 02 - Perspective Scan
+# Perspective Scan
 
-## Practitioner
+## practitioner
 
-**Role charter:** Judge whether RL can be operated in real networks without creating fragile control loops.
+Role and focus: The practitioner lens tests whether an RL proposal can survive NOC/SRE reality: training stability, warm-start latency, ECMP fallback, observability, rollout safety, and on-call burden. It privileges production papers, rollback designs, failure handling, and control-loop deadlines.
 
-**Priority questions**
+Priority questions: What fails at 3 a.m.? Can ECMP or shortest-path forwarding recover from a bad action? Does the controller expose enough state for incident review? How long can solve or inference latency be before the control loop misses its window? Can the system run shadow-mode before traffic exposure?
 
-- What parts of network flow optimization are static planning versus online adaptation?
-- Where do current LP/min-cost-flow/heuristic systems fail operationally?
-- What monitoring, simulator, fallback, and rollback mechanisms would RL require?
+Expected evidence types: production deployment reports, incident-safe architecture descriptions, fallback mechanisms, operational playbooks, traffic replay, failure-injection tests.
 
-**Expected evidence:** Solver documentation, SDN/TE deployment papers, operational constraints from traffic-engineering systems.
+Likely blind spot: It may discount advances that are technically credible but not yet productized.
 
-**Likely blind spot:** Discounting research progress because it is not yet productized.
+Conflicts with other lenses: It will challenge the academic lens on simulation realism and the economist lens on omitted on-call cost.
 
-**Potential conflicts:** May accept RL as an augmentation layer while the skeptic rejects it as unsafe.
+Unique contribution: It will force every recommendation to include fallback and observability gates.
 
-**Escalation trigger:** A claim that RL can directly control production routing without a deterministic safety layer.
+Escalation triggers: Any claim that a benchmark implies production readiness; any recommendation to replace a deterministic controller.
 
-## Academic
+## academic
 
-**Role charter:** Ground the decision in algorithms, benchmarks, and reproducibility.
+Role and focus: The academic lens evaluates DRL-for-TE literature, benchmark realism, baselines, reproducibility, and methodological scope. It privileges peer-reviewed experiments, open benchmarks, ablations, and precise support-scope limits.
 
-**Priority questions**
+Priority questions: What exactly was compared? Were hard constraints enforced by learning, optimization, or a post-processor? Are baselines strong? Are traces public? Does the paper test failures and demand shifts?
 
-- Does RL beat strong flow-optimization baselines, or only shortest-path/ECMP heuristics?
-- Are results robust to topology, demand, and failure distribution shifts?
-- Is the method solving network flow, traffic engineering, or a narrower proxy problem?
+Expected evidence types: SIGCOMM/JSAC papers, arXiv preprints when full text is available, benchmark tables, ablation studies, source code releases.
 
-**Expected evidence:** Peer-reviewed ML-for-CO surveys, RL traffic-engineering papers, benchmark comparisons.
+Likely blind spot: It may under-weight operational rollout and accountability.
 
-**Likely blind spot:** Under-weighting integration and incident-management costs.
+Conflicts with other lenses: It will conflict with the practitioner on deployment readiness and with the skeptic on whether benchmark gains should be trusted.
 
-**Potential conflicts:** May see promise in learning-accelerated optimization that operators still view as immature.
+Unique contribution: It separates RL-primary results from learning-accelerated optimization.
 
-**Escalation trigger:** Results reported without reproducible baselines or ablations.
+Escalation triggers: Any claim of generalization from a single topology, trace set, or simulation setting.
 
-## Skeptic
+## skeptic
 
-**Role charter:** Stress-test claims about optimality, safety, generalization, and incentives.
+Role and focus: The skeptic lens tests reward hacking, sim-to-real gaps, black-box audit friction, source overclaiming, and incentive problems in ML papers. It privileges negative evidence, null retrieval, scope mismatch, and missing production evidence.
 
-**Priority questions**
+Priority questions: What is not measured? Is the reward aligned with SLA outcomes? Does a cited passage entail the claim? Is the result deployment evidence or only simulation? What breaks under failures?
 
-- Are hard constraints guaranteed or merely encouraged by reward penalties?
-- Does RL optimize the real objective or a simulation proxy?
-- What happens under adversarial traffic, topology change, measurement error, or partial observability?
+Expected evidence types: safety surveys, missing-source logs, contradiction records, failure-mode analyses, evidence locators.
 
-**Expected evidence:** Negative results, limitations sections, robustness studies, missing benchmark evidence.
+Likely blind spot: It may reject useful hybrid ML components because RL-primary replacement is too weak.
 
-**Likely blind spot:** Reflexive dismissal of genuinely useful hybrid designs.
+Conflicts with other lenses: It will challenge academic performance claims, economist ROI claims, and practitioner pilot optimism.
 
-**Potential conflicts:** Challenges practitioner and academic optimism around dynamic routing gains.
+Unique contribution: It treats absence of production evidence as a finding rather than a nuisance.
 
-**Escalation trigger:** Any recommendation that lacks explicit fallback and constraint enforcement.
+Escalation triggers: Any unsupported production-readiness claim or any recommendation that removes deterministic fallback.
 
-## Economist
+## economist
 
-**Role charter:** Compare expected value, opportunity cost, staffing burden, and measurable benefit.
+Role and focus: The economist lens evaluates GPU/training cost, solver/license cost, energy, engineering time, on-call burden, opportunity cost, and risk-adjusted value. It privileges measurable cost models and reversible investments.
 
-**Priority questions**
+Priority questions: What cost does solve latency impose today? What is the marginal value of faster TE? What infrastructure and staffing does RL require? Which option is reversible? What should be measured before buying?
 
-- What does RL add that cheaper solvers, heuristics, or forecasting cannot?
-- Is the target use case frequent and valuable enough to pay for RL infrastructure?
-- Who owns training data, simulator maintenance, model monitoring, and incident response?
+Expected evidence types: runtime benchmarks, solver bottleneck evidence, architecture costs, pilot metrics, staffing assumptions, opportunity-cost comparisons.
 
-**Expected evidence:** Cost model, deployment architecture, observed performance deltas, operations labor estimates.
+Likely blind spot: It may under-value hard-to-price safety and auditability.
 
-**Likely blind spot:** Overweighting measurable cost and underweighting resilience value.
+Conflicts with other lenses: It will conflict with academic enthusiasm when benchmark gains lack a cost model and with practitioner caution when costs are small.
 
-**Potential conflicts:** May support RL only where traffic variability creates measurable economic upside.
+Unique contribution: It converts the decision into an option-value pilot rather than a technology preference.
 
-**Escalation trigger:** A payoff claim without an experiment design or baseline.
+Escalation triggers: Any high-cost recommendation without local runtime, labor, or incident data.
 
-## Historian
+## historian
 
-**Role charter:** Bring precedent from network optimization, SDN, and ML-for-combinatorial-optimization adoption.
+Role and focus: The historian lens compares RL-for-TE to older expert systems, MPLS TE, SDN adoption, and prior centralized-control rollouts. It privileges precedent, adoption curves, fallback patterns, and institutional memory.
 
-**Priority questions**
+Priority questions: How did previous network-control innovations enter production? What did operators preserve? Which claims sounded familiar? Did past systems replace routing or layer over it?
 
-- Which previous network-control innovations succeeded, and why?
-- Did they replace optimization/control systems or become hybrid overlays?
-- What repeated failure patterns apply to RL-for-network-flow work?
+Expected evidence types: RFCs, production SDN papers, historical deployment reports, standards documents, architecture retrospectives.
 
-**Expected evidence:** SDN/TE deployment history, classic solver adoption, ML-for-optimization surveys.
+Likely blind spot: It may assume history constrains a genuinely new method too tightly.
 
-**Likely blind spot:** Assuming past adoption patterns fully constrain a newer method.
+Conflicts with other lenses: It will challenge academic novelty claims and economist replacement narratives.
 
-**Potential conflicts:** May favor hybridization even when the academic lens sees end-to-end RL as intellectually promising.
+Unique contribution: It identifies hybridization as the recurring survival pattern.
 
-**Escalation trigger:** Replacement framing that ignores operational trust, control-plane safety, and rollback history.
+Escalation triggers: Any claim that RL should skip the staged deployment path used by prior TE innovations.

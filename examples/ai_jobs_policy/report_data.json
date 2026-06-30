@@ -1,0 +1,422 @@
+{
+  "eyebrow": "Storm Council - Policy Decision Brief",
+  "title": "Should governments tax or slow AI-driven automation to protect jobs, or let labor markets adjust?",
+  "subtitle": "A five-lens Council Mode run with live web retrieval, scoped source claims, explicit contradictions, and deterministic verification.",
+  "date": "2026-06-30",
+  "mode": "Council Mode (bounded cross-examination)",
+  "audience": "Government economic-policy teams and labor-market policy advisers",
+  "counts": {
+    "lenses": 5,
+    "claims": 26,
+    "sources": 12,
+    "conflicts": 8
+  },
+  "status": {
+    "level": "source_checked",
+    "pill": "LIVE SOURCES",
+    "headline": "Live retrieval performed; broad AI slowdown evidence remains insufficient.",
+    "detail": "Web search and direct official URLs were retrieved in this run. Deterministic verification passed with caveats because several contradictions remain open and some publisher full text was limited to abstract-level evidence. Publication identity was not checked with the optional metadata adapters.",
+    "checks": [
+      {
+        "value": "12",
+        "label": "sources checked",
+        "tone": "green"
+      },
+      {
+        "value": "26",
+        "label": "claims traced",
+        "tone": "green"
+      },
+      {
+        "value": "2026-06-30",
+        "label": "live lookup"
+      }
+    ],
+    "verdict": "PASS_WITH_CAVEATS",
+    "scores": {
+      "coverage": 100,
+      "traceability": 100,
+      "contradiction": 50,
+      "recommendation": 100
+    }
+  },
+  "bottom_line": "Do not use a blanket AI automation tax or broad slowdown as the default jobs policy, and do not rely on laissez-faire adjustment. Use a targeted transition compact: tax-neutrality reform, worker support, monitoring, and sector-specific safeguards where evidence warrants them.",
+  "strongest_findings": [
+    {
+      "text": "Automation can harm exposed workers and local labor markets, so pure laissez-faire is too weak.",
+      "claims": [
+        "C-001",
+        "C-020",
+        "C-024"
+      ],
+      "supported_by": {
+        "perspectives": [
+          "academic",
+          "historian",
+          "skeptic"
+        ],
+        "note": "Robot evidence plus institutional policy analysis."
+      },
+      "challenged_by": {
+        "perspectives": [
+          "practitioner"
+        ],
+        "note": "Needs AI-specific measurement before broad intervention."
+      },
+      "reliability": "high",
+      "score": 8
+    },
+    {
+      "text": "AI exposure is large but should not be treated as realized job loss.",
+      "claims": [
+        "C-003",
+        "C-004",
+        "C-005",
+        "C-021"
+      ],
+      "supported_by": {
+        "perspectives": [
+          "academic",
+          "skeptic"
+        ],
+        "note": "IMF, ILO, and OECD sources preserve this distinction."
+      },
+      "challenged_by": {
+        "perspectives": [
+          "historian"
+        ],
+        "note": "Lagged harms may still appear."
+      },
+      "reliability": "high",
+      "score": 9
+    },
+    {
+      "text": "The retrieved fiscal evidence does not support a blanket AI-specific tax as the default instrument.",
+      "claims": [
+        "C-006",
+        "C-009",
+        "C-011",
+        "C-026"
+      ],
+      "supported_by": {
+        "perspectives": [
+          "economist",
+          "practitioner",
+          "skeptic"
+        ],
+        "note": "IMF fiscal guidance, task heterogeneity, and run-local negative evidence."
+      },
+      "challenged_by": {
+        "perspectives": [
+          "economist"
+        ],
+        "note": "Robot-tax theory supports a narrower temporary case under assumptions."
+      },
+      "reliability": "medium",
+      "score": 8
+    },
+    {
+      "text": "A targeted transition compact is better supported than either broad slowing or passive adjustment.",
+      "claims": [
+        "C-010",
+        "C-014",
+        "C-017",
+        "C-025"
+      ],
+      "supported_by": {
+        "perspectives": [
+          "economist",
+          "practitioner",
+          "historian",
+          "skeptic"
+        ],
+        "note": "Converges across fiscal, implementation, and historical lenses."
+      },
+      "reliability": "high",
+      "score": 8
+    }
+  ],
+  "lens_snapshot": {
+    "title": "Lens posture snapshot",
+    "summary": "Skeptic and practitioner pressure against a blanket tax is high; academic and historian lenses keep worker-protection urgency visible.",
+    "scale_label": "0 low posture intensity - 1 high posture intensity",
+    "lenses": [
+      {
+        "name": "academic",
+        "score": 0.78,
+        "stance": "prepare, do not overstate exposure",
+        "tone": "mixed",
+        "note": "Supports worker risk but rejects exposure-as-loss."
+      },
+      {
+        "name": "economist",
+        "score": 0.84,
+        "stance": "tax-neutrality plus transition funding",
+        "tone": "support",
+        "note": "Rejects blunt AI tax but keeps narrow reform live."
+      },
+      {
+        "name": "practitioner",
+        "score": 0.88,
+        "stance": "administrability first",
+        "tone": "caution",
+        "note": "Tax base must distinguish substitution from augmentation."
+      },
+      {
+        "name": "historian",
+        "score": 0.76,
+        "stance": "institutions over panic",
+        "tone": "mixed",
+        "note": "Adaptation is real but not painless."
+      },
+      {
+        "name": "skeptic",
+        "score": 0.92,
+        "stance": "evidence gap on broad tax",
+        "tone": "challenge",
+        "note": "No evaluated broad AI tax was retrieved."
+      }
+    ]
+  },
+  "contradictions": [
+    {
+      "id": "X-001",
+      "kind": "tension",
+      "stake": "Broad AI tax versus targeted tax reform",
+      "status": "partially_resolved"
+    },
+    {
+      "id": "X-002",
+      "kind": "scope_difference",
+      "stake": "High AI exposure versus limited current observed disruption",
+      "status": "unresolved"
+    },
+    {
+      "id": "X-003",
+      "kind": "tension",
+      "stake": "Labor-market adjustment versus distributional harm",
+      "status": "partially_resolved"
+    },
+    {
+      "id": "X-004",
+      "kind": "tension",
+      "stake": "Productivity gains versus job protection",
+      "status": "partially_resolved"
+    },
+    {
+      "id": "X-005",
+      "kind": "evidence_gap",
+      "stake": "Administrative feasibility of taxing AI automation",
+      "status": "unresolved"
+    },
+    {
+      "id": "X-006",
+      "kind": "evidence_conflict",
+      "stake": "Robot-tax theory versus AI-specific fiscal guidance",
+      "status": "partially_resolved"
+    },
+    {
+      "id": "X-007",
+      "kind": "scope_difference",
+      "stake": "Historical adaptation versus AI novelty",
+      "status": "unresolved"
+    },
+    {
+      "id": "X-008",
+      "kind": "evidence_gap",
+      "stake": "Evidence for an implemented broad AI slowdown",
+      "status": "unresolved"
+    }
+  ],
+  "options": [
+    {
+      "name": "A - Blanket AI automation tax or broad slowdown",
+      "strength": "weak",
+      "points": [
+        "May visibly respond to job fears.",
+        "Weak retrieved evidence and serious targeting risk."
+      ],
+      "when": "Only after evaluated evidence and a clear tax base exist."
+    },
+    {
+      "name": "B - Let labor markets adjust with minimal intervention",
+      "strength": "weak",
+      "points": [
+        "Avoids taxing useful AI adoption.",
+        "Under-protects workers and regions exposed to displacement."
+      ],
+      "when": "Only if monitoring shows low displacement and strong wage growth in exposed occupations."
+    },
+    {
+      "name": "C - Targeted transition compact",
+      "strength": "strong",
+      "points": [
+        "Best match to retrieved evidence.",
+        "Requires sustained fiscal and administrative capacity."
+      ],
+      "when": "Default recommendation for a national policy team."
+    },
+    {
+      "name": "D - Narrow temporary tax in defined sectors",
+      "strength": "conditional",
+      "points": [
+        "Can address a specific distortion or displacement channel.",
+        "Must be scoped, measured, and sunsetted."
+      ],
+      "when": "Only for sectors with clear substitution evidence and incidence analysis."
+    }
+  ],
+  "next_actions": [
+    {
+      "text": "Audit the tax code for capital-labor neutrality before proposing an AI-specific tax.",
+      "refs": [
+        "C-007",
+        "C-010",
+        "X-001"
+      ]
+    },
+    {
+      "text": "Fund unemployment insurance, wage insurance pilots, labor-market programs, and training.",
+      "refs": [
+        "C-014",
+        "C-024"
+      ]
+    },
+    {
+      "text": "Build a worker-level monitoring panel for AI adoption, task change, wages, displacement, and regions.",
+      "refs": [
+        "C-003",
+        "C-013",
+        "C-022",
+        "X-002"
+      ]
+    },
+    {
+      "text": "Require any automation-tax proposal to define the taxable event, incidence, exemptions, and sunset test.",
+      "refs": [
+        "C-011",
+        "C-015",
+        "C-026",
+        "X-005"
+      ]
+    },
+    {
+      "text": "Reserve slowing tools for sector-specific safety, market-power, procurement, or displacement evidence.",
+      "refs": [
+        "C-025",
+        "X-008"
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "text": "No evaluated primary source was retrieved showing that a broad AI automation tax protected jobs in practice.",
+      "refs": [
+        "C-026",
+        "X-008"
+      ]
+    },
+    {
+      "text": "No country-specific tax-base design in this run separated substitution from augmentation at legislative precision.",
+      "refs": [
+        "C-011",
+        "X-005"
+      ]
+    },
+    {
+      "text": "No worker-level panel evidence in this run establishes medium-term AI displacement by occupation and region.",
+      "refs": [
+        "X-002",
+        "X-003"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "S-001",
+      "title": "Robots and Jobs: Evidence from US Labor Markets",
+      "type": "peer_reviewed",
+      "note": "Primary empirical evidence on industrial robot exposure, employment, and wages in US commuting zones."
+    },
+    {
+      "id": "S-002",
+      "title": "Automation and New Tasks: How Technology Displaces and Reinstates Labor",
+      "type": "peer_reviewed",
+      "note": "Task-based framing for displacement, reinstatement, productivity, and labor-demand effects."
+    },
+    {
+      "id": "S-003",
+      "title": "Gen-AI: Artificial Intelligence and the Future of Work",
+      "type": "institutional_report",
+      "note": "Exposure estimates and policy framing for AI effects across advanced and emerging economies."
+    },
+    {
+      "id": "S-004",
+      "title": "Generative AI and Jobs: A Global Analysis of Potential Effects on Job Quantity and Quality",
+      "type": "institutional_report",
+      "note": "Global task exposure analysis distinguishing augmentation potential from automation potential."
+    },
+    {
+      "id": "S-005",
+      "title": "OECD Employment Outlook 2023: Artificial Intelligence and the Labour Market",
+      "type": "institutional_report",
+      "note": "Labor-market evidence and uncertainty around AI adoption, job quality, and worker voice."
+    },
+    {
+      "id": "S-006",
+      "title": "Broadening the Gains from Generative AI: The Role of Fiscal Policies",
+      "type": "institutional_report",
+      "note": "Direct policy guidance on AI taxes, social protection, education, and tax-system neutrality."
+    },
+    {
+      "id": "S-007",
+      "title": "Does the U.S. Tax Code Favor Automation?",
+      "type": "working_paper",
+      "note": "Analyzes labor-capital tax asymmetry and automation incentives."
+    },
+    {
+      "id": "S-008",
+      "title": "Should Robots Be Taxed?",
+      "type": "peer_reviewed",
+      "note": "Formal model of robot taxation and transition dynamics for routine workers."
+    },
+    {
+      "id": "S-009",
+      "title": "The Work of the Future: Building Better Jobs in an Age of Intelligent Machines",
+      "type": "institutional_report",
+      "note": "Historical and policy context on technology, new work, and institutions."
+    },
+    {
+      "id": "S-010",
+      "title": "Evaluating the Impact of AI on the Labor Market: Current State of Affairs",
+      "type": "institutional_report",
+      "note": "Near-term tracking of observed labor-market disruption after ChatGPT adoption."
+    },
+    {
+      "id": "S-011",
+      "title": "Technology and Jobs: A Systematic Literature Review",
+      "type": "peer_reviewed",
+      "note": "Systematic review evidence on technology, displacement, reinstatement, and distributional effects."
+    },
+    {
+      "id": "S-012",
+      "title": "Live web retrieval log for Storm Council AI jobs policy run",
+      "type": "primary",
+      "note": "Records searches for evaluated AI-specific automation taxes and direct job-protection results."
+    }
+  ],
+  "review": {
+    "verdict": "PASS_WITH_CAVEATS",
+    "scores": {
+      "coverage": 100,
+      "traceability": 100,
+      "contradiction": 50,
+      "recommendation": 100
+    },
+    "blocking": [],
+    "major": [],
+    "minor": [
+      "Open contradictions remain for human review: X-002, X-005, X-007, X-008"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "status": "PASS_WITH_CAVEATS",
+  "blocking_issues": [],
+  "major_issues": [],
+  "minor_issues": [
+    "Open contradictions remain for human review: X-002, X-005, X-007, X-008"
+  ],
+  "coverage_score": 100,
+  "traceability_score": 100,
+  "contradiction_handling_score": 50,
+  "recommendation_support_score": 100,
+  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 0 major, 1 minor (computed by verify.py over 26 claims, 12 sources, 26 evidence records, 43 evidence verdicts, 8 contradictions)."
+}

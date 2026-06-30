@@ -1,34 +1,75 @@
-# 04 - Contradiction Ledger
+# Contradiction Ledger
 
 ## Consensus
 
-- Classical flow solvers remain the baseline for static and safety-critical flow optimization (C-001, C-012).
-- RL has credible evidence in traffic-engineering and datacenter/WAN optimization settings, especially where decisions are online and repeated (C-004, C-011, C-031).
-- The strongest near-term architecture is hybrid: RL or ML proposes, ranks, warms, or accelerates; a solver, shield, or optimizer enforces constraints (C-013, C-020, C-041).
-- A production decision needs shadow-mode evaluation on real traffic traces and clear rollback, not only paper benchmarks (C-023, C-033, C-043).
+All five lenses agree that RL should not replace classical TE optimization on the retrieved evidence. The defensible path is solver-centered or hybrid: RL may propose, rank, warm-start, or accelerate, while deterministic optimization, constraints, and fallback remain the authority.
+
+## Collective Blind Spot
+
+No retrieved source gives a full production case study of RL-primary TE with outage, rollback, SLA, audit, and compliance evidence. This absence is recorded as X-008.
 
 ## Conflicts
 
-### X-001 - Replacement versus augmentation
+### X-001 · Benchmark speed versus production authority
+- Claims: C-002, C-011
+- Relationship: scope_difference
+- Evidence balance: mixed
+- Resolution: partially_resolved
+- Why it matters: A benchmark acceleration result does not itself justify live control authority.
+- Next question: Can a pilot reproduce Teal-like gains under live rollback and SLA gates?
 
-The academic recommendation keeps classical optimization as the default baseline (C-012), while the practitioner sees dynamic RL value (C-004). This is partly resolved by narrowing the recommendation: do not replace the solver; evaluate bounded augmentation.
+### X-002 · RL generalization versus sim-to-real risk
+- Claims: C-001, C-016
+- Relationship: tension
+- Evidence balance: mixed
+- Resolution: unresolved
+- Why it matters: Generalization beyond traffic-matrix benchmarks determines outage risk.
+- Next question: Does the learned policy preserve behavior under failures, demand shifts, and update races?
 
-### X-002 - Optimality and feasibility versus fast adaptation
+### X-003 · Hybrid design versus RL-primary replacement
+- Claims: C-003, C-020
+- Relationship: tension
+- Evidence balance: supports_a
+- Resolution: partially_resolved
+- Why it matters: The strategic choice is replacement, augmentation, or status quo.
+- Next question: What measurable value does RL add when solvers still enforce constraints?
 
-The practitioner and economist disagree on what matters most. Stable optimization benefits from exactness and mature tooling (C-001), while online TE can justify faster approximate decisions (C-031). The resolution depends on workload classification.
+### X-004 · Solver runtime bottleneck versus engineering cost
+- Claims: C-019, C-021
+- Relationship: tension
+- Evidence balance: mixed
+- Resolution: unresolved
+- Why it matters: Runtime savings only matter if they exceed model, observability, training, and on-call cost.
+- Next question: What are the local costs of solve latency, ML infra, retraining, and incident response?
 
-### X-003 - Benchmark evidence and simulator fidelity
+### X-005 · Safe exploration versus SLA obligations
+- Claims: C-013, C-015
+- Relationship: evidence_gap
+- Evidence balance: supports_b
+- Resolution: partially_resolved
+- Why it matters: Online learning can create unacceptable operational exposure.
+- Next question: Can all learning be offline or shielded before live deployment?
 
-The academic lens sees promising RL/TE papers (C-011), while the skeptic argues that production transfer remains unproven (C-021). This remains unresolved until tested against real traffic traces, topologies, and failures.
+### X-006 · Auditability versus learned policy complexity
+- Claims: C-017, C-022
+- Relationship: tension
+- Evidence balance: mixed
+- Resolution: unresolved
+- Why it matters: Network operators need explainable rollback and accountability after incidents.
+- Next question: Can the policy emit auditable constraint proofs or only opaque action scores?
 
-### X-004 - Safety guardrails versus economic upside
+### X-007 · Classical TE precedent versus ML acceleration frontier
+- Claims: C-023, C-026
+- Relationship: scope_difference
+- Evidence balance: mixed
+- Resolution: partially_resolved
+- Why it matters: Older standards define the durable objective; newer ML changes possible implementation speed.
+- Next question: Which TE subproblem is too slow for the existing deterministic stack?
 
-The skeptic requires constraint guarantees (C-020); the economist allows RL where speed/value is high (C-031). This remains unresolved until the architecture has a shielded enforcement layer and quantified residual risk.
-
-### X-005 - Total cost of ownership
-
-The economist sees RL as likely overhead for stable flow planning (C-030), but potentially valuable for frequent online decisions (C-031). This remains unresolved without a workload-specific cost model.
-
-## Decision impact
-
-The ledger does not block all RL work. It blocks only a broad replacement recommendation. The defensible path is a guarded pilot for dynamic traffic engineering or learning-accelerated optimization, with classical optimization retained as the system of record.
+### X-008 · Production deployment evidence for RL-primary TE
+- Claims: C-012, C-028
+- Relationship: evidence_gap
+- Evidence balance: supports_a
+- Resolution: unresolved
+- Why it matters: Replacement requires production evidence stronger than papers on augmentation.
+- Next question: Is there a verifiable RL-primary TE deployment with outage, rollback, and SLA evidence?

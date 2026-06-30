@@ -1,48 +1,53 @@
-# 01 - Decision Frame
+# Decision Frame
 
-## Decision question
+## Decision Question
 
-Should an engineering organization use reinforcement learning (RL) methods for network flow optimization?
+Should a production network operations team replace LP/MIP/CP-SAT flow optimization with a deep-RL controller, augment classical optimization with RL, or keep the current solver-centered architecture for real-time network flow control?
 
-## Framed decision
+## Why It Matters
 
-Do not treat the question as "can RL solve any network-routing toy problem?" Treat it as an architecture decision for production network-flow optimization: whether RL should replace, augment, or be excluded from systems that route traffic, allocate capacity, or solve traffic-engineering problems under capacity, conservation, latency, reliability, and operational constraints.
-
-## Audience
-
-Infrastructure engineering leadership, network optimization researchers, SRE/network operations, and product owners deciding whether to fund an RL-based optimization effort.
+Traffic engineering decisions affect congestion, latency, packet loss, service-level agreements, auditability, and on-call risk. A mistaken replacement can turn an optimization improvement into a production outage.
 
 ## Scope
 
-- In scope: traffic engineering, WAN/datacenter flow scheduling, critical-flow rerouting, learned heuristics, learned warm starts, and RL/GNN methods for online routing decisions.
-- In scope: comparison with classical max-flow, min-cost-flow, linear programming, constraint programming, and heuristic traffic-engineering baselines.
-- Out of scope: generic reinforcement learning tutorials, physical transportation networks, financial order routing, and replacing all network control-plane logic.
+- Real-time traffic engineering in IP/MPLS backbones and data-center fabrics.
+- Classical LP/MIP/CP-SAT or minimum-cost-flow style optimization used for flow allocation, routing, or rerouting.
+- RL as a replacement controller, a proposer, a warm-start mechanism, or an accelerator.
+
+## Exclusions
+
+- Wireless/cellular resource scheduling.
+- Pure adaptive bitrate streaming or TCP congestion-control products unless they bear directly on TE controller replacement.
+- Vendor claims without inspectable methods, benchmarks, or production evidence.
+
+## Key Assumptions
+
+- The audience operates a mid-to-large ISP or cloud-provider network.
+- The decision horizon is 3-5 years.
+- Risk tolerance is low because production outages, compliance failures, and SLA violations are unacceptable.
+- A credible recommendation must distinguish deployed practice from simulation or offline benchmark evidence.
 
 ## Stakeholders
 
-- Network operators who need predictable behavior and fast rollback.
-- Optimization engineers who own exact and approximate flow solvers.
-- SRE/security teams who need guardrails, observability, and incident response.
-- Finance/product leaders who care about engineering cost and measurable performance gains.
-- Users/customers affected by congestion, packet loss, latency, and outages.
+Senior network engineers, NOC/SRE teams, engineering managers, capacity planners, compliance and audit stakeholders, application owners, and customers affected by network reliability.
 
-## Acceptance criteria
+## What Would Change the Decision
 
-RL is a credible production option only if it:
+- A verified production deployment where RL is the primary TE authority with published rollback, failure, and SLA evidence.
+- A reproducible benchmark where RL-primary control beats a strong LP/MIP/CP-SAT baseline on the same hard constraints, under failures and demand shifts.
+- A cost model showing that solve-time savings materially exceed ML infrastructure, training, observability, and on-call costs.
+- A safe-RL or hybrid architecture that gives deterministic constraint enforcement and auditable rollback.
 
-1. Meets or beats a strong classical baseline on the same objective and constraints.
-2. Preserves hard constraints through a solver, projection layer, shield, or safe fallback.
-3. Generalizes across traffic matrices, topologies, failures, and demand shifts.
-4. Produces measurable operational value beyond added ML complexity.
-5. Can run in shadow mode, be rolled back, and be audited after incidents.
+## Known Uncertainties
 
-## What would change the answer
+- Whether offline traffic-matrix gains transfer to production failures and update races.
+- Whether learned policies can be audited to the standard required by production network operations.
+- Whether GPU/training and engineering costs beat solver and operations costs for a specific network.
+- Whether the strongest published evidence reflects replacement, augmentation, or only acceleration.
 
-- A reproducible benchmark where RL or learning-augmented optimization consistently matches solver quality at lower decision latency across real topologies and unseen traffic matrices.
-- Evidence that the RL policy can satisfy capacity and conservation constraints by construction, not only in average simulation results.
-- A live or shadow deployment showing reduced congestion, faster convergence, or lower operational toil without increasing incident risk.
-- A cost model showing that data, simulator, training, monitoring, and rollback overhead are justified by measured network gains.
+## Research Acceptance Criteria
 
-## Initial risk posture
-
-Medium-high. RL may be useful for dynamic decision support and learned heuristics, but network flow optimization sits close to safety, reliability, and customer experience. Replacement of mature flow solvers requires stronger evidence than a research prototype.
+- Every external factual claim must cite a stable source ID.
+- The brief must name at least one production TE deployment or credible benchmark.
+- Cross-perspective contradictions must be explicit rather than hidden.
+- Evidence insufficiency must be stated directly.

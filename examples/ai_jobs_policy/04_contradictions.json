@@ -1,0 +1,153 @@
+[
+  {
+    "conflict_id": "X-001",
+    "contradiction_id": "X-001",
+    "topic": "Broad AI tax versus targeted tax reform",
+    "claim_ids": [
+      "C-006",
+      "C-007",
+      "C-008",
+      "C-025"
+    ],
+    "relationship": "tension",
+    "scope_dimension": "policy_instrument",
+    "why_it_matters": "The decision turns on whether taxation should slow adoption itself or correct narrower distortions and fund transition support.",
+    "evidence_balance": "mixed",
+    "resolution_status": "partially_resolved",
+    "next_question": "Can a country define a narrow automation-bias correction without taxing augmenting AI uses?",
+    "decisive_missing_evidence": "Country-specific tax-base design with incidence analysis and evidence on affected worker outcomes.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-002",
+    "contradiction_id": "X-002",
+    "topic": "High AI exposure versus limited current observed disruption",
+    "claim_ids": [
+      "C-003",
+      "C-004",
+      "C-005",
+      "C-013",
+      "C-022"
+    ],
+    "relationship": "scope_difference",
+    "scope_dimension": "time_horizon",
+    "why_it_matters": "Exposure may justify preparation, but current outcomes do not yet justify an emergency economywide brake.",
+    "evidence_balance": "mixed",
+    "resolution_status": "unresolved",
+    "next_question": "Which occupations show both high AI exposure and measured displacement after adoption?",
+    "decisive_missing_evidence": "Longitudinal occupation-level adoption, employment, wage, and task-use data through the next adoption wave.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-003",
+    "contradiction_id": "X-003",
+    "topic": "Labor-market adjustment versus distributional harm",
+    "claim_ids": [
+      "C-016",
+      "C-018",
+      "C-020",
+      "C-024"
+    ],
+    "relationship": "tension",
+    "scope_dimension": "population_or_domain",
+    "why_it_matters": "Aggregate adaptation can coexist with serious losses for exposed workers and regions.",
+    "evidence_balance": "mixed",
+    "resolution_status": "partially_resolved",
+    "next_question": "Which workers and places face persistent losses from AI adoption rather than temporary transition costs?",
+    "decisive_missing_evidence": "Worker-level panel evidence linking AI adoption to earnings, displacement, retraining, and regional outcomes.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-004",
+    "contradiction_id": "X-004",
+    "topic": "Productivity gains versus job protection",
+    "claim_ids": [
+      "C-009",
+      "C-014",
+      "C-024",
+      "C-025"
+    ],
+    "relationship": "tension",
+    "scope_dimension": "metric",
+    "why_it_matters": "A broad slowdown can protect some jobs while giving up productivity gains and augmenting uses.",
+    "evidence_balance": "supports_b",
+    "resolution_status": "partially_resolved",
+    "next_question": "Which policy package preserves useful AI adoption while compensating displaced workers?",
+    "decisive_missing_evidence": "Microsimulation comparing a broad automation tax, tax-neutrality reform, wage insurance, and training under plausible AI adoption scenarios.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-005",
+    "contradiction_id": "X-005",
+    "topic": "Administrative feasibility of taxing AI automation",
+    "claim_ids": [
+      "C-011",
+      "C-012",
+      "C-015",
+      "C-026"
+    ],
+    "relationship": "evidence_gap",
+    "scope_dimension": "implementation",
+    "why_it_matters": "A policy that cannot define the taxable event will be hard to enforce and easy to distort.",
+    "evidence_balance": "supports_a",
+    "resolution_status": "unresolved",
+    "next_question": "Has any jurisdiction implemented an evaluated automation-tax base that distinguishes substitution from augmentation?",
+    "decisive_missing_evidence": "Primary legislation, administrative guidance, and evaluation data for an implemented AI automation tax.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-006",
+    "contradiction_id": "X-006",
+    "topic": "Robot-tax theory versus AI-specific fiscal guidance",
+    "claim_ids": [
+      "C-006",
+      "C-008",
+      "C-023"
+    ],
+    "relationship": "evidence_conflict",
+    "scope_dimension": "deployment_context",
+    "why_it_matters": "Theory can support temporary robot taxes, while fiscal guidance warns that AI-specific taxes may be poorly targeted.",
+    "evidence_balance": "mixed",
+    "resolution_status": "partially_resolved",
+    "next_question": "Can the robot-tax model be mapped to generative AI tasks without losing its assumptions?",
+    "decisive_missing_evidence": "A generative-AI-specific model with task complementarity, fiscal incidence, and adoption response calibrated to current data.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-007",
+    "contradiction_id": "X-007",
+    "topic": "Historical adaptation versus AI novelty",
+    "claim_ids": [
+      "C-016",
+      "C-018",
+      "C-021",
+      "C-022"
+    ],
+    "relationship": "scope_difference",
+    "scope_dimension": "technology_class",
+    "why_it_matters": "Historical adaptation lowers panic, but cognitive task exposure may change distribution and timing.",
+    "evidence_balance": "mixed",
+    "resolution_status": "unresolved",
+    "next_question": "Does generative AI create different adjustment lags or worker bargaining effects than earlier automation waves?",
+    "decisive_missing_evidence": "Comparative evidence on AI adoption, task change, wages, and bargaining power across exposed occupations.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-008",
+    "contradiction_id": "X-008",
+    "topic": "Evidence for an implemented broad AI slowdown",
+    "claim_ids": [
+      "C-006",
+      "C-026",
+      "C-025"
+    ],
+    "relationship": "evidence_gap",
+    "scope_dimension": "policy_evaluation",
+    "why_it_matters": "A recommendation to tax or slow AI adoption would need evidence that such a policy works and is not too blunt.",
+    "evidence_balance": "supports_a",
+    "resolution_status": "unresolved",
+    "next_question": "Where is the evaluated primary evidence for a broad AI automation tax protecting jobs?",
+    "decisive_missing_evidence": "A government evaluation or credible quasi-experimental study of a broad AI automation tax or slowdown rule.",
+    "human_review_required": true
+  }
+]

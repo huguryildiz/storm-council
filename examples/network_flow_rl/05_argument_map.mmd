@@ -1,12 +1,25 @@
 flowchart TD
-  Q["Should we use RL for network flow optimization?"]
-  Q --> A["Static/offline flow problem?"]
-  Q --> B["Dynamic traffic-engineering problem?"]
-  A --> C["Use classical flow solvers as baseline and system of record<br/>C-001 C-012"]
-  B --> D["Consider guarded RL or learning-accelerated optimization<br/>C-004 C-011 C-031"]
-  D --> E["Keep solver/shield/fallback for hard constraints<br/>C-020 C-023 C-041"]
-  D --> F["Run shadow-mode benchmark on real traffic and failures<br/>C-021 C-032 C-033"]
-  F --> G["Pilot only if faster decisions or lower congestion beat incumbent<br/>X-003 X-005"]
-  C --> H["Verdict: do not replace solvers"]
-  E --> I["Verdict: use RL only as bounded augmentation"]
-  G --> I
+  Q["Should RL replace or augment classical network-flow optimization?"]
+  Q --> A["Option A: solver-centered status quo"]
+  Q --> B["Option B: hybrid RL augmentation"]
+  Q --> C["Option C: RL-primary with solver fallback"]
+  C002["C-002 Teal benchmark gains"] --> S001["S-001 Teal"]
+  C003["C-003 Teal uses constrained optimization"] --> S001
+  C005["C-005 CFR-RL uses LP rerouting"] --> S002["S-002 CFR-RL"]
+  C008["C-008 B4 fallback"] --> S003["S-003 B4"]
+  C010["C-010 SWAN update safety"] --> S004["S-004 SWAN"]
+  C014["C-014 Safe RL constraints"] --> S005["S-005 Safe RL survey"]
+  C012["C-012 No retrieved RL-primary production evidence"] --> S009["S-009 retrieval log"]
+  C002 --> X001["X-001 benchmark vs production authority"]
+  C003 --> B
+  C005 --> B
+  C008 --> B
+  C010 --> B
+  C014 --> B
+  C012 --> X008["X-008 production evidence gap"]
+  X001 --> B
+  X008 --> A
+  X008 --> C
+  B --> N1["Shadow-mode pilot with solver enforcement"]
+  A --> N2["Keep classical solver as system of record"]
+  C --> N3["Do not expose without production evidence"]

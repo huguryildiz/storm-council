@@ -1,53 +1,52 @@
-# 03 - Evidence-Grounded Inquiry
+# Evidence Plan
 
-## Retrieval status
+## Retrieval Tooling
 
-Live source lookup was used on 2026-06-30. The report remains a decision-support artifact, not a substitute for a formal literature review or production design review.
+The Semantic Scholar MCP was not callable in this Codex session, so the run used live HTTPS retrieval:
 
-## Source plan by lens
+- Semantic Scholar Graph API search for the seven mandatory queries and additional topic probes.
+- Direct PDF/HTML retrieval for Teal, CFR-RL, B4, SWAN, the JMLR Safe RL survey, OR-Tools, and RFC 2702.
+- Crossref metadata lookup for DOI-bearing papers.
 
-### Practitioner
+All retrieval happened on 2026-06-30. Raw mandatory query logs are stored as `retrieval_semantic_scholar.json` and `retrieval_semantic_scholar_additional.json`; downloaded source text is under `source_cache/`.
 
-- Use solver/library documentation to establish what classical network-flow tooling already provides: S-001, S-002.
-- Use production traffic-engineering history to assess operational fit: S-003.
-- Use RL traffic-engineering papers to identify required architecture components: S-006, S-007, S-008.
+## Mandatory Semantic Scholar Queries
 
-Key claims: C-001 through C-004.
+- `deep reinforcement learning traffic engineering`: result_count=0
+  - no top-3 paper selected because the API returned no relevant results for this query in this run.
+- `RL network routing optimization production`: result_count=0
+  - no top-3 paper selected because the API returned no relevant results for this query in this run.
+- `MPLS traffic engineering reinforcement learning`: result_count=0
+  - no top-3 paper selected because the API returned no relevant results for this query in this run.
+- `safe reinforcement learning network control`: result_count=10
+  - selected/top result: Safe Reinforcement Learning for Longitudinal Control of Autonomous Vehicles: An Augmented Neural Network With Supervision Using Safe Distance | paperId=cccc3b57f0d377eed1a15a36c4ba22929fcf74ea | year=2025 | citationCount=1
+  - selected/top result: Hierarchical Safe Reinforcement Learning Control for Leader-Follower Systems With Prescribed Performance | paperId=f926f0b908666e2b18137f99fc4f3a8c3fc4a250 | year=2025 | citationCount=28
+  - selected/top result: Data-Model Hybrid-Driven Safe Reinforcement Learning for Adaptive Avoidance Control Against Unsafe Moving Zones | paperId=d81823bf9a79cdfcdc884f5ec6c324b4076e68b2 | year=2025 | citationCount=14
+- `linear programming network flow vs reinforcement learning benchmark`: result_count=0
+  - no top-3 paper selected because the API returned no relevant results for this query in this run.
+- `multi-agent reinforcement learning datacenter networking`: result_count=0
+  - no top-3 paper selected because the API returned no relevant results for this query in this run.
+- `reinforcement learning sim-to-real network`: result_count=0
+  - no top-3 paper selected because the API returned no relevant results for this query in this run.
 
-### Academic
+## Lens Plans
 
-- Compare RL/ML-for-CO claims against strong optimization baselines and surveys: S-004, S-005.
-- Distinguish traffic engineering from generic network-flow optimization: S-006, S-007, S-008.
-- Evaluate hybrid learning-accelerated optimization: S-009.
+### practitioner
 
-Key claims: C-010 through C-013.
+Queries and sources: B4, SWAN, CFR-RL fallback behavior, Teal control-loop context. Disconfirming evidence would be a production case where an RL-primary TE controller runs without deterministic fallback while meeting strict SLA targets.
 
-### Skeptic
+### academic
 
-- Check whether RL approaches guarantee feasibility or merely penalize violations: S-001, S-002, S-008.
-- Look for simulator, topology-shift, and baseline-comparison limitations: S-006, S-007, S-008.
-- Convert unsupported safety concerns into explicit assumptions rather than unsupported conclusions: C-022.
+Queries and sources: Teal SIGCOMM 2023, CFR-RL JSAC 2020, DRL-for-SD-WAN DOI metadata, required Semantic Scholar queries. Disconfirming evidence would be a reproducible RL-primary benchmark beating strong classical baselines under hard constraints and failure tests.
 
-Key claims: C-020 through C-023.
+### skeptic
 
-### Economist
+Queries and sources: required null-result logs, Safe RL survey, SWAN update-safety evidence, B4 fallback. Disconfirming evidence would be full production evidence with outage, rollback, and audit details.
 
-- Separate stable/offline flow solving from frequent online optimization where latency has measurable value.
-- Use source-supported architectural evidence for costs where possible, but avoid inventing TCO numbers.
-- Require measurable pilot thresholds before investment.
+### economist
 
-Key claims: C-030 through C-033.
+Queries and sources: Teal runtime benchmark, OR-Tools flow optimization docs, production TE architecture papers. Disconfirming evidence would be local cost data showing classical solver latency is negligible or ML infrastructure cost dominates.
 
-### Historian
+### historian
 
-- Use B4 and learning-accelerated optimization as adoption precedents.
-- Treat past adoption patterns as analogical evidence, not proof.
-- Prefer hybrid and staged deployment over replacement framing.
-
-Key claims: C-040 through C-043.
-
-## Evidence status summary
-
-- Supported facts and recommendations cite S-001 through S-009.
-- Unsupported items are limited to assumptions about reward misspecification and problem-scope ambiguity.
-- The major unresolved issue is not whether RL can help in some settings. It is whether the target workload needs RL enough to justify simulator, safety, and operations complexity.
+Queries and sources: RFC 2702, B4, SWAN, Teal architecture. Disconfirming evidence would be a historical network-control transition where a new opaque controller replaced the existing mechanism without staged fallback and still survived production adoption.

@@ -1,19 +1,40 @@
-# 05 - Decision Brief
+# Decision Brief
 
-## Verdict
+RL should augment, not replace, LP/MIP/CP-SAT-style TE optimization for production network-flow control. The retrieved RL evidence is strongest for learning-accelerated optimization and critical-flow selection, while the production TE evidence emphasizes fallback, safe updates, and auditability. Under low risk tolerance, keep the classical solver as the authority and pilot RL only as a bounded proposer or accelerator.
 
-Use RL selectively, not as a general replacement for network-flow optimization.
+## Strongest Findings
 
-For static, feasibility-critical, or auditable flow problems, keep classical network-flow, LP, min-cost-flow, max-flow, and traffic-engineering solvers as the baseline and system of record (C-001, C-012). For dynamic traffic engineering where decisions are frequent and latency-sensitive, RL is worth evaluating as a bounded augmentation: candidate selection, learned warm starts, policy ranking, critical-flow selection, or learning-accelerated optimization (C-004, C-013, C-031, C-041).
+- Teal reports credible benchmark gains for learning-accelerated WAN TE, but the design still uses constrained optimization. Sources: S-001. Claims: C-001, C-002, C-003.
+- CFR-RL uses RL to select critical flows and LP to reroute them. Source: S-002. Claims: C-004, C-005.
+- B4 and SWAN show production TE practice values centralized optimization, fallback, and safe update sequencing. Sources: S-003, S-004. Claims: C-006, C-008, C-009, C-010.
+- Safe RL literature makes safety constraints and risky exploration explicit concerns. Source: S-005. Claims: C-013, C-014, C-015.
 
-## Recommended path
+## Top Unresolved Contradictions
 
-1. Define the exact workload: offline planning, online TE, datacenter flow scheduling, or incident response (X-002).
-2. Build a replay benchmark from real traffic matrices, topology snapshots, and failure scenarios (C-032, X-003).
-3. Compare against strong baselines: min-cost/max-flow where appropriate, LP/CP/TE optimizers, and incumbent heuristics (C-012, C-033).
-4. If RL is tested, keep it outside direct control first: shadow mode, advisory mode, or solver-guided candidate selection (C-023, C-043).
-5. Promote only if the pilot proves measurable value without weakening hard-constraint guarantees (C-020, X-004).
+- X-002: benchmark generalization versus sim-to-real and failure-mode risk.
+- X-004: possible runtime ROI versus missing local ML and operations cost model.
+- X-008: no retrieved production evidence for RL-primary TE authority.
 
-## Non-recommendation
+## Options
 
-Do not fund an end-to-end RL replacement for network-flow optimization unless the organization can show constraint satisfaction, generalization, rollback, and economic value against a strong optimizer on the target workload.
+Option A: Stay with LP/MIP/CP-SAT. Strong evidence for safety and auditability; may leave solve-time bottlenecks untouched.
+
+Option B: Hybrid RL for coarse TE, candidate ranking, warm-starting, or critical-flow selection while LP/MIP enforces constraints. Moderate evidence; recommended.
+
+Option C: RL-primary with LP fallback circuit. Weak evidence; only consider after shadow-mode and failure-injection proof.
+
+## Recommended Next Actions
+
+1. Keep solver-centered TE in production while profiling actual solve bottlenecks.
+2. Build a replay benchmark from local traffic matrices, failures, and update races.
+3. Run RL in shadow mode as a proposer; accept only allocations certified by deterministic constraints.
+4. Measure ROI: solve latency, satisfied demand, operator workload, GPU/training cost, and incident risk.
+5. Require auditable logs and fallback drills before any traffic exposure.
+
+## Frontier Research Questions
+
+1. Can RL proposals improve TE objective value after deterministic constraint certification?
+2. Can safe-RL shields cover update-order, failure, and SLA constraints in a live TE loop?
+3. What benchmark best predicts production behavior under traffic shifts and incidents?
+
+This brief supports, but does not replace, domain expertise, source verification, and accountable human decision-making.

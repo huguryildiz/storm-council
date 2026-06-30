@@ -3,13 +3,11 @@
   "blocking_issues": [],
   "major_issues": [],
   "minor_issues": [
-    "Overclaiming language to verify against evidence: C-020 [guaranteed]",
-    "Overclaiming language to verify against evidence: C-042 [all]",
-    "Open contradictions remain for human review: X-003, X-004, X-005"
+    "Open contradictions remain for human review: X-002, X-004, X-006, X-008"
   ],
   "coverage_score": 100,
   "traceability_score": 100,
-  "contradiction_handling_score": 40,
+  "contradiction_handling_score": 50,
   "recommendation_support_score": 100,
-  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 0 major, 3 minor (computed by verify.py over 20 claims, 9 sources, 3 evidence records, 5 contradictions)."
+  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 0 major, 1 minor (computed by verify.py over 28 claims, 9 sources, 20 evidence records, 48 evidence verdicts, 8 contradictions)."
 }

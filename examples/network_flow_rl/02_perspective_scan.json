@@ -1,119 +1,137 @@
 [
   {
-    "name": "practitioner",
-    "role_charter": "Judge whether RL can be operated in real networks without creating fragile control loops.",
+    "lens": "practitioner",
+    "role_focus": "NOC/SRE feasibility, fallback, observability, rollout safety, and control-loop deadlines.",
     "priority_questions": [
-      "What parts of network flow optimization are static planning versus online adaptation?",
-      "Where do current LP/min-cost-flow/heuristic systems fail operationally?",
-      "What monitoring, simulator, fallback, and rollback mechanisms would RL require?"
+      "What fails during an incident?",
+      "Can ECMP or shortest-path fallback recover?",
+      "Can the system run in shadow mode?",
+      "What telemetry explains a decision?",
+      "Can solve or inference finish inside the control loop?"
     ],
     "expected_evidence_types": [
-      "Solver documentation",
-      "SDN and traffic-engineering deployment papers",
-      "Operational constraints from production network systems"
+      "production deployment papers",
+      "failure-injection tests",
+      "fallback designs",
+      "traffic replay",
+      "operational playbooks"
     ],
-    "likely_blind_spots": [
-      "Discounting research progress because it is not yet productized."
+    "likely_blind_spot": "May under-weight credible research that is not yet productized.",
+    "conflicts_with_other_lenses": [
+      "academic on simulation realism",
+      "economist on omitted on-call cost"
     ],
-    "potential_conflicts": [
-      "May accept RL as an augmentation layer while the skeptic rejects it as unsafe."
-    ],
+    "unique_contribution": "Adds fallback and observability gates to every option.",
     "escalation_triggers": [
-      "A claim that RL can directly control production routing without a deterministic safety layer."
+      "benchmark-to-production leap",
+      "deterministic fallback removed"
     ]
   },
   {
-    "name": "academic",
-    "role_charter": "Ground the decision in algorithms, benchmarks, and reproducibility.",
+    "lens": "academic",
+    "role_focus": "DRL-for-TE literature quality, baselines, reproducibility, and scope preservation.",
     "priority_questions": [
-      "Does RL beat strong flow-optimization baselines, or only shortest-path/ECMP heuristics?",
-      "Are results robust to topology, demand, and failure distribution shifts?",
-      "Is the method solving network flow, traffic engineering, or a narrower proxy problem?"
+      "What was compared?",
+      "Were constraints learned or enforced?",
+      "Are baselines strong?",
+      "Are traces public?",
+      "Are failures tested?"
     ],
     "expected_evidence_types": [
-      "Peer-reviewed ML-for-CO surveys",
-      "RL traffic-engineering papers",
-      "Benchmark comparisons"
+      "peer-reviewed papers",
+      "benchmark tables",
+      "ablation studies",
+      "source code releases"
     ],
-    "likely_blind_spots": [
-      "Under-weighting integration and incident-management costs."
+    "likely_blind_spot": "May under-weight rollout accountability.",
+    "conflicts_with_other_lenses": [
+      "practitioner on deployment readiness",
+      "skeptic on overclaiming"
     ],
-    "potential_conflicts": [
-      "May see promise in learning-accelerated optimization that operators still view as immature."
-    ],
+    "unique_contribution": "Separates RL-primary from learning-accelerated optimization.",
     "escalation_triggers": [
-      "Results reported without reproducible baselines or ablations."
+      "single-topology generalization",
+      "weak baseline"
     ]
   },
   {
-    "name": "skeptic",
-    "role_charter": "Stress-test claims about optimality, safety, generalization, and incentives.",
+    "lens": "skeptic",
+    "role_focus": "Reward hacking, sim-to-real gaps, black-box audit friction, and missing production evidence.",
     "priority_questions": [
-      "Are hard constraints guaranteed or merely encouraged by reward penalties?",
-      "Does RL optimize the real objective or a simulation proxy?",
-      "What happens under adversarial traffic, topology change, measurement error, or partial observability?"
+      "What is not measured?",
+      "Does the passage entail the claim?",
+      "Is evidence simulation or deployment?",
+      "What breaks under failures?",
+      "Is the reward SLA-aligned?"
     ],
     "expected_evidence_types": [
-      "Negative results",
-      "Limitations sections",
-      "Robustness studies",
-      "Missing benchmark evidence"
+      "safety surveys",
+      "null retrieval logs",
+      "failure analyses",
+      "evidence locators"
     ],
-    "likely_blind_spots": [
-      "Reflexive dismissal of genuinely useful hybrid designs."
+    "likely_blind_spot": "May reject useful hybrid ML too quickly.",
+    "conflicts_with_other_lenses": [
+      "academic performance claims",
+      "economist ROI claims",
+      "practitioner pilot optimism"
     ],
-    "potential_conflicts": [
-      "Challenges practitioner and academic optimism around dynamic routing gains."
-    ],
+    "unique_contribution": "Treats absence of evidence as a finding.",
     "escalation_triggers": [
-      "Any recommendation that lacks explicit fallback and constraint enforcement."
+      "unsupported production-readiness claim",
+      "fallback removed"
     ]
   },
   {
-    "name": "economist",
-    "role_charter": "Compare expected value, opportunity cost, staffing burden, and measurable benefit.",
+    "lens": "economist",
+    "role_focus": "Risk-adjusted cost, solver bottlenecks, ML infrastructure, engineering time, and reversibility.",
     "priority_questions": [
-      "What does RL add that cheaper solvers, heuristics, or forecasting cannot?",
-      "Is the target use case frequent and valuable enough to pay for RL infrastructure?",
-      "Who owns training data, simulator maintenance, model monitoring, and incident response?"
+      "What is solve latency worth?",
+      "What does RL infra cost?",
+      "Which option is reversible?",
+      "What pilot metric decides?",
+      "What opportunity cost is hidden?"
     ],
     "expected_evidence_types": [
-      "Cost model",
-      "Deployment architecture",
-      "Observed performance deltas",
-      "Operations labor estimates"
+      "runtime benchmarks",
+      "cost models",
+      "pilot metrics",
+      "staffing assumptions"
     ],
-    "likely_blind_spots": [
-      "Overweighting measurable cost and underweighting resilience value."
+    "likely_blind_spot": "May under-price safety and auditability.",
+    "conflicts_with_other_lenses": [
+      "academic on benchmark value",
+      "practitioner on risk cost"
     ],
-    "potential_conflicts": [
-      "May support RL only where traffic variability creates measurable economic upside."
-    ],
+    "unique_contribution": "Frames the choice as option value.",
     "escalation_triggers": [
-      "A payoff claim without an experiment design or baseline."
+      "high-cost option without local data"
     ]
   },
   {
-    "name": "historian",
-    "role_charter": "Bring precedent from network optimization, SDN, and ML-for-combinatorial-optimization adoption.",
+    "lens": "historian",
+    "role_focus": "Lessons from MPLS TE, SDN adoption, expert systems, and staged network-control rollouts.",
     "priority_questions": [
-      "Which previous network-control innovations succeeded, and why?",
-      "Did they replace optimization/control systems or become hybrid overlays?",
-      "What repeated failure patterns apply to RL-for-network-flow work?"
+      "How did prior TE innovations enter production?",
+      "What was preserved?",
+      "What sounded familiar?",
+      "Did systems replace or layer?",
+      "Where did adoption stall?"
     ],
     "expected_evidence_types": [
-      "SDN and traffic-engineering deployment history",
-      "Classic solver adoption",
-      "ML-for-optimization surveys"
+      "RFCs",
+      "production SDN papers",
+      "architecture retrospectives",
+      "standards documents"
     ],
-    "likely_blind_spots": [
-      "Assuming past adoption patterns fully constrain a newer method."
+    "likely_blind_spot": "May overfit past adoption patterns.",
+    "conflicts_with_other_lenses": [
+      "academic novelty claims",
+      "economist replacement narratives"
     ],
-    "potential_conflicts": [
-      "May favor hybridization even when the academic lens sees end-to-end RL as intellectually promising."
-    ],
+    "unique_contribution": "Identifies hybridization as the recurring pattern.",
     "escalation_triggers": [
-      "Replacement framing that ignores operational trust, control-plane safety, and rollback history."
+      "unstaged replacement proposal"
     ]
   }
 ]

@@ -1,62 +1,138 @@
 [
   {
     "conflict_id": "X-001",
-    "topic": "Replacement versus augmentation",
-    "claim_a_id": "C-012",
-    "claim_b_id": "C-004",
+    "contradiction_id": "X-001",
+    "topic": "Benchmark speed versus production authority",
+    "claim_ids": [
+      "C-002",
+      "C-011"
+    ],
     "relationship": "scope_difference",
-    "why_it_matters": "A recommendation to replace flow solvers is much riskier than a recommendation to use RL for online candidate selection or warm starts.",
-    "evidence_balance": "supports_a",
+    "scope_dimension": "deployment_context",
+    "why_it_matters": "A benchmark acceleration result does not itself justify live control authority.",
+    "evidence_balance": "mixed",
     "resolution_status": "partially_resolved",
-    "next_question": "Specify the target workload and decide whether RL is replacing optimization or feeding it.",
+    "next_question": "Can a pilot reproduce Teal-like gains under live rollback and SLA gates?",
+    "decisive_missing_evidence": "Head-to-head production shadow-mode trial against the current LP/MIP engine.",
     "human_review_required": true
   },
   {
     "conflict_id": "X-002",
-    "topic": "Optimality and feasibility versus fast adaptation",
-    "claim_a_id": "C-001",
-    "claim_b_id": "C-031",
+    "contradiction_id": "X-002",
+    "topic": "RL generalization versus sim-to-real risk",
+    "claim_ids": [
+      "C-001",
+      "C-016"
+    ],
     "relationship": "tension",
-    "why_it_matters": "Static flow problems reward exactness and certificates, while online traffic engineering may reward low-latency decisions under changing demand.",
+    "scope_dimension": "deployment_context",
+    "why_it_matters": "Generalization beyond traffic-matrix benchmarks determines outage risk.",
     "evidence_balance": "mixed",
-    "resolution_status": "partially_resolved",
-    "next_question": "Classify the workload as offline planning, online TE, or incident response before selecting a method.",
+    "resolution_status": "unresolved",
+    "next_question": "Does the learned policy preserve behavior under failures, demand shifts, and update races?",
+    "decisive_missing_evidence": "Failure-injection benchmark with production traffic replay and live rollback criteria.",
     "human_review_required": true
   },
   {
     "conflict_id": "X-003",
-    "topic": "Benchmark evidence and simulator fidelity",
-    "claim_a_id": "C-011",
-    "claim_b_id": "C-021",
-    "relationship": "evidence_gap",
-    "why_it_matters": "Promising benchmark results do not automatically transfer to production if traffic, topology, and failures differ from training/evaluation.",
-    "evidence_balance": "insufficient",
-    "resolution_status": "unresolved",
-    "next_question": "Run shadow-mode replay on real traffic matrices and failure scenarios against the incumbent optimizer.",
+    "contradiction_id": "X-003",
+    "topic": "Hybrid design versus RL-primary replacement",
+    "claim_ids": [
+      "C-003",
+      "C-020"
+    ],
+    "relationship": "tension",
+    "scope_dimension": "comparison_baseline",
+    "why_it_matters": "The strategic choice is replacement, augmentation, or status quo.",
+    "evidence_balance": "supports_a",
+    "resolution_status": "partially_resolved",
+    "next_question": "What measurable value does RL add when solvers still enforce constraints?",
+    "decisive_missing_evidence": "Ablation comparing pure solver, RL proposal plus solver, and RL-primary with fallback.",
     "human_review_required": true
   },
   {
     "conflict_id": "X-004",
-    "topic": "Safety guardrails versus economic upside",
-    "claim_a_id": "C-020",
-    "claim_b_id": "C-031",
+    "contradiction_id": "X-004",
+    "topic": "Solver runtime bottleneck versus engineering cost",
+    "claim_ids": [
+      "C-019",
+      "C-021"
+    ],
     "relationship": "tension",
-    "why_it_matters": "Even if RL improves speed or utilization, hard constraints and failure safety can dominate the decision.",
+    "scope_dimension": "metric",
+    "why_it_matters": "Runtime savings only matter if they exceed model, observability, training, and on-call cost.",
     "evidence_balance": "mixed",
     "resolution_status": "unresolved",
-    "next_question": "Define a shielded architecture and quantify the residual incident risk versus measured performance gain.",
+    "next_question": "What are the local costs of solve latency, ML infra, retraining, and incident response?",
+    "decisive_missing_evidence": "Operator-specific cost model with incident and solve-latency data.",
     "human_review_required": true
   },
   {
     "conflict_id": "X-005",
-    "topic": "Total cost of ownership",
-    "claim_a_id": "C-030",
-    "claim_b_id": "C-031",
+    "contradiction_id": "X-005",
+    "topic": "Safe exploration versus SLA obligations",
+    "claim_ids": [
+      "C-013",
+      "C-015"
+    ],
+    "relationship": "evidence_gap",
+    "scope_dimension": "deployment_context",
+    "why_it_matters": "Online learning can create unacceptable operational exposure.",
+    "evidence_balance": "supports_b",
+    "resolution_status": "partially_resolved",
+    "next_question": "Can all learning be offline or shielded before live deployment?",
+    "decisive_missing_evidence": "Safe-RL TE design with formal shields and no online unsafe exploration.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-006",
+    "contradiction_id": "X-006",
+    "topic": "Auditability versus learned policy complexity",
+    "claim_ids": [
+      "C-017",
+      "C-022"
+    ],
     "relationship": "tension",
-    "why_it_matters": "The same RL system can be unjustified overhead in stable planning and valuable in high-frequency online control.",
-    "evidence_balance": "insufficient",
+    "scope_dimension": "limitations",
+    "why_it_matters": "Network operators need explainable rollback and accountability after incidents.",
+    "evidence_balance": "mixed",
     "resolution_status": "unresolved",
-    "next_question": "Estimate engineering cost, simulator cost, traffic volatility, decision frequency, and value per avoided congestion event.",
+    "next_question": "Can the policy emit auditable constraint proofs or only opaque action scores?",
+    "decisive_missing_evidence": "Incident-review exercise comparing solver certificate, RL proposal, and hybrid guardrail logs.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-007",
+    "contradiction_id": "X-007",
+    "topic": "Classical TE precedent versus ML acceleration frontier",
+    "claim_ids": [
+      "C-023",
+      "C-026"
+    ],
+    "relationship": "scope_difference",
+    "scope_dimension": "time_horizon",
+    "why_it_matters": "Older standards define the durable objective; newer ML changes possible implementation speed.",
+    "evidence_balance": "mixed",
+    "resolution_status": "partially_resolved",
+    "next_question": "Which TE subproblem is too slow for the existing deterministic stack?",
+    "decisive_missing_evidence": "Local solver profiling by topology size and control-loop deadline.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-008",
+    "contradiction_id": "X-008",
+    "topic": "Production deployment evidence for RL-primary TE",
+    "claim_ids": [
+      "C-012",
+      "C-028"
+    ],
+    "relationship": "evidence_gap",
+    "scope_dimension": "deployment_context",
+    "why_it_matters": "Replacement requires production evidence stronger than papers on augmentation.",
+    "evidence_balance": "supports_a",
+    "resolution_status": "unresolved",
+    "next_question": "Is there a verifiable RL-primary TE deployment with outage, rollback, and SLA evidence?",
+    "decisive_missing_evidence": "Production case study or postmortem from ISP/cloud provider using RL as primary TE authority.",
     "human_review_required": true
   }
 ]
