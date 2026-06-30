@@ -1,8 +1,7 @@
 # Stage 1 prompt · Decision Frame
 
-> Extends: none (new stage). The origin seeds begin at perspectives; rigorous
-> research begins one step earlier — by framing the decision so every later
-> stage has something to aim at.
+> Rigorous research begins by framing the decision so every later stage has
+> something to aim at — one step before any perspective is gathered.
 >
 > Writes: `01_decision_frame.md` (shape: [`../templates/decision_frame.md`](../templates/decision_frame.md)).
 

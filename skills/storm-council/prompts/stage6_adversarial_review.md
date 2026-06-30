@@ -1,11 +1,10 @@
 # Stage 6 prompt · Adversarial Review
 
-> Extends seed [`/prompts/4.md`](../../../prompts/README.md) — "peer-review your
-> own briefing". The seed asks the author to score confidence, name the weakest
-> claim, check for bias, find a missing perspective, and assign a grade. This
-> stage keeps every one of those checks but runs them as an **independent
-> reviewer with a computed verdict** — the synthesis does not get to grade
-> itself, and the scores are produced by `verify.py`, not asserted by the model.
+> Peer-review the briefing — score confidence, name the weakest claim, check
+> for bias, find a missing perspective, assign a grade — but run every check as
+> an **independent reviewer with a computed verdict**: the synthesis does not
+> get to grade itself, and the scores are produced by `verify.py`, not asserted
+> by the model.
 >
 > Writes: `06_adversarial_review.md` + `06_quality_gate.json`. Shape:
 > [`../templates/quality_gate.json`](../templates/quality_gate.json).

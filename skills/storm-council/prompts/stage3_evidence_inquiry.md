@@ -1,10 +1,9 @@
 # Stage 3 prompt · Evidence-Grounded Inquiry
 
-> Extends seed [`/prompts/1.md`](../../../prompts/README.md) — the "strongest
-> evidence supporting their view" and "one thing no other perspective would
-> tell me" parts. The seed lets each expert assert evidence informally. This
-> stage forces every assertion into a **source-grounded, typed, traceable
-> claim** — the difference between a persona's opinion and a defensible finding.
+> Each lens's strongest evidence and unique insight must become a
+> **source-grounded, typed, traceable claim** rather than an informal
+> assertion — the difference between a persona's opinion and a defensible
+> finding.
 >
 > Writes: `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`,
 > `03_source_registry.csv`. Shapes: [`../templates/claim_record.json`](../templates/claim_record.json),

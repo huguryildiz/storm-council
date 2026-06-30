@@ -1,10 +1,8 @@
 # Stage 2 prompt · Perspective Scan
 
-> Extends seed [`/prompts/1.md`](../../../prompts/README.md) — "simulate five
-> expert perspectives". The seed asks each expert for a position, its strongest
-> evidence, and one unique insight. This stage turns that into **chartered
-> research lenses** that will later inspect one another, not five parallel
-> answers that get concatenated.
+> Simulate several expert perspectives, each with a position, its strongest
+> evidence, and one unique insight — but as **chartered research lenses** that
+> will later inspect one another, not parallel answers that get concatenated.
 >
 > Writes: `02_perspective_scan.md` + `02_perspective_scan.json`.
 

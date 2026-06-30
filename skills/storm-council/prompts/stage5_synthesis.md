@@ -1,11 +1,10 @@
 # Stage 5 prompt · Source-Mapped Synthesis
 
-> Extends seed [`/prompts/3.md`](../../../prompts/README.md) — "synthesise into
-> a briefing". The seed asks for a one-paragraph summary, five confidence-ranked
-> findings, a hidden connection, an actionable insight, and a frontier question.
-> This stage keeps all of that but **maps every finding back to claim and source
-> IDs**, carries the disagreements forward instead of erasing them, and adds
-> decision options and an argument map.
+> Synthesise into a briefing — a one-paragraph summary, confidence-ranked
+> findings, a hidden connection, an actionable insight, and a frontier
+> question — but **map every finding back to claim and source IDs**, carry the
+> disagreements forward instead of erasing them, and add decision options and an
+> argument map.
 >
 > Writes: `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md`.
 > Outline: [`../templates/synthesis_outline.md`](../templates/synthesis_outline.md).

@@ -1,11 +1,9 @@
 # Stage 4 prompt · Contradiction Ledger
 
-> Extends seed [`/prompts/2.md`](../../../prompts/README.md) — "map the
-> contradictions". The seed asks where perspectives disagree, who has the
-> strongest/weakest evidence, what they all agree on, and what none of them
-> addressed. This stage turns that into a **classified, ID-linked ledger** and
-> (when stakes are high) a bounded cross-examination, so disagreement is
-> recorded rather than averaged away.
+> Map where the lenses disagree, who has the strongest/weakest evidence, what
+> they all agree on, and what none addressed — as a **classified, ID-linked
+> ledger** and (when stakes are high) a bounded cross-examination, so
+> disagreement is recorded rather than averaged away.
 >
 > Writes: `04_contradiction_ledger.md` + `04_contradictions.json`
 > (+ `04_council_deliberation.md`/`.jsonl` in Council Mode). Shape:
