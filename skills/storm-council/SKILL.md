@@ -70,6 +70,9 @@ into the output folder before the next begins.
    / forecast / assumption / recommendation kept distinct; sources and exact
    evidence locators by ID). You may dispatch each lens as its subagent so they
    reason in independent contexts.
+   Optional Phase-4 content verification writes `03_evidence_verdicts.jsonl`,
+   an LLM-assisted entailment/scope verdict artifact. `verify.py` checks verdict
+   presence, shape, and declared outcomes; it does not decide entailment itself.
 4. **Contradiction Ledger** → `04_contradiction_ledger.md` + `04_contradictions.json`
    Compare claims across lenses and classify each conflict. In **Council Mode**, run
    bounded cross-examination and log it in `04_council_deliberation.md` / `.jsonl`.
@@ -125,6 +128,7 @@ Create these in the user's chosen output folder:
 | 1 Decision Frame | `01_decision_frame.md` |
 | 2 Perspective Scan | `02_perspective_scan.md`, `02_perspective_scan.json` |
 | 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv`, `03_evidence.jsonl` |
+| 3b Content Verification | `03_evidence_verdicts.jsonl` |
 | 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.md`/`.jsonl` in Council Mode) |
 | 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` |
 | 6 Adversarial Review | `06_adversarial_review.md`, `06_quality_gate.json` |
@@ -141,7 +145,8 @@ neither is hand-asserted by the model. After stage 6:
 1. Write the consolidated run as **`report_data.json`** (bottom line, strongest
    findings, contradictions, decision options with evidence strength, next actions,
    gaps, sources, counts), alongside the structured stage artifacts
-   (`03_claims.jsonl`, `03_evidence.jsonl`, `04_contradictions.json`,
+   (`03_claims.jsonl`, `03_evidence.jsonl`, optional
+   `03_evidence_verdicts.jsonl`, `04_contradictions.json`,
    `03_source_registry.csv`). See
    [the example](../../examples/university_timetabling/expected_artifacts/report_data.json).
 
@@ -190,8 +195,9 @@ neither is hand-asserted by the model. After stage 6:
    evidence IDs resolve, contradictions reference real claims), plus deterministic
    publication/content guards: duplicate/malformed DOI, retracted or superseded
    sources, direct-support locator requirements, abstract-only gating,
-   comparative-claim scope fields, and obvious overclaiming language. It computes
-   the four scores and the verdict, writes `06_quality_gate.json`, and patches
+   comparative-claim scope fields, obvious overclaiming language, and
+   LLM-assisted evidence-verdict presence/shape/outcome. It computes the four
+   scores and the verdict, writes `06_quality_gate.json`, and patches
    `report_data.json`. **Do not hand-set the scores** — let `verify.py` compute them.
    Optionally, before this step, run the Phase-3 publication metadata adapters:
 

@@ -160,6 +160,13 @@ CSS = """
   .claims-table td .cev{ display:block; font-size:12px; color:var(--muted); margin-top:4px; }
   .claims-table td .claim-meta{ display:block; margin-top:6px; }
   .claim-chip{ display:inline-flex; align-items:center; gap:4px; font:11px ui-monospace,Menlo,monospace; padding:2px 8px; border-radius:999px; background:#eef0f3; color:var(--muted); margin-right:4px; }
+  .evidence-table .excerpt{ color:var(--muted); font-size:12.5px; line-height:1.45; }
+  .verdict-list{ display:flex; flex-direction:column; gap:4px; min-width:130px; }
+  .verdict-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
+  .verdict-rationale{ display:block; color:var(--faint); font-size:11.5px; line-height:1.35; margin-top:1px; }
+  .verdict-bad{ background:#fdecea; color:var(--red); }
+  .verdict-warn{ background:#fef3e2; color:#9a6a1e; }
+  .verdict-ok{ background:#e7f6ee; color:var(--green); }
   .artifact{ border:1px solid var(--line); border-radius:10px; background:var(--card); padding:16px 18px; }
   .artifact h4{ margin:14px 0 7px; font-size:14.5px; }
   .artifact h4:first-child{ margin-top:0; }
@@ -836,9 +843,57 @@ def _source_identity_badges(src: dict) -> str:
     return " ".join(badges)
 
 
-def _evidence_table_html(evidence, sources_by_id=None) -> str:
+def _verdicts_by_evidence(verdicts) -> dict:
+    by_evidence: dict = {}
+    if not isinstance(verdicts, list):
+        return by_evidence
+    for v in verdicts:
+        if not isinstance(v, dict):
+            continue
+        eid = v.get("evidence_id")
+        if eid:
+            by_evidence.setdefault(eid, []).append(v)
+    return by_evidence
+
+
+def _verdict_badge_html(v: dict) -> str:
+    verdict = str(v.get("verdict") or "").lower()
+    scope = str(v.get("scope_preserved") or "").lower()
+    if verdict == "does_not_entail" or scope == "overclaimed":
+        cls = "verdict-bad"
+    elif verdict in {"partial", "uncertain"} or scope in {"narrowed", "uncertain"}:
+        cls = "verdict-warn"
+    else:
+        cls = "verdict-ok"
+    claim = v.get("claim_id")
+    rationale = v.get("rationale") or ""
+    review = " · review" if v.get("human_review_required") else ""
+    return (
+        '<div class="verdict-row">%s'
+        '<span class="tag %s">%s</span>'
+        '<span class="tag kind">scope: %s%s</span></div>%s'
+        % (
+            refs([claim]) if claim else "",
+            cls,
+            e(verdict or "—"),
+            e(scope or "—"),
+            review,
+            f'<span class="verdict-rationale">{text_refs(rationale)}</span>' if rationale else "",
+        )
+    )
+
+
+def _evidence_verdicts_html(eid: str, verdicts_by_eid: dict) -> str:
+    verdicts = verdicts_by_eid.get(eid) or []
+    if not verdicts:
+        return "—"
+    return '<div class="verdict-list">' + "".join(_verdict_badge_html(v) for v in verdicts) + "</div>"
+
+
+def _evidence_table_html(evidence, sources_by_id=None, verdicts=None) -> str:
     if not isinstance(evidence, list) or not evidence:
         return ""
+    verdicts_by_eid = _verdicts_by_evidence(verdicts)
     rows = ""
     for ev in evidence:
         if not isinstance(ev, dict):
@@ -849,17 +904,18 @@ def _evidence_table_html(evidence, sources_by_id=None) -> str:
         excerpt = ev.get("evidence_excerpt") or ev.get("excerpt") or ""
         method = ev.get("extraction_method") or ""
         badges = _evidence_source_badges(ev, sources_by_id)
+        verdict_html = _evidence_verdicts_html(eid, verdicts_by_eid)
         rows += (
-            '<tr id="ref-%s"><td class="mono">%s</td><td>%s</td><td>%s</td><td>%s</td>'
-            '<td><span class="tag kind">%s</span></td><td>%s</td></tr>'
+            '<tr id="ref-%s"><td class="mono">%s</td><td>%s</td><td>%s</td>'
+            '<td class="excerpt">%s</td><td>%s</td><td><span class="tag kind">%s</span></td><td>%s</td></tr>'
             % (e(eid), e(eid), refs([sid]) if sid else "—", text_refs(loc) if loc else "—",
-               text_refs(excerpt) if excerpt else "—", e(method or "—"), badges)
+               text_refs(excerpt) if excerpt else "—", verdict_html, e(method or "—"), badges)
         )
     if not rows:
         return ""
     return (
         '<table class="evidence-table"><thead><tr><th>ID</th><th>Source</th><th>Locator</th>'
-        '<th>Excerpt</th><th>Method</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table>'
+        '<th>Excerpt</th><th>Verdict</th><th>Method</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table>'
     )
 
 
@@ -1269,8 +1325,14 @@ def build(data: dict) -> str:
     if claims_html:
         sec("Claims & evidence ledger", claims_html)
 
-    _sources_by_id = {s.get("id"): s for s in (data.get("sources") or []) if isinstance(s, dict)}
-    evidence_html = _evidence_table_html(data.get("evidence"), _sources_by_id or None)
+    _sources_by_id = {
+        (s.get("id") or s.get("source_id")): s
+        for s in (data.get("sources") or [])
+        if isinstance(s, dict) and (s.get("id") or s.get("source_id"))
+    }
+    evidence_html = _evidence_table_html(
+        data.get("evidence"), _sources_by_id or None, data.get("evidence_verdicts")
+    )
     if evidence_html:
         sec("Evidence registry", evidence_html)
 
@@ -1533,6 +1595,13 @@ def _fold_in_artifacts(data: dict, base: Path) -> None:
             evidence = _read_jsonl(f)
             if evidence:
                 data["evidence"] = evidence
+
+    if not data.get("evidence_verdicts"):
+        f = base / "03_evidence_verdicts.jsonl"
+        if f.exists():
+            verdicts = _read_jsonl(f)
+            if verdicts:
+                data["evidence_verdicts"] = verdicts
 
     if not data.get("argument_map"):
         f = base / "05_argument_map.mmd"

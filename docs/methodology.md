@@ -40,6 +40,13 @@ short excerpt, a content-verification status, and the source scope
 vs simulation context). Abstract-only evidence cannot directly support strong
 empirical, causal, comparative, quantitative, or safety-critical claims.
 
+Phase 4 adds a separate verdict artifact, `03_evidence_verdicts.jsonl`, for
+LLM-assisted passage-to-claim judgement. Each verdict names the `claim_id` and
+`evidence_id`, records `verdict` (`entails`, `partial`, `does_not_entail`,
+`uncertain`) and `scope_preserved` (`yes`, `narrowed`, `overclaimed`,
+`uncertain`), and includes a short rationale. `uncertain` is a valid downgrade,
+not a failure to hide.
+
 ## 4. Contradiction-ledger logic
 
 Stage 4 compares claims across lenses and classifies each conflict:
@@ -86,7 +93,8 @@ rather than generated, the reviewer cannot be talked into approving weak work.
 The deterministic verifier is intentionally limited: it checks structural and
 machine-checkable preconditions (IDs, source links, DOI shape, duplicate DOI,
 retracted/superseded flags, direct-support locators, abstract-only gating,
-comparative-claim scope fields, and obvious overclaiming language). It does not
-pretend to solve semantic entailment by itself; passage-to-claim judgement and
-scope interpretation remain model/human review tasks that must be documented in
+comparative-claim scope fields, obvious overclaiming language, and the
+presence/shape/outcome of evidence verdict records). It does not pretend to
+solve semantic entailment by itself; passage-to-claim judgement and scope
+interpretation remain LLM-assisted/human-review tasks that must be documented in
 the artifacts.

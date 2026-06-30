@@ -1,0 +1,9 @@
+{
+  "claim_id": "C-001",
+  "evidence_id": "E-001",
+  "judged_claim": "The exact atomic claim text that was judged.",
+  "verdict": "entails|partial|does_not_entail|uncertain",
+  "scope_preserved": "yes|narrowed|overclaimed|uncertain",
+  "rationale": "One concise sentence explaining the verdict from the cited passage.",
+  "human_review_required": true
+}

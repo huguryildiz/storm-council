@@ -8,6 +8,7 @@ half of the workflow's honesty guarantee: the *reasoning* is the model's, but th
 Reads (from the output directory):
   - 03_claims.jsonl          one claim record per line
   - 03_evidence.jsonl        (optional) one evidence record per line (schema v2)
+  - 03_evidence_verdicts.jsonl (optional) LLM-assisted entailment/scope verdicts
   - 04_contradictions.json   array of contradiction records
   - 03_source_registry.csv   the source registry (source_id, source_type, ...)
   - report_data.json         (optional) for option/action recommendation scoring
@@ -19,6 +20,7 @@ Checks (structural + deterministic publication/content guards):
   - retracted / superseded / corrected source handling
   - placeholder / unverifiable source URLs
   - schema v2 direct_support requires an evidence locator
+  - direct / strong / comparative located evidence requires a well-formed verdict
   - abstract-only sources cannot directly support strong claims
   - comparative claims require scope fields (metric / baseline / dataset)
   - unsupported absolute / overclaiming language
@@ -55,6 +57,8 @@ _DOWNGRADED_STATUS = {"superseded", "corrected", "duplicate_version"}
 
 # Content verification statuses (schema v2).
 _DIRECT = "direct_support"
+_VERDICT_VALUES = {"entails", "partial", "does_not_entail", "uncertain"}
+_SCOPE_VERDICT_VALUES = {"yes", "narrowed", "overclaimed", "uncertain"}
 
 # A locator is satisfied by any one of these (evidence record or inline).
 _LOCATOR_KEYS = ("page", "section", "subsection", "table", "figure",
@@ -195,6 +199,16 @@ def _claim_is_comparative(c: dict) -> bool:
     return bool(_COMPARATIVE_HINT.search(c.get("claim_text") or c.get("text") or ""))
 
 
+def _claim_requires_entailment_verdict(c: dict) -> bool:
+    cv = c.get("content_verification") if isinstance(c.get("content_verification"), dict) else {}
+    if (cv.get("status") or "").lower() == _DIRECT:
+        return True
+    strength = (c.get("claim_strength") or "").lower()
+    if strength in {"strong", "comparative"}:
+        return True
+    return _claim_is_comparative(c)
+
+
 def _locator_present(loc) -> bool:
     if not isinstance(loc, dict):
         return False
@@ -219,6 +233,7 @@ def _read_jsonl(path: Path) -> list:
 def _load(d: Path):
     claims = _read_jsonl(d / "03_claims.jsonl")
     evidence = _read_jsonl(d / "03_evidence.jsonl")
+    verdicts = _read_jsonl(d / "03_evidence_verdicts.jsonl")
     contradictions = []
     xf = d / "04_contradictions.json"
     if xf.exists():
@@ -231,7 +246,7 @@ def _load(d: Path):
     rf = d / "report_data.json"
     if rf.exists():
         report = json.loads(rf.read_text(encoding="utf-8"))
-    return claims, evidence, contradictions, sources, report
+    return claims, evidence, verdicts, contradictions, sources, report
 
 
 def _load_source_versions(d: Path) -> dict:
@@ -278,12 +293,17 @@ def _contradiction_id(x: dict) -> str:
 # --------------------------------------------------------------------------- #
 
 def verify(d: Path) -> dict:
-    claims, evidence, contradictions, sources, report = _load(d)
+    claims, evidence, verdicts, contradictions, sources, report = _load(d)
     claim_ids = {c.get("claim_id") for c in claims}
     src_ids = {s.get("source_id") for s in sources}
     sources_by_id = {s.get("source_id"): s for s in sources}
     _merge_source_versions(sources_by_id, _load_source_versions(d))
     evidence_by_id = {e.get("evidence_id"): e for e in evidence}
+    verdicts_by_pair = {
+        (v.get("claim_id"), v.get("evidence_id")): v
+        for v in verdicts
+        if isinstance(v, dict)
+    }
 
     blocking, major, minor = [], [], []
 
@@ -312,6 +332,28 @@ def verify(d: Path) -> dict:
         for ref in _contradiction_claim_ids(x):
             if ref not in claim_ids:
                 link_errors.append(f"{_contradiction_id(x)} references missing claim {ref}")
+
+    # --- LLM-assisted entailment verdict artifact ------------------------- #
+    for v in verdicts:
+        vid = f"{v.get('claim_id', '?')}->{v.get('evidence_id', '?')}"
+        cid = v.get("claim_id")
+        eid = v.get("evidence_id")
+        verdict = (v.get("verdict") or "").lower()
+        scope_verdict = (v.get("scope_preserved") or "").lower()
+        if cid not in claim_ids:
+            blocking.append(f"Evidence verdict {vid} references missing claim {cid}")
+        if eid not in evidence_by_id:
+            blocking.append(f"Evidence verdict {vid} references missing evidence {eid}")
+        if verdict not in _VERDICT_VALUES:
+            blocking.append(f"Evidence verdict {vid} has invalid verdict '{v.get('verdict')}'")
+        if scope_verdict not in _SCOPE_VERDICT_VALUES:
+            blocking.append(
+                f"Evidence verdict {vid} has invalid scope_preserved '{v.get('scope_preserved')}'"
+            )
+        if not isinstance(v.get("rationale"), str) or not v.get("rationale", "").strip():
+            blocking.append(f"Evidence verdict {vid} is missing a rationale")
+        if not isinstance(v.get("human_review_required"), bool):
+            blocking.append(f"Evidence verdict {vid} has non-boolean human_review_required")
 
     # --- source credibility / identity ------------------------------------- #
     def _is_low(s):
@@ -374,21 +416,40 @@ def verify(d: Path) -> dict:
     for c in claims:
         cid = c.get("claim_id", "?")
         cv = c.get("content_verification") if isinstance(c.get("content_verification"), dict) else None
-        if not cv:
-            continue
-        status = (cv.get("status") or "").lower()
-        if status == _DIRECT:
+        status = (cv.get("status") or "").lower() if cv else ""
+        has_locator = _locator_present(cv.get("evidence_locator")) if cv else False
+        for eid in c.get("evidence_ids", []) or []:
+            ev = evidence_by_id.get(eid)
+            if ev and _locator_present(ev.get("locator")):
+                has_locator = True
+        if cv and status == _DIRECT:
             # require a resolvable evidence locator
-            has_locator = _locator_present(cv.get("evidence_locator"))
-            for eid in c.get("evidence_ids", []) or []:
-                ev = evidence_by_id.get(eid)
-                if ev and _locator_present(ev.get("locator")):
-                    has_locator = True
             if not has_locator:
                 blocking.append(f"{cid} is direct_support but has no evidence locator")
             # abstract-only cannot directly support a strong claim
             if _claim_full_text_status(c, sources_by_id) == "abstract_only" and _claim_is_strong(c):
                 blocking.append(f"{cid} claims direct_support from an abstract-only source for a strong claim")
+        if has_locator and _claim_requires_entailment_verdict(c):
+            evidence_ids = c.get("evidence_ids", []) or []
+            if not evidence_ids:
+                major.append(f"{cid} has located direct/strong/comparative support but no evidence_id for a verdict")
+            for eid in evidence_ids:
+                if eid not in evidence_by_id:
+                    continue
+                v = verdicts_by_pair.get((cid, eid))
+                if not v:
+                    major.append(f"{cid}->{eid} has located direct/strong/comparative support but no entailment verdict")
+                    continue
+                verdict = (v.get("verdict") or "").lower()
+                scope_verdict = (v.get("scope_preserved") or "").lower()
+                if verdict == "does_not_entail":
+                    blocking.append(f"{cid}->{eid} verdict says does_not_entail")
+                elif verdict in {"partial", "uncertain"}:
+                    major.append(f"{cid}->{eid} verdict is {verdict}; claim support must be downgraded or reviewed")
+                if scope_verdict == "overclaimed":
+                    blocking.append(f"{cid}->{eid} scope verdict says overclaimed")
+                elif scope_verdict in {"narrowed", "uncertain"}:
+                    major.append(f"{cid}->{eid} scope preservation is {scope_verdict}; claim needs caveat/review")
         # comparative claims need scope fields
         if _claim_is_comparative(c):
             scope = c.get("support_scope") if isinstance(c.get("support_scope"), dict) else {}
@@ -529,7 +590,8 @@ def verify(d: Path) -> dict:
         "recommendation_support_score": recommendation,
         "review_summary": f"{verdict} — {len(blocking)} blocking, {len(major)} major, {len(minor)} minor "
                           f"(computed by verify.py over {len(claims)} claims, {len(sources)} sources, "
-                          f"{len(evidence)} evidence records, {len(contradictions)} contradictions).",
+                          f"{len(evidence)} evidence records, {len(verdicts)} evidence verdicts, "
+                          f"{len(contradictions)} contradictions).",
     }
 
 

@@ -61,6 +61,28 @@ equation, clause, or paragraph and include a short excerpt. A claim may cite a
 source because it is relevant, but it cannot be marked `direct_support` unless
 the supporting evidence has a concrete locator.
 
+## Evidence verdicts
+
+Phase 4 adds `03_evidence_verdicts.jsonl`: one LLM-assisted verdict for each
+judged `(claim_id, evidence_id)` pair. The verdict layer answers the question
+"does this cited passage support this atomic claim at this scope?" in an
+inspectable artifact:
+
+| Field | Values |
+| --- | --- |
+| `verdict` | `entails`, `partial`, `does_not_entail`, `uncertain` |
+| `scope_preserved` | `yes`, `narrowed`, `overclaimed`, `uncertain` |
+
+`uncertain` is a first-class outcome. It downgrades confidence and requires
+review; it must not be rewritten as support. `does_not_entail` and
+`overclaimed` are blocking for direct/strong/comparative support.
+
+The deterministic verifier checks that required verdicts exist, have valid enum
+values, name real claim/evidence IDs, include a rationale, and use a boolean
+`human_review_required`. It does **not** prove semantic entailment itself; the
+entailment and scope judgement is LLM-assisted and should remain visible for
+human review.
+
 Content-verification statuses:
 
 | Status | Meaning |

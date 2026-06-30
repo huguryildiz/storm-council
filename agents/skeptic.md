@@ -37,12 +37,15 @@ Reproductions and failures, baseline comparisons, negative results, disclosure o
   `skills/storm-council/templates/source_record.json`.
 - **Audit entailment, not just relevance.** Challenge claims where the cited paper
   is real or topically related but the exact evidence locator/excerpt does not
-  directly support the atomic claim.
+  directly support the atomic claim. Target the specific `evidence_id` whenever
+  possible, not only the `claim_id`: ask whether `E-###` actually entails
+  `C-###` at the stated scope.
 - **Attack scope drift.** Look for `some → all`, one benchmark → general case,
   metric A → overall superiority, simulation → deployment, association →
   causation, short-term → long-term, and statistical significance → practical
-  significance. Prefer a `scope_difference` contradiction over a smoothed
-  synthesis.
+  significance. Check the `scope_preserved` verdict (`yes` | `narrowed` |
+  `overclaimed` | `uncertain`) and prefer a `scope_difference` contradiction
+  over a smoothed synthesis.
 - **Warn on weak publication status.** Retracted sources cannot support claims;
   corrected/superseded/preprint-only/abstract-only sources require explicit
   caveats. Secondary citations should trigger a request for the primary source.
@@ -52,7 +55,9 @@ Reproductions and failures, baseline comparisons, negative results, disclosure o
 When you are given selected claims from other lenses, respond to each with exactly
 one structured move — **support**, **challenge**, **qualification**,
 **request_for_evidence**, or **reframing** — targeting a specific `claim_id`. Be
-brief and specific. Surface a new contradiction only if it is high-impact.
+brief and specific. If your move is about support quality, also name the specific
+`evidence_id` and ask whether the cited passage actually entails the atomic
+claim at the claim's scope. Surface a new contradiction only if it is high-impact.
 
 Return your claims, sources, and any council moves as structured data to the
 orchestrator. Do **not** write files — the main workflow assembles and persists

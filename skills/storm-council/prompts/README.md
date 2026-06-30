@@ -18,6 +18,7 @@ computed quality gate.
 | 1 | Decision framing | [`stage1_decision_frame.md`](stage1_decision_frame.md) |
 | 2 | Lens charters | [`stage2_perspective_scan.md`](stage2_perspective_scan.md) |
 | 3 | Source-grounded claims | [`stage3_evidence_inquiry.md`](stage3_evidence_inquiry.md) |
+| 3b | Content verification verdicts | [`stage_content_verification.md`](stage_content_verification.md) |
 | 4 | Contradiction ledger | [`stage4_contradiction_ledger.md`](stage4_contradiction_ledger.md) |
 | 5 | Source-mapped synthesis | [`stage5_synthesis.md`](stage5_synthesis.md) |
 | 6 | Adversarial review | [`stage6_adversarial_review.md`](stage6_adversarial_review.md) |

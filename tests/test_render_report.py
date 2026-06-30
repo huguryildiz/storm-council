@@ -581,6 +581,36 @@ class RenderReportTest(unittest.TestCase):
         self.assertIn("Table 1", html)
         self.assertIn("Latency improved by 12%", html)
 
+    def test_evidence_registry_renders_entailment_verdicts(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "evidence": [
+                    {
+                        "evidence_id": "E-001",
+                        "source_id": "S-001",
+                        "locator": {"section": "4.2"},
+                        "evidence_excerpt": "The table reports throughput, not tail latency.",
+                    }
+                ],
+                "evidence_verdicts": [
+                    {
+                        "claim_id": "C-001",
+                        "evidence_id": "E-001",
+                        "verdict": "does_not_entail",
+                        "scope_preserved": "overclaimed",
+                        "rationale": "The cited row is a different metric.",
+                        "human_review_required": True,
+                    }
+                ],
+            }
+        )
+
+        self.assertIn("does_not_entail", html)
+        self.assertIn("scope: overclaimed", html)
+        self.assertIn("verdict-bad", html)
+        self.assertIn("The cited row is a different metric.", html)
+
     def test_fold_in_artifacts_reads_evidence_jsonl(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
@@ -596,6 +626,24 @@ class RenderReportTest(unittest.TestCase):
             data = {}
             render_report._fold_in_artifacts(data, base)
             self.assertEqual(data["evidence"][0]["evidence_id"], "E-001")
+
+    def test_fold_in_artifacts_reads_evidence_verdicts_jsonl(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / "03_evidence_verdicts.jsonl").write_text(
+                json.dumps({
+                    "claim_id": "C-001",
+                    "evidence_id": "E-001",
+                    "verdict": "does_not_entail",
+                    "scope_preserved": "overclaimed",
+                    "rationale": "Wrong metric.",
+                    "human_review_required": True,
+                }) + "\n",
+                encoding="utf-8",
+            )
+            data = {}
+            render_report._fold_in_artifacts(data, base)
+            self.assertEqual(data["evidence_verdicts"][0]["verdict"], "does_not_entail")
 
     def test_evidence_source_status_badges(self):
         ev_abstract = {"evidence_id": "E-001", "source_id": "S-001", "extraction_method": "abstract"}
