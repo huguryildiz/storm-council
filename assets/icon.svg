@@ -1,42 +1,113 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="bolt" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FDE68A"/>
-      <stop offset="100%" stop-color="#92400E"/>
+    <!-- Deep space background -->
+    <radialGradient id="bg" cx="50%" cy="40%" r="62%">
+      <stop offset="0%" stop-color="#1A2744"/>
+      <stop offset="100%" stop-color="#080C14"/>
+    </radialGradient>
+
+    <!-- Bolt: white-hot at top, deep gold at bottom -->
+    <linearGradient id="bolt" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="20%"  stop-color="#FEF3C7"/>
+      <stop offset="60%"  stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#78350F"/>
     </linearGradient>
-    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+
+    <!-- Wide outer glow + tight inner glow for bolt -->
+    <filter id="bolt-glow" x="-100%" y="-60%" width="300%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5"   result="g-wide"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"   result="g-mid"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="g-tight"/>
+      <feMerge>
+        <feMergeNode in="g-wide"/>
+        <feMergeNode in="g-mid"/>
+        <feMergeNode in="g-tight"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Pentagon edge glow -->
+    <filter id="pent-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+
+    <!-- Node glow -->
+    <filter id="node-glow" x="-180%" y="-180%" width="460%" height="460%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Spark glow -->
+    <filter id="spark-glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Ambient gold aura radiating from top node where bolt begins -->
+    <radialGradient id="aura" cx="50%" cy="14%" r="45%">
+      <stop offset="0%"   stop-color="#F59E0B" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
-  <rect width="64" height="64" rx="13" fill="#0F172A"/>
+  <!-- Background -->
+  <rect width="64" height="64" rx="13" fill="url(#bg)"/>
+  <!-- Gold ambient aura from bolt origin -->
+  <rect width="64" height="64" rx="13" fill="url(#aura)"/>
 
   <!--
-    Pentagon = 5-agent council, point-top, center (32,32), R=23.
-    Vertices at angles 90°, 162°, 234°, 306°, 18°:
-      top (32,9)  top-left (10.1,24.9)  bottom-left (18.5,50.6)
-      bottom-right (45.5,50.6)  top-right (53.9,24.9)
+    Pentagon: 5-agent council, point-top, center (32,32), R=23
+    Vertices: top(32,9)  TL(10.1,24.9)  BL(18.5,50.6)  BR(45.5,50.6)  TR(53.9,24.9)
   -->
+  <!-- Subtle fill so pentagon reads as a chamber -->
+  <polygon
+    points="32,9 10.1,24.9 18.5,50.6 45.5,50.6 53.9,24.9"
+    fill="#1E3A8A" fill-opacity="0.10" stroke="none"/>
+  <!-- Glowing edges -->
   <polygon
     points="32,9 10.1,24.9 18.5,50.6 45.5,50.6 53.9,24.9"
     fill="none"
-    stroke="#2563EB"
-    stroke-width="1.5"/>
+    stroke="#3B82F6" stroke-width="1.4" stroke-opacity="0.85"
+    filter="url(#pent-glow)"/>
+
+  <!-- Zeus lightning bolt — top tip exactly at pentagon vertex (32,9) -->
+  <!-- Shape: classic angled Z-bolt, wider and bolder for Zeus feel -->
+  <path
+    d="M32,9 L43,30 L36,30 L44,50 L21,31 L29,31 Z"
+    fill="url(#bolt)"
+    filter="url(#bolt-glow)"/>
+
+  <!-- Bright specular highlight running down the bolt spine -->
+  <path
+    d="M32,9 L39,27 L35,27 L42,47"
+    stroke="rgba(255,255,255,0.5)" stroke-width="0.7"
+    fill="none" stroke-linecap="round"/>
 
   <!-- 5 agent nodes at pentagon vertices -->
-  <circle cx="32"  cy="9"    r="2.5" fill="#60A5FA"/>
-  <circle cx="10.1" cy="24.9" r="2.5" fill="#60A5FA"/>
-  <circle cx="18.5" cy="50.6" r="2.5" fill="#60A5FA"/>
-  <circle cx="45.5" cy="50.6" r="2.5" fill="#60A5FA"/>
-  <circle cx="53.9" cy="24.9" r="2.5" fill="#60A5FA"/>
+  <!-- Top node: gold-tinted (bolt origin / Zeus crown) -->
+  <circle cx="32"   cy="9"    r="3.2" fill="#FDE68A" filter="url(#node-glow)" opacity="0.95"/>
+  <circle cx="10.1" cy="24.9" r="2.5" fill="#93C5FD" filter="url(#node-glow)" opacity="0.80"/>
+  <circle cx="18.5" cy="50.6" r="2.5" fill="#93C5FD" filter="url(#node-glow)" opacity="0.80"/>
+  <circle cx="45.5" cy="50.6" r="2.5" fill="#93C5FD" filter="url(#node-glow)" opacity="0.80"/>
+  <circle cx="53.9" cy="24.9" r="2.5" fill="#93C5FD" filter="url(#node-glow)" opacity="0.80"/>
 
-  <!-- Lightning bolt, fits inside pentagon (bottom capped at y=49 < pentagon bottom edge y=50.6) -->
-  <path
-    d="M36,13 L24,33 L33,33 L27,49 L45,29 L37,29 Z"
-    fill="url(#bolt)"
-    filter="url(#glow)"/>
+  <!-- Electric sparks crackling from the bolt tip -->
+  <g filter="url(#spark-glow)">
+    <line x1="32" y1="9" x2="26" y2="4.5" stroke="#FEF3C7" stroke-width="0.9" stroke-linecap="round" stroke-opacity="0.85"/>
+    <line x1="32" y1="9" x2="38" y2="4.5" stroke="#FEF3C7" stroke-width="0.9" stroke-linecap="round" stroke-opacity="0.85"/>
+    <line x1="32" y1="9" x2="31" y2="2.5" stroke="#FFFFFF"  stroke-width="0.7" stroke-linecap="round" stroke-opacity="0.70"/>
+    <line x1="32" y1="9" x2="23" y2="7"   stroke="#FDE68A"  stroke-width="0.6" stroke-linecap="round" stroke-opacity="0.55"/>
+    <line x1="32" y1="9" x2="41" y2="7"   stroke="#FDE68A"  stroke-width="0.6" stroke-linecap="round" stroke-opacity="0.55"/>
+  </g>
 </svg>
