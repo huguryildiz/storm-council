@@ -3,7 +3,8 @@
     "semantic-scholar": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["semantic-scholar-fastmcp"]
+      "args": ["semantic-scholar-fastmcp"],
+      "env": { "SEMANTIC_SCHOLAR_API_KEY": "${SEMANTIC_SCHOLAR_API_KEY}" }
     },
     "paper-search": {
       "type": "stdio",
