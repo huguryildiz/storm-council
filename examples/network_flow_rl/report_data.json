@@ -124,6 +124,48 @@
       "score": 7
     }
   ],
+  "lens_snapshot": {
+    "title": "Lens posture snapshot",
+    "summary": "Practitioner and academic lenses support bounded hybrid use; skeptic and historian press for production caution; economist support depends on measurable latency or incident-response value.",
+    "scale_label": "0 low posture intensity · 1 high posture intensity",
+    "lenses": [
+      {
+        "name": "practitioner",
+        "score": 0.78,
+        "stance": "bounded dynamic TE pilot",
+        "tone": "support",
+        "note": "Dynamic traffic-engineering use is plausible if shadow-mode replay beats incumbent optimizers."
+      },
+      {
+        "name": "academic",
+        "score": 0.82,
+        "stance": "hybrid learning-accelerated optimization",
+        "tone": "support",
+        "note": "Survey and TE evidence favors learned components rather than end-to-end replacement."
+      },
+      {
+        "name": "skeptic",
+        "score": 0.91,
+        "stance": "production transfer and hard constraints",
+        "tone": "challenge",
+        "note": "Simulator fidelity, topology shift, and feasibility guarantees remain unresolved."
+      },
+      {
+        "name": "economist",
+        "score": 0.66,
+        "stance": "ROI conditional on workload frequency",
+        "tone": "mixed",
+        "note": "Value exists only if faster decisions beat training, monitoring, and operations cost."
+      },
+      {
+        "name": "historian",
+        "score": 0.74,
+        "stance": "advisory or shadow mode first",
+        "tone": "caution",
+        "note": "Network-control precedents favor explicit control, observability, and operator override."
+      }
+    ]
+  },
   "contradictions": [
     {
       "id": "X-001",

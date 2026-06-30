@@ -28,45 +28,115 @@
   "strongest_findings": [
     {
       "text": "University course timetabling is NP-hard but routinely solved to feasibility/optimality by CP-SAT/MIP and metaheuristics.",
-      "claims": ["C-010", "C-001"],
+      "claims": [
+        "C-010",
+        "C-001"
+      ],
       "supported_by": {
-        "perspectives": ["academic", "skeptic", "historian"],
+        "perspectives": [
+          "academic",
+          "skeptic",
+          "historian"
+        ],
         "note": "Schaerf 1999, ITC2007 benchmark, OR-Tools docs"
       }
     },
     {
       "text": "Published RL-for-combinatorial-optimization gains concentrate on routing/packing and seldom outperform strong OR baselines on constrained scheduling.",
-      "claims": ["C-011", "C-012"],
+      "claims": [
+        "C-011",
+        "C-012"
+      ],
       "supported_by": {
-        "perspectives": ["skeptic", "academic"],
+        "perspectives": [
+          "skeptic",
+          "academic"
+        ],
         "note": "Mazyavkina et al. 2021 survey; Bengio et al. 2021"
       },
       "challenged_by": {
-        "perspectives": ["practitioner"],
+        "perspectives": [
+          "practitioner"
+        ],
         "note": "vendor benchmarks claim higher gains (low-credibility source S-010; unresolved X-001)"
       }
     },
     {
       "text": "Historically, each new 'autonomous scheduling' wave over-promised and settled into niche or hybrid use.",
-      "claims": ["C-040", "C-041"],
+      "claims": [
+        "C-040",
+        "C-041"
+      ],
       "supported_by": {
-        "perspectives": ["historian", "skeptic"],
+        "perspectives": [
+          "historian",
+          "skeptic"
+        ],
         "note": "McCollum 2007; Schaerf 1999 retrospective"
       }
     },
     {
       "text": "RL solutions lack the optimality guarantees and explainability that student-facing decisions often require.",
-      "claims": ["C-022"],
+      "claims": [
+        "C-022"
+      ],
       "supported_by": {
-        "perspectives": ["skeptic", "economist"],
+        "perspectives": [
+          "skeptic",
+          "economist"
+        ],
         "note": "governance and accountability literature"
       },
       "challenged_by": {
-        "perspectives": ["practitioner"],
+        "perspectives": [
+          "practitioner"
+        ],
         "note": "explainability may be addressable with hybrid architectures (not yet validated)"
       }
     }
   ],
+  "lens_snapshot": {
+    "title": "Lens posture snapshot",
+    "summary": "Skeptic, academic, and historian lenses lean strongly against replacing CP-SAT/MIP; practitioner keeps only a narrow pilot path open; economist requires measured operational value.",
+    "scale_label": "0 low posture intensity · 1 high posture intensity",
+    "lenses": [
+      {
+        "name": "practitioner",
+        "score": 0.58,
+        "stance": "narrow disruption pilot",
+        "tone": "mixed",
+        "note": "RL may help dynamic rescheduling only if CP-SAT remains the system of record."
+      },
+      {
+        "name": "academic",
+        "score": 0.86,
+        "stance": "domain evidence gap",
+        "tone": "challenge",
+        "note": "The literature does not establish RL superiority for constrained course timetabling."
+      },
+      {
+        "name": "skeptic",
+        "score": 0.93,
+        "stance": "reject solver replacement",
+        "tone": "challenge",
+        "note": "Hard constraints, reproducibility, and explainability remain unresolved."
+      },
+      {
+        "name": "economist",
+        "score": 0.7,
+        "stance": "ROI not proven",
+        "tone": "caution",
+        "note": "ML budget is hard to justify without measured rescheduling labor or disruption frequency."
+      },
+      {
+        "name": "historian",
+        "score": 0.82,
+        "stance": "hybrid precedent",
+        "tone": "caution",
+        "note": "Prior autonomous scheduling waves settled into bounded or hybrid use."
+      }
+    ]
+  },
   "contradictions": [
     {
       "id": "X-001",

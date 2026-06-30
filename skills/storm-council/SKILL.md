@@ -154,6 +154,30 @@ neither is hand-asserted by the model. After stage 6:
    ```
    `supported_by` lists perspectives that converge on the finding; `challenged_by` lists
    those that contest it, with a note on how/whether it was resolved. Both are optional.
+
+   Optionally add `lens_snapshot` when the HTML report should show a compact five-lens
+   radar above the contradiction table. These scores are **posture intensity**, not
+   evidence quality or verification scores; derive them from the council synthesis and
+   keep the summary honest about what the numbers mean:
+   ```json
+   {
+     "lens_snapshot": {
+       "summary": "Skeptic pressure is high; hybrid support remains bounded.",
+       "scale_label": "0 low posture intensity · 1 high posture intensity",
+       "lenses": [
+         {
+           "name": "academic",
+           "score": 0.82,
+           "stance": "hybrid evidence",
+           "tone": "support",
+           "note": "Surveys support learned components."
+         }
+       ]
+     }
+   }
+   ```
+   The renderer only displays the radar when this field is present; it must not infer
+   posture scores from prose.
 2. **Verify + score** (pure stdlib — no network, no LLM, no API key):
 
    ```bash
