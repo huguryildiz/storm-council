@@ -4,6 +4,16 @@
       "type": "stdio",
       "command": "uvx",
       "args": ["semantic-scholar-fastmcp"]
+    },
+    "paper-search": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["paper-search-mcp"]
+    },
+    "fetch": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
     }
   }
 }

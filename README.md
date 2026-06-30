@@ -113,8 +113,9 @@ of relying on model knowledge.
 | --- | --- | --- |
 | `paper-search` | 20+ sources: arXiv, OpenAlex, PubMed, CrossRef, CORE, SSRN, Zenodo … | `uvx paper-search-mcp` |
 | `semantic-scholar` | 200M+ papers — deep citation graph & recommendations | `uvx semantic-scholar-fastmcp` |
+| `fetch` | Full-text retrieval of any URL (reports, PDFs, policy docs) | `uvx mcp-server-fetch` |
 
-Both require [uv](https://docs.astral.sh/uv/getting-started/installation/) (`pip install uv` or `brew install uv`). No API keys needed.
+All three require [uv](https://docs.astral.sh/uv/getting-started/installation/) (`pip install uv` or `brew install uv`). No API keys needed.
 
 ---
 

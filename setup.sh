@@ -30,6 +30,12 @@ else
     echo "✗ semantic-scholar-fastmcp failed — run: uvx semantic-scholar-fastmcp --help"
 fi
 
+if uvx mcp-server-fetch --help &>/dev/null 2>&1; then
+    echo "✓ mcp-server-fetch"
+else
+    echo "✗ mcp-server-fetch failed — run: uvx mcp-server-fetch --help"
+fi
+
 # ── 3. Python (for verify.py / render_report.py) ─────────────────────────────
 echo ""
 PYTHON=$(command -v python3 || true)
