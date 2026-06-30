@@ -85,6 +85,24 @@ into the output folder before the next begins.
 The numbered requirements (1–10) in this skill are cross-cutting rules that apply
 across all six stages.
 
+### Stage prompt library
+
+Each stage has a ready-to-run prompt template in
+[`prompts/`](prompts/README.md). They are the operational instructions for the
+stage — substitute the `{{placeholders}}` and run them in order. The templates
+**extend** the four origin seed prompts ([`/prompts/1.md`–`4.md`](../../prompts/README.md))
+that the method grew out of, carrying the seed idea into a source-traceable,
+artifact-producing pipeline.
+
+| Stage | Prompt template | Origin seed |
+| --- | --- | --- |
+| 1 Decision Frame | [`prompts/stage1_decision_frame.md`](prompts/stage1_decision_frame.md) | — (new) |
+| 2 Perspective Scan | [`prompts/stage2_perspective_scan.md`](prompts/stage2_perspective_scan.md) | seed `1.md` |
+| 3 Evidence | [`prompts/stage3_evidence_inquiry.md`](prompts/stage3_evidence_inquiry.md) | seed `1.md` |
+| 4 Contradiction Ledger | [`prompts/stage4_contradiction_ledger.md`](prompts/stage4_contradiction_ledger.md) | seed `2.md` |
+| 5 Synthesis | [`prompts/stage5_synthesis.md`](prompts/stage5_synthesis.md) | seed `3.md` |
+| 6 Adversarial Review | [`prompts/stage6_adversarial_review.md`](prompts/stage6_adversarial_review.md) | seed `4.md` |
+
 ## 3. Default to evidence traceability
 
 Every external factual claim must carry a stable source ID and (where it exists)
