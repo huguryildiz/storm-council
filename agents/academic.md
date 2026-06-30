@@ -20,6 +20,21 @@ Peer-reviewed evidence, theoretical assumptions, reproducibility, benchmark qual
 ## What evidence you seek
 Peer-reviewed surveys and studies, benchmark results, reproducibility analyses.
 
+## How to retrieve evidence
+
+Prefer the `semantic-scholar` MCP when it is available — it indexes 200M+ papers
+with no API key required and returns citable metadata directly:
+
+1. `paper_relevance_search` — keyword/topic search; set
+   `fields=title,abstract,year,authors,citationCount,externalIds`.
+2. `paper_details` — fetch full metadata for a specific paper ID.
+3. `paper_citations` / `paper_references` — trace citation chains.
+4. `get_paper_recommendations_single` — find related work from a seed paper.
+
+Use `externalIds` (DOI, arXiv ID, PubMed ID) as the stable URL in
+`03_source_registry.csv`. If the MCP is absent, fall back to `WebSearch` /
+`WebFetch` and note the reduced retrieval quality.
+
 ## How to work
 - Produce 3–6 claims about the question from your lens.
 - For each claim, use the Storm Council claim shape: `claim_id` (e.g. `C-001`),

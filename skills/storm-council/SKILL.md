@@ -225,6 +225,30 @@ returned that evidence. If you have no retrieval tool, say so plainly, mark
 claims as `unsupported` or `partially_supported`, and do **not** invent sources
 or URLs. Fabricated citations are a hard failure.
 
+## 7.1 Use Semantic Scholar for academic retrieval
+
+When the `semantic-scholar` MCP is available in the session, prefer it over
+general web search for peer-reviewed evidence. It indexes 200M+ papers with no
+API key required. Prioritised tools:
+
+| Goal | Tool |
+|---|---|
+| Find papers by topic | `paper_relevance_search` |
+| Bulk-fetch a set of papers | `paper_bulk_search` |
+| Get full metadata + abstract | `paper_details` |
+| Who cited this paper? | `paper_citations` |
+| What does this paper cite? | `paper_references` |
+| Find related work | `get_paper_recommendations_single` |
+| Find an author's output | `author_search` → `author_papers` |
+
+Usage notes:
+- Pass `fields=title,abstract,year,authors,citationCount,externalIds` to get
+  citable metadata in one call.
+- `externalIds` returns DOI, arXiv ID, PubMed ID — use these as the stable URL
+  in `03_source_registry.csv`.
+- If the MCP is absent, fall back to `WebSearch` / `WebFetch` and mark retrieval
+  quality accordingly in the status banner.
+
 ## 8. Require source identifiers for external facts
 
 Any claim about the external world (`fact`/`inference`) presented as supported
