@@ -1,0 +1,33 @@
+# 01 · Decision Frame
+
+**Topic:** …
+**Audience:** … · **Time horizon:** … · **Risk tolerance:** … · **Output:** …
+
+## Decision question
+…
+
+## Why this decision matters
+…
+
+## Scope
+- …
+
+## Exclusions
+- …
+
+## Key assumptions
+- …
+
+## Stakeholders
+- …
+
+## What would change the decision
+- …
+
+## Known uncertainties
+- …
+
+## Research acceptance criteria
+- Every factual claim ties to a stable source ID.
+- At least the major cross-perspective contradictions are surfaced explicitly.
+- The brief states where evidence is insufficient rather than forcing a verdict.

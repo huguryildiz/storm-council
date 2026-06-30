@@ -1,0 +1,12 @@
+{
+  "conflict_id": "X-001",
+  "topic": "Short label for what is in conflict.",
+  "claim_a_id": "C-001",
+  "claim_b_id": "C-014",
+  "relationship": "contradiction|tension|scope_difference|evidence_gap|definition_conflict",
+  "why_it_matters": "Why this disagreement affects the decision.",
+  "evidence_balance": "supports_a|supports_b|mixed|insufficient",
+  "resolution_status": "resolved|partially_resolved|unresolved",
+  "next_question": "The question that would move this forward.",
+  "human_review_required": true
+}

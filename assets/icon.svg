@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="100%" stop-color="#92400E"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="64" height="64" rx="13" fill="#0F172A"/>
+
+  <!--
+    Pentagon = 5-agent council, point-top, center (32,32), R=23.
+    Vertices at angles 90°, 162°, 234°, 306°, 18°:
+      top (32,9)  top-left (10.1,24.9)  bottom-left (18.5,50.6)
+      bottom-right (45.5,50.6)  top-right (53.9,24.9)
+  -->
+  <polygon
+    points="32,9 10.1,24.9 18.5,50.6 45.5,50.6 53.9,24.9"
+    fill="none"
+    stroke="#2563EB"
+    stroke-width="1.5"/>
+
+  <!-- 5 agent nodes at pentagon vertices -->
+  <circle cx="32"  cy="9"    r="2.5" fill="#60A5FA"/>
+  <circle cx="10.1" cy="24.9" r="2.5" fill="#60A5FA"/>
+  <circle cx="18.5" cy="50.6" r="2.5" fill="#60A5FA"/>
+  <circle cx="45.5" cy="50.6" r="2.5" fill="#60A5FA"/>
+  <circle cx="53.9" cy="24.9" r="2.5" fill="#60A5FA"/>
+
+  <!-- Lightning bolt, fits inside pentagon (bottom capped at y=49 < pentagon bottom edge y=50.6) -->
+  <path
+    d="M36,13 L24,33 L33,33 L27,49 L45,29 L37,29 Z"
+    fill="url(#bolt)"
+    filter="url(#glow)"/>
+</svg>

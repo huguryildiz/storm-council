@@ -1,0 +1,117 @@
+[
+  {
+    "name": "practitioner",
+    "role_charter": "Judge whether an approach works in production, not just on paper. Weigh operational constraints, implementation reality, failure modes, and adoption friction.",
+    "priority_questions": [
+      "How are university timetables actually produced in production today?",
+      "Where do current solver-based systems fail or require manual fixing?",
+      "What operational burden would an RL component add?"
+    ],
+    "expected_evidence_types": [
+      "Deployment case studies",
+      "Solver documentation",
+      "Operational post-mortems"
+    ],
+    "likely_blind_spots": [
+      "Discounting research advances that have not yet been productized."
+    ],
+    "potential_conflicts": [
+      "Tension with the academic view on how mature RL methods are."
+    ],
+    "escalation_triggers": [
+      "A claim that RL is production-ready without deployment evidence."
+    ]
+  },
+  {
+    "name": "academic",
+    "role_charter": "Ground claims in peer-reviewed evidence. Examine theoretical assumptions, reproducibility, benchmark quality, and methodological limits.",
+    "priority_questions": [
+      "What does peer-reviewed evidence show about RL for combinatorial optimization?",
+      "Are there standardized benchmarks comparing RL to CP-SAT/MIP on timetabling?",
+      "What are the methodological limits of the RL-CO literature?"
+    ],
+    "expected_evidence_types": [
+      "Peer-reviewed surveys",
+      "Benchmark results",
+      "Reproducibility studies"
+    ],
+    "likely_blind_spots": [
+      "Under-weighting deployment and maintenance realities."
+    ],
+    "potential_conflicts": [
+      "May find practitioner optimism unsupported by benchmarks."
+    ],
+    "escalation_triggers": [
+      "Claims citing non-reproducible or vendor-only results."
+    ]
+  },
+  {
+    "name": "skeptic",
+    "role_charter": "Stress-test claims. Look for unsupported assertions, alternative explanations, weak assumptions, incentive problems, and missing or negative evidence.",
+    "priority_questions": [
+      "Which optimistic claims lack reproducible baselines?",
+      "What incentives might inflate reported RL gains?",
+      "Is absence of head-to-head evidence being glossed over?"
+    ],
+    "expected_evidence_types": [
+      "Reproductions and failures",
+      "Baseline comparisons",
+      "Negative results"
+    ],
+    "likely_blind_spots": [
+      "Reflexive dismissal of genuinely novel methods."
+    ],
+    "potential_conflicts": [
+      "Challenges both practitioner and academic optimism."
+    ],
+    "escalation_triggers": [
+      "A recommendation resting on a single low-quality source."
+    ]
+  },
+  {
+    "name": "economist",
+    "role_charter": "Reason about cost, incentives, externalities, opportunity cost, and distributional effects. Ask who pays, who benefits, and what is foregone.",
+    "priority_questions": [
+      "What is the total cost of ownership of an RL approach vs CP-SAT?",
+      "What is the opportunity cost of ML effort spent on timetabling?",
+      "Who bears the switching and adoption costs?"
+    ],
+    "expected_evidence_types": [
+      "Cost models",
+      "Labor estimates",
+      "Adoption/procurement data"
+    ],
+    "likely_blind_spots": [
+      "Quantifying only what is measurable, missing soft value."
+    ],
+    "potential_conflicts": [
+      "Internal tension between opportunity cost and resilience value."
+    ],
+    "escalation_triggers": [
+      "A payoff claim with no quantified labor or cost basis."
+    ]
+  },
+  {
+    "name": "historian",
+    "role_charter": "Bring precedent and institutional memory. Identify historical analogies, repeated failure patterns, and the integration/trust dynamics that decide adoption.",
+    "priority_questions": [
+      "How have previous 'autonomous scheduling' waves fared?",
+      "Why did competition-winning methods not always deploy?",
+      "What recurring failure patterns apply to RL here?"
+    ],
+    "expected_evidence_types": [
+      "Historical surveys",
+      "Retrospectives",
+      "Institutional case histories"
+    ],
+    "likely_blind_spots": [
+      "Assuming the past fully constrains a genuinely new method."
+    ],
+    "potential_conflicts": [
+      "May read current RL enthusiasm as a repeat of past hype cycles."
+    ],
+    "escalation_triggers": [
+      "Replacement framing that ignores integration/trust history."
+    ]
+  }
+]

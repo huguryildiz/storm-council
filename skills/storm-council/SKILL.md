@@ -1,0 +1,223 @@
+---
+name: storm-council
+description: Contradiction-aware, evidence-grounded multi-agent research workflow. Use when a question needs competing expert perspectives, source-traceable claims, an explicit contradiction ledger, and a decision-ready brief — especially for contested, high-impact, policy, finance, medicine, safety, security, research-design, institutional, or architecture decisions.
+---
+
+# Storm Council
+
+Turn one research question into competing expert perspectives, source-grounded
+claims, an explicit contradiction ledger, a source-mapped synthesis, an
+adversarial review, and a decision-ready brief.
+
+> **Core principle: parallel answers are not the same as collective reasoning.**
+> Do not produce five independent persona answers and concatenate them. Make the
+> perspectives inspect one another's claims, evidence, assumptions, and
+> uncertainties before synthesising.
+
+## 1. When to use this skill
+
+Use Storm Council when the user wants a researched decision, not a quick answer —
+when perspectives genuinely differ, trade-offs are real, or the topic is
+contested or high-stakes. If the request is a simple factual lookup, do not use
+this skill.
+
+## 2. Ask only the necessary framing questions
+
+Before researching, confirm just enough to frame the decision. Ask at most a few
+short questions, and only for what you cannot infer:
+
+- What decision will this inform, and who is the audience?
+- What is in and out of scope?
+- Time horizon and risk tolerance?
+
+If the user already gave these, do not re-ask. Then write **`01_decision_frame.md`**.
+
+### Default perspectives (the research lenses)
+
+Run these five lenses unless the user specifies others. They are configurable
+research lenses, **not** fixed personas — each is chartered to seek different
+evidence and to name its own blind spots. In `02_perspective_scan.md`, give each
+a role charter, priority questions, expected evidence types, likely blind spots,
+potential conflicts with other lenses, and escalation triggers.
+
+| Lens | Focus | Likely blind spot |
+| --- | --- | --- |
+| **practitioner** | Operational constraints, implementation reality, failure modes, adoption friction | Discounting advances not yet productized |
+| **academic** | Peer-reviewed evidence, theoretical assumptions, reproducibility, methodological limits | Under-weighting deployment/maintenance reality |
+| **skeptic** | Unsupported claims, alternative explanations, weak assumptions, incentive problems | Reflexive dismissal of genuinely novel methods |
+| **economist** | Cost, incentives, externalities, opportunity cost, distributional effects | Measuring only what is quantifiable |
+| **historian** | Precedent, historical analogies, repeated failure patterns, institutional context | Assuming the past fully constrains a new method |
+
+The whole point is that these lenses **inspect one another** (Council Mode) — not
+that they answer in parallel.
+
+Each lens is also shipped as a **subagent** (`storm-council:practitioner`, `…:academic`, `…:skeptic`, `…:economist`, `…:historian`). In Council Mode you may dispatch each as its own subagent so they research and reason in independent contexts before cross-examining one another; then assemble their claims into the shared ledger.
+
+## The six stages — run in order
+
+This is the runbook. Execute the stages in sequence; each writes its artifact(s)
+into the output folder before the next begins.
+
+1. **Decision Frame** → `01_decision_frame.md`
+   Frame the decision, scope, exclusions, stakeholders, acceptance criteria, and
+   what would change the answer. Surface ambiguity before researching.
+2. **Perspective Scan** → `02_perspective_scan.md` + `02_perspective_scan.json`
+   Charter each lens (see the table above): priority questions, expected evidence,
+   blind spots, conflicts with other lenses, escalation triggers.
+3. **Evidence-Grounded Inquiry** → `03_evidence_plan.md`, `03_claims.jsonl`,
+   `03_sources.bib`, `03_source_registry.csv`
+   Each lens produces an evidence plan and source-grounded claims (fact / inference
+   / forecast / assumption / recommendation kept distinct; sources by ID). You may
+   dispatch each lens as its subagent so they reason in independent contexts.
+4. **Contradiction Ledger** → `04_contradiction_ledger.md` + `04_contradictions.json`
+   Compare claims across lenses and classify each conflict. In **Council Mode**, run
+   bounded cross-examination and log it in `04_council_deliberation.md` / `.jsonl`.
+5. **Source-Mapped Synthesis** → `05_synthesis.md`, `05_argument_map.mmd`,
+   `05_decision_brief.md`
+   Integrate without erasing disagreement: strongest findings, confidence-ranked
+   claims, evidence gaps, decision options, argument map, one-page brief.
+6. **Adversarial Review** → `06_adversarial_review.md` + `06_quality_gate.json`
+   Run the independent review (do not let the synthesis grade itself) and emit the
+   verdict.
+
+**Then render the report** → `storm_council_report.html` (see "Final deliverable").
+
+The numbered requirements (1–10) in this skill are cross-cutting rules that apply
+across all six stages.
+
+## 3. Default to evidence traceability
+
+Every external factual claim must carry a stable source ID and (where it exists)
+a URL. Sources get IDs like `S-001`; claims get IDs like `C-001`; contradictions
+get `X-001`. Claims reference sources and each other **only by ID**.
+
+## 4. Separate fact, inference, and recommendation
+
+Label every claim with a `claim_type`: `fact`, `inference`, `forecast`,
+`assumption`, or `recommendation`, and an `evidence_status`: `supported`,
+`partially_supported`, `unsupported`, or `contested`. Never silently turn weak
+evidence into a conclusion. Record negative evidence and *absence* of evidence
+explicitly.
+
+## 5. Produce all six artifacts
+
+Create these in the user's chosen output folder:
+
+| Stage | Artifact(s) |
+| --- | --- |
+| 1 Decision Frame | `01_decision_frame.md` |
+| 2 Perspective Scan | `02_perspective_scan.md`, `02_perspective_scan.json` |
+| 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv` |
+| 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.md`/`.jsonl` in Council Mode) |
+| 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` |
+| 6 Adversarial Review | `06_adversarial_review.md`, `06_quality_gate.json` |
+
+Use the JSON shapes in [`templates/`](templates/). Keep IDs consistent across
+all files.
+
+### Final deliverable: verify, then render one polished report
+
+The single shareable output is **`storm_council_report.html`**. Its scoring is
+**computed deterministically** and its format is **rendered deterministically** —
+neither is hand-asserted by the model. After stage 6:
+
+1. Write the consolidated run as **`report_data.json`** (bottom line, strongest
+   findings, contradictions, decision options with evidence strength, next actions,
+   gaps, sources, counts), alongside the structured stage artifacts
+   (`03_claims.jsonl`, `04_contradictions.json`, `03_source_registry.csv`). See
+   [the example](../../examples/university_timetabling/expected_artifacts/report_data.json).
+
+   For each entry in `strongest_findings`, optionally add perspective attribution:
+   ```json
+   {
+     "text": "...",
+     "claims": ["C-001"],
+     "supported_by": { "perspectives": ["academic", "skeptic"], "note": "source note" },
+     "challenged_by": { "perspectives": ["practitioner"], "note": "challenge note or resolution ref" }
+   }
+   ```
+   `supported_by` lists perspectives that converge on the finding; `challenged_by` lists
+   those that contest it, with a note on how/whether it was resolved. Both are optional.
+2. **Verify + score** (pure stdlib — no network, no LLM, no API key):
+
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/verify.py" <output_dir> --write
+   ```
+
+   This checks reference integrity (IDs resolve, supported facts cite sources,
+   contradictions reference real claims), computes the four scores and the verdict,
+   writes `06_quality_gate.json`, and patches `report_data.json`. **Do not hand-set
+   the scores** — let `verify.py` compute them.
+3. **Render** the report:
+
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render_report.py" <output_dir>/report_data.json -o <output_dir>/storm_council_report.html
+   ```
+
+4. Give the user the path to the HTML.
+
+**Honesty rule for the status banner:** set `status.level` to reflect whether
+sources were actually verified. Use a green / `PASS` state **only** if live
+retrieval/verification actually happened; otherwise mark the report
+`ILLUSTRATIVE` / `UNVERIFIED`. Never fake a verification badge.
+
+## 6. Escalate to Council Mode when contested or high-impact
+
+Two interaction modes:
+
+- **Hub-and-Spoke** — perspectives research independently; you assemble. Use for
+  narrow, low-stakes questions.
+- **Council Mode** — perspectives cross-examine selected claims and respond with
+  one structured move each (support / challenge / qualification /
+  request-for-evidence / reframing). Use when evidence is contested, trade-offs
+  are significant, a recommendation is requested, or the topic involves policy,
+  finance, medicine, safety, research design, institutional decisions, or system
+  architecture.
+
+Council Mode is **bounded**: at most ~2 rounds, ~5 cross-examination items per
+perspective, and stop when no new high-impact contradiction appears. Record the
+exchanges in `04_council_deliberation.md`/`.jsonl`. Never loop indefinitely.
+
+## 7. Never fake retrieval
+
+Only claim that you browsed, retrieved, or verified something if a tool actually
+returned that evidence. If you have no retrieval tool, say so plainly, mark
+claims as `unsupported` or `partially_supported`, and do **not** invent sources
+or URLs. Fabricated citations are a hard failure.
+
+## 8. Require source identifiers for external facts
+
+Any claim about the external world (`fact`/`inference`) presented as supported
+must reference at least one `S-###` source, with a URL when available. A
+supported claim with no source is invalid — downgrade it or cite it.
+
+## 9. End with a quality gate
+
+Run an independent review (do not let the synthesis grade itself). Check for:
+claims without sufficient evidence, citation mismatch, overconfident wording,
+missing stakeholder perspectives, source concentration, dependence on low-quality
+sources, unresolved contradictions hidden by the synthesis, recommendations not
+justified by evidence, missing time sensitivity, and hidden value judgements.
+Emit one verdict in `06_quality_gate.json`:
+
+`PASS` · `PASS_WITH_CAVEATS` · `REVISE` · `BLOCKED_PENDING_EVIDENCE`
+
+## 10. Caveat high-stakes output
+
+Do not present output as professional, legal, medical, financial, or policy
+advice. State that the brief supports — and does not replace — domain expertise,
+source verification, and accountable human decision-making.
+
+---
+
+## Invocation examples
+
+```text
+Use Storm Council to investigate whether reinforcement learning is appropriate for university course timetabling.
+
+Use Storm Council in hub-and-spoke mode to compare OR-Tools CP-SAT and MIP for university course timetabling.
+
+Use Storm Council in council mode to evaluate whether a deep-RL controller should replace rule-based routing in an underwater sensor network.
+
+Use Storm Council to prepare a decision brief on [TOPIC].
+```

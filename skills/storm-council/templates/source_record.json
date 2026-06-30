@@ -1,0 +1,11 @@
+{
+  "source_id": "S-001",
+  "title": "Exact title of the source.",
+  "url": "https://… or null",
+  "publisher": "Publisher / venue or null",
+  "publication_date": "YYYY-MM-DD or null",
+  "source_type": "primary|peer_reviewed|government|standards|industry|news|blog|other",
+  "accessed_at": "2026-01-01T00:00:00+00:00",
+  "credibility_notes": "Why this source is (or is not) credible for this claim.",
+  "relevance_notes": "Why it is relevant to the question."
+}

@@ -1,0 +1,134 @@
+<!-- markdownlint-disable MD033 MD041 -->
+
+<p align="center">
+  <img src="assets/icon.svg" alt="Storm Council" width="120" height="120">
+</p>
+
+<h1 align="center">Storm Council</h1>
+
+<p align="center">
+  <strong>Contradiction-aware research workflow</strong><br>
+  <sub>Ask a question — get traceable evidence, competing perspectives, an explicit contradiction ledger, and a decision-ready brief.</sub>
+</p>
+
+<p align="center">
+  <a href="https://claude.ai/claude-code"><img src="https://img.shields.io/badge/Claude_Code-plugin-0b1220?style=for-the-badge&logo=anthropic&logoColor=4285F4" alt="Claude Code"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-0b1220?style=for-the-badge" alt="License"></a>
+  <a href="skills/storm-council/SKILL.md"><img src="https://img.shields.io/badge/5_agents-council-0b1220?style=for-the-badge" alt="Agents"></a>
+</p>
+
+---
+
+Storm Council takes a question and an intended decision, then runs a six-stage workflow through five independent research lenses. Each lens gathers evidence, makes claims, and cross-examines the others. Agreements and disagreements are recorded explicitly — not smoothed over. The result is a source-mapped synthesis, an argument map, a one-page decision brief, and an adversarial quality gate.
+
+It runs as a **Claude Code plugin**: no API key, no separate billing. It uses your own Claude Code session. The methodology, evidence taxonomy, and design rationale are in [`docs/methodology.md`](docs/methodology.md).
+
+---
+
+## ✅ What it does
+
+- **Contradiction-aware by construction.** Parallel answers are not collective reasoning. Storm Council makes perspectives *inspect one another's* claims, and records what they disagree about:
+  - every factual claim cites a stable source ID
+  - contradictions, tensions, scope differences, and evidence gaps are structured data, not prose
+  - confidence and evidence status are explicit fields, not implied tone
+  - a quality gate issues PASS / PASS_WITH_CAVEATS / REVISE / BLOCKED
+
+- **Two interaction modes.** Both produce the same artifacts:
+  - **Hub-and-Spoke** — lenses work independently; results assembled centrally. Fast; good for narrow, low-stakes lookups.
+  - **Council Mode** — lenses cross-examine each other's claims in bounded rounds. Auto-selected for contested evidence, policy, finance, medicine, safety, security, and institutional decisions.
+
+- **Verified independently.** A separate `verify.py` script re-checks all reference integrity and computes quality-gate scores from raw artifacts — decoupled from the solver, so a prompt encoding bug cannot pass silently.
+
+- **Exports a shareable deliverable.** Sixteen stage artifacts plus a single self-contained `storm_council_report.html` — no dependencies, ready to share or archive.
+
+---
+
+## 🔬 The six stages
+
+**1 · Decision Frame** 📋 — Pin down the decision, scope, stakeholders, and what evidence would change the answer. Surface ambiguity before researching.
+
+**2 · Perspective Scan** 🔭 — Charter five research lenses (practitioner, academic, skeptic, economist, historian, …), each with its own priority questions and self-declared blind spots.
+
+**3 · Evidence-Grounded Inquiry** 🔎 — Each lens produces an evidence plan and structured claims. Facts, inferences, forecasts, assumptions, and recommendations are kept distinct. Every factual claim cites a source ID.
+
+**4 · Contradiction Ledger** ⚖️ — Compare claims across lenses; record contradictions, tensions, scope differences, and evidence gaps as structured data. In **Council Mode**, lenses cross-examine each other in bounded rounds.
+
+**5 · Source-Mapped Synthesis** 📊 — Strongest findings, confidence-ranked claims, decision options with honest evidence strength, a Mermaid argument map, and a concise decision brief. Disagreement is preserved.
+
+**6 · Adversarial Review** 🛡️ — An independent reviewer checks citation integrity, overconfidence, source bias, hidden contradictions, and unjustified recommendations, then issues a quality gate verdict.
+
+---
+
+## ⚡ Quick start
+
+Once this repo is on GitHub:
+
+```text
+/plugin marketplace add huguryildiz/storm-council
+/plugin install storm-council@storm-council
+```
+
+To try it locally without GitHub:
+
+```text
+/plugin marketplace add /absolute/path/to/storm-council
+/plugin install storm-council@storm-council
+```
+
+Invoke with natural language or the `/storm-council` shortcut:
+
+```text
+Use Storm Council to investigate whether reinforcement learning is appropriate for university course timetabling.
+
+Use Storm Council in council mode to evaluate whether a deep-RL controller should replace rule-based routing in an underwater sensor network.
+
+Use Storm Council to prepare a decision brief on [TOPIC].
+```
+
+To verify output and render the shareable report:
+
+```bash
+python3 scripts/verify.py <output_dir> --write
+python3 scripts/render_report.py <output_dir>/report_data.json -o <output_dir>/storm_council_report.html
+```
+
+Both scripts are pure standard library — no network, no LLM, no API key.
+
+---
+
+## 📦 Output artifacts
+
+| File | Stage | What it is |
+| --- | --- | --- |
+| `01_decision_frame.md` | 1 | Decision, scope, stakeholders, acceptance criteria |
+| `02_perspective_scan.md` / `.json` | 2 | Lens charters, questions, blind spots |
+| `03_evidence_plan.md` | 3 | Per-lens evidence plans + claims |
+| `03_claims.jsonl` | 3 | One JSON claim record per line |
+| `03_sources.bib` | 3 | BibTeX of all sources |
+| `03_source_registry.csv` | 3 | Tabular source registry |
+| `04_contradiction_ledger.md` | 4 | Consensus, disagreements, gaps, unknowns |
+| `04_contradictions.json` | 4 | Structured contradiction records |
+| `04_council_deliberation.md` / `.jsonl` | 4 | Council Mode only: cross-examination log |
+| `05_synthesis.md` | 5 | 10-section source-mapped synthesis |
+| `05_argument_map.mmd` | 5 | Mermaid argument map |
+| `05_decision_brief.md` | 5 | One-page brief for a technical leader |
+| `06_adversarial_review.md` | 6 | Reviewer checks, issues, and scores |
+| `06_quality_gate.json` | 6 | Machine-readable verdict + scores |
+| `storm_council_report.html` | final | **Shareable self-contained decision-brief report** |
+
+---
+
+## 📚 Reference
+
+[`docs/methodology.md`](docs/methodology.md) — evidence taxonomy, contradiction types, quality-gate criteria, hub-and-spoke vs council tradeoffs, and design rationale.
+
+[`docs/safety-and-limitations.md`](docs/safety-and-limitations.md) — what Storm Council cannot do and when not to use it.
+
+[`examples/university_timetabling/`](examples/university_timetabling/) — a complete run with five lenses, five explicit contradictions, and a `PASS_WITH_CAVEATS` quality gate. Start with `05_decision_brief.md`.
+
+> Storm Council is independently developed and is not affiliated with Stanford University, Stanford OVAL, the STORM project, Anthropic, Claude Code, or YouMind. See [`NOTICE.md`](NOTICE.md).
+
+---
+
+**Storm Council** · Contradiction-aware research workflow  
+Every question, examined from five angles — disagreements included.

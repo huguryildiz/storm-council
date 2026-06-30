@@ -1,0 +1,14 @@
+{
+  "name": "storm-council",
+  "owner": {
+    "name": "Storm Council contributors"
+  },
+  "description": "Storm Council — a contradiction-aware, evidence-grounded research workflow for Claude Code that surfaces competing perspectives, explicit contradictions, and a traceable decision brief.",
+  "plugins": [
+    {
+      "name": "storm-council",
+      "source": "./",
+      "description": "Contradiction-aware, evidence-grounded research workflow as a Claude Code skill. Uses your own Claude Code session (no API key, no separate billing)."
+    }
+  ]
+}

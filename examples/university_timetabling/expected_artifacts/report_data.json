@@ -1,0 +1,260 @@
+{
+  "eyebrow": "Storm Council · Decision Brief",
+  "title": "Should reinforcement learning run university course timetabling?",
+  "subtitle": "A five-lens deliberation — practitioner, academic, skeptic, economist, historian — with every claim traced to a source and every disagreement kept on the record, not smoothed over.",
+  "date": "2026-01-01",
+  "mode": "Council (bounded cross-examination)",
+  "audience": "University CIO & registrar",
+  "counts": {
+    "lenses": 5,
+    "claims": 21,
+    "sources": 10,
+    "conflicts": 5
+  },
+  "status": {
+    "level": "illustrative",
+    "pill": "ILLUSTRATIVE",
+    "headline": "Not independently verified.",
+    "detail": "This brief was generated without live retrieval (deterministic demo). Sources are illustrative and one (S-010) is explicitly synthetic. An independent review flagged 2 low-credibility sources and left 3 contradictions open for a human. Verify every source before relying on anything here.",
+    "verdict": "PASS_WITH_CAVEATS",
+    "scores": {
+      "coverage": 100,
+      "traceability": 94,
+      "contradiction": 40,
+      "recommendation": 70
+    }
+  },
+  "bottom_line": "On current evidence, reinforcement learning should not replace CP-SAT/MIP for university course timetabling. Exact and metaheuristic methods reliably satisfy hard constraints and produce auditable schedules, whereas RL's demonstrated strengths in combinatorial optimization come mostly from routing/packing studies and rarely beat strong OR baselines on constrained scheduling. RL's plausible near-term role is narrow: augmenting soft or dynamic objectives (e.g. disruption rescheduling), and only where a validated simulator/reward and a reproducible baseline exist — neither of which the literature currently provides for this domain. The decision is therefore inconclusive in RL's favour: keep solver-based timetabling, optionally pilot learning-augmented OR, and commission the missing benchmark before any RL investment.",
+  "strongest_findings": [
+    {
+      "text": "University course timetabling is NP-hard but routinely solved to feasibility/optimality by CP-SAT/MIP and metaheuristics.",
+      "claims": ["C-010", "C-001"],
+      "supported_by": {
+        "perspectives": ["academic", "skeptic", "historian"],
+        "note": "Schaerf 1999, ITC2007 benchmark, OR-Tools docs"
+      }
+    },
+    {
+      "text": "Published RL-for-combinatorial-optimization gains concentrate on routing/packing and seldom outperform strong OR baselines on constrained scheduling.",
+      "claims": ["C-011", "C-012"],
+      "supported_by": {
+        "perspectives": ["skeptic", "academic"],
+        "note": "Mazyavkina et al. 2021 survey; Bengio et al. 2021"
+      },
+      "challenged_by": {
+        "perspectives": ["practitioner"],
+        "note": "vendor benchmarks claim higher gains (low-credibility source S-010; unresolved X-001)"
+      }
+    },
+    {
+      "text": "Historically, each new 'autonomous scheduling' wave over-promised and settled into niche or hybrid use.",
+      "claims": ["C-040", "C-041"],
+      "supported_by": {
+        "perspectives": ["historian", "skeptic"],
+        "note": "McCollum 2007; Schaerf 1999 retrospective"
+      }
+    },
+    {
+      "text": "RL solutions lack the optimality guarantees and explainability that student-facing decisions often require.",
+      "claims": ["C-022"],
+      "supported_by": {
+        "perspectives": ["skeptic", "economist"],
+        "note": "governance and accountability literature"
+      },
+      "challenged_by": {
+        "perspectives": ["practitioner"],
+        "note": "explainability may be addressable with hybrid architectures (not yet validated)"
+      }
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "X-001",
+      "kind": "tension",
+      "stake": "Are reported RL gains reproducible enough to expect complementary value? (skeptic vs practitioner)",
+      "status": "unresolved"
+    },
+    {
+      "id": "X-002",
+      "kind": "definition",
+      "stake": "'Use RL' = replace the solver, or augment soft/dynamic objectives?",
+      "status": "partly"
+    },
+    {
+      "id": "X-003",
+      "kind": "time-horizon",
+      "stake": "Current evidence (insufficient) vs near-term pilot potential",
+      "status": "partly"
+    },
+    {
+      "id": "X-004",
+      "kind": "stakeholder",
+      "stake": "ML budget opportunity cost vs operational-resilience value",
+      "status": "unresolved"
+    },
+    {
+      "id": "X-005",
+      "kind": "evidence-gap",
+      "stake": "No peer-reviewed RL-vs-CP-SAT head-to-head for this domain",
+      "status": "unresolved"
+    }
+  ],
+  "options": [
+    {
+      "name": "A · Keep CP-SAT/MIP as primary; no RL",
+      "strength": "strong",
+      "points": [
+        "Proven feasibility/optimality, auditable, lowest total cost of ownership.",
+        "Limited adaptivity to soft or dynamic objectives."
+      ],
+      "when": "most universities with stable, constraint-heavy schedules."
+    },
+    {
+      "name": "B · CP-SAT/MIP primary + pilot learning-augmented OR",
+      "strength": "moderate",
+      "points": [
+        "Keeps optimality guarantees; evidence-backed direction; incremental and reversible.",
+        "Engineering effort; uncertain marginal gains; needs ML capacity."
+      ],
+      "when": "large institutions with ML capacity seeking efficiency gains."
+    },
+    {
+      "name": "C · Add an RL layer for dynamic rescheduling only (guarded pilot)",
+      "strength": "weak",
+      "points": [
+        "Potential labour savings during disruptions.",
+        "Requires a validated simulator/reward; governance & explainability risk; no domain benchmark exists."
+      ],
+      "when": "only as a pre-registered pilot with a CP-SAT baseline and human oversight."
+    },
+    {
+      "name": "D · Replace the solver with end-to-end RL",
+      "strength": "unsupported",
+      "points": [
+        "No optimality guarantee; no domain evidence; high operational and trust risk."
+      ],
+      "when": "not recommended on current evidence."
+    }
+  ],
+  "next_actions": [
+    {
+      "text": "Commission or locate an ITC2007-based RL-vs-CP-SAT benchmark before any RL investment.",
+      "refs": [
+        "X-005"
+      ]
+    },
+    {
+      "text": "Quantify per-incident rescheduling labour and disruption frequency by institution type.",
+      "refs": [
+        "X-004"
+      ]
+    },
+    {
+      "text": "Prototype learning-augmented OR (learned branching / warm-starts) feeding CP-SAT (Option B).",
+      "refs": []
+    },
+    {
+      "text": "If exploring RL, first build and validate a disruption simulator and reward, with explicit governance for student-facing automation.",
+      "refs": []
+    },
+    {
+      "text": "Keep CP-SAT/MIP as the system of record throughout.",
+      "refs": []
+    }
+  ],
+  "gaps": [
+    {
+      "text": "No peer-reviewed head-to-head of RL vs CP-SAT/MIP on university course timetabling.",
+      "refs": [
+        "X-005"
+      ]
+    },
+    {
+      "text": "No validated simulator/reward for institution-specific disruption dynamics.",
+      "refs": [
+        "X-001"
+      ]
+    },
+    {
+      "text": "No data on per-incident rescheduling labour or disruption frequency.",
+      "refs": [
+        "X-004"
+      ]
+    },
+    {
+      "text": "Open question: can learned components reliably warm-start CP-SAT at university scale, and what reward avoids proxy-objective drift?",
+      "refs": []
+    }
+  ],
+  "sources": [
+    {
+      "id": "S-001",
+      "title": "Google OR-Tools — CP-SAT Solver (official docs)",
+      "type": "industry",
+      "note": "Authoritative for solver capabilities; not a comparative benchmark."
+    },
+    {
+      "id": "S-002",
+      "title": "A Survey of Automated Timetabling (Schaerf, 1999)",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-003",
+      "title": "Metaheuristic-based Techniques for University Course Timetabling (Lewis, 2008)",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-004",
+      "title": "ML for Combinatorial Optimization: a Tour d'Horizon (Bengio, Lodi & Prouvost, 2021)",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-005",
+      "title": "RL for Combinatorial Optimization: A Survey (Mazyavkina et al., 2021)",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-006",
+      "title": "International Timetabling Competition 2007 (ITC2007)",
+      "type": "standards / benchmark"
+    },
+    {
+      "id": "S-007",
+      "title": "Bridging Theory and Practice in University Timetabling (McCollum, 2007)",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-008",
+      "title": "Neural Combinatorial Optimization with RL (Bello et al., 2016)",
+      "type": "preprint",
+      "note": "Foundational but not domain-specific; lower evidentiary weight here."
+    },
+    {
+      "id": "S-009",
+      "title": "Attention, Learn to Solve Routing Problems! (Kool et al., 2019)",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-010",
+      "title": "Synthetic vendor blog (illustrative)",
+      "type": "blog",
+      "synthetic": true,
+      "note": "Low-credibility anecdote included to exercise the review stage — not a real citation."
+    }
+  ],
+  "review": {
+    "verdict": "PASS_WITH_CAVEATS",
+    "scores": {
+      "coverage": 100,
+      "traceability": 94,
+      "contradiction": 40,
+      "recommendation": 70
+    },
+    "blocking": [],
+    "major": [],
+    "minor": [
+      "Low-credibility sources present: S-008, S-010",
+      "Open contradictions remain for human review: X-001, X-004, X-005"
+    ]
+  }
+}

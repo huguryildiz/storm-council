@@ -1,0 +1,11 @@
+{
+  "status": "PASS|PASS_WITH_CAVEATS|REVISE|BLOCKED_PENDING_EVIDENCE",
+  "blocking_issues": [],
+  "major_issues": [],
+  "minor_issues": [],
+  "coverage_score": 0,
+  "traceability_score": 0,
+  "contradiction_handling_score": 0,
+  "recommendation_support_score": 0,
+  "review_summary": "One paragraph: what passed, what is caveated, what is missing."
+}

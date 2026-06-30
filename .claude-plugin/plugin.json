@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "storm-council",
+  "displayName": "Storm Council",
+  "version": "0.1.0",
+  "description": "Contradiction-aware, evidence-grounded research workflow: turns a question into traceable evidence, competing perspectives, an explicit contradiction ledger, and a decision-ready brief. Runs on your own Claude Code session — no API key.",
+  "author": { "name": "Storm Council contributors" },
+  "homepage": "https://github.com/your-org/storm-council",
+  "repository": "https://github.com/your-org/storm-council",
+  "license": "Apache-2.0",
+  "keywords": ["research", "multi-agent", "evidence", "contradiction", "decision-support", "council"]
+}

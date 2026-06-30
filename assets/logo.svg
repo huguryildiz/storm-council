@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 68" width="252" height="68">
+  <defs>
+    <!-- Icon bolt gradient -->
+    <linearGradient id="bolt-l" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="100%" stop-color="#92400E"/>
+    </linearGradient>
+    <filter id="glow-l" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- "Storm" text: dark slate → electric blue, left-to-right -->
+    <linearGradient id="grad-storm" x1="72" y1="0" x2="152" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+
+    <!-- "COUNCIL" text: electric blue → sky, left-to-right -->
+    <linearGradient id="grad-council" x1="73" y1="0" x2="168" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+  </defs>
+
+  <!--
+    Icon: 48×48 (scale 0.75 of the 64×64 original), at (10,10).
+    Stroke widths and radii compensated: stroke-width=2 → 1.5px visual, r=3.33 → 2.5px visual.
+    Pentagon vertices same as icon.svg (in 64×64 space).
+  -->
+  <g transform="translate(10,10) scale(0.75)">
+    <rect width="64" height="64" rx="13" fill="#0F172A"/>
+    <polygon
+      points="32,9 10.1,24.9 18.5,50.6 45.5,50.6 53.9,24.9"
+      fill="none" stroke="#2563EB" stroke-width="2"/>
+    <circle cx="32"   cy="9"    r="3.33" fill="#60A5FA"/>
+    <circle cx="10.1" cy="24.9" r="3.33" fill="#60A5FA"/>
+    <circle cx="18.5" cy="50.6" r="3.33" fill="#60A5FA"/>
+    <circle cx="45.5" cy="50.6" r="3.33" fill="#60A5FA"/>
+    <circle cx="53.9" cy="24.9" r="3.33" fill="#60A5FA"/>
+    <path d="M36,13 L24,33 L33,33 L27,49 L45,29 L37,29 Z"
+          fill="url(#bolt-l)" filter="url(#glow-l)"/>
+  </g>
+
+  <!-- "Storm" — Palatino serif, bold, dark-to-blue gradient -->
+  <text
+    x="72" y="37"
+    font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif"
+    font-size="26" font-weight="700"
+    fill="url(#grad-storm)"
+    letter-spacing="-0.5">Storm</text>
+
+  <!-- "COUNCIL" — Palatino serif, light-weight, spaced, blue-to-sky gradient -->
+  <text
+    x="73" y="57"
+    font-family="'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif"
+    font-size="13" font-weight="400"
+    fill="url(#grad-council)"
+    letter-spacing="3.5">COUNCIL</text>
+</svg>

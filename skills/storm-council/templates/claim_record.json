@@ -1,0 +1,12 @@
+{
+  "claim_id": "C-001",
+  "perspective": "academic",
+  "claim_text": "One sentence stating the claim.",
+  "claim_type": "fact|inference|forecast|recommendation|assumption",
+  "confidence": 0.0,
+  "evidence_status": "supported|partially_supported|unsupported|contested",
+  "source_ids": ["S-001"],
+  "counterevidence_ids": ["C-011"],
+  "limitations": ["What would weaken or scope this claim."],
+  "created_at": "2026-01-01T00:00:00+00:00"
+}
