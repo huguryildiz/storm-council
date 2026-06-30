@@ -176,7 +176,7 @@ class RenderReportTest(unittest.TestCase):
         )
 
         self.assertIn("The five council lenses", html)
-        self.assertIn('class="charter"', html)
+        self.assertIn('class="charter charter--skeptic"', html)
         self.assertIn("Stress-test claims about safety", html)
         self.assertIn("Priority questions", html)
         self.assertIn("Are hard constraints guaranteed?", html)
@@ -186,7 +186,7 @@ class RenderReportTest(unittest.TestCase):
     def test_lens_charters_omitted_when_absent(self):
         html = render_report.build({"title": "A decision"})
         self.assertNotIn("The five council lenses", html)
-        self.assertNotIn('class="charter"', html)
+        self.assertNotIn('class="charter charter--', html)
 
     def test_claims_ledger_renders_and_owns_anchor(self):
         html = render_report.build(

@@ -141,15 +141,21 @@ CSS = """
   footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); font-size:12px; color:var(--faint); } footer p{ margin:6px 0; }
   footer a{ color:var(--brand); text-decoration:none; border-bottom:1px solid var(--brand-soft); }
   @media print{ body{background:#fff} .page{border:0; box-shadow:none; margin:0; max-width:none} }
-  .charters{ display:grid; gap:14px; }
-  .charter{ border:1px solid var(--line); border-radius:12px; padding:16px 18px 18px; background:var(--card); }
-  .charter h4{ margin:0 0 8px; font-size:15.5px; text-transform:capitalize; }
-  .charter h4::before{ content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--brand); margin-right:9px; vertical-align:1px; }
-  .charter .role{ margin:0 0 12px; font-size:14px; color:var(--ink); }
-  .charter .ch-grid{ display:grid; grid-template-columns:1fr 1fr; gap:11px 24px; }
-  .charter .ch-block h5{ margin:0 0 4px; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); font-weight:700; }
-  .charter .ch-block ul{ margin:0; padding-left:16px; } .charter .ch-block li{ font-size:13px; color:var(--muted); margin:3px 0; }
-  .charter .ch-block p{ margin:0; font-size:13px; color:var(--muted); line-height:1.5; }
+  .charters{ display:grid; gap:18px; }
+  .charter{ border:1px solid var(--ca-border,var(--line)); border-top:3px solid var(--ca,var(--brand)); border-radius:14px; padding:20px 22px 22px; background:var(--ca-bg,var(--card)); position:relative; overflow:hidden; }
+  .charter::after{ content:""; position:absolute; top:0; right:0; width:180px; height:180px; border-radius:50%; background:var(--ca,var(--brand)); opacity:.04; transform:translate(38%,-46%); pointer-events:none; }
+  .charter--academic    { --ca:#3b5bdb; --ca-bg:#f8f9ff; --ca-border:rgba(59,91,219,.18); }
+  .charter--economist   { --ca:#087f5b; --ca-bg:#f3fbf7; --ca-border:rgba(8,127,91,.18); }
+  .charter--historian   { --ca:#c47c08; --ca-bg:#fdf9ef; --ca-border:rgba(196,124,8,.18); }
+  .charter--practitioner{ --ca:#6741d9; --ca-bg:#faf8ff; --ca-border:rgba(103,65,217,.18); }
+  .charter--skeptic     { --ca:#c92a2a; --ca-bg:#fff5f5; --ca-border:rgba(201,42,42,.18); }
+  .charter h4{ margin:0 0 6px; font-size:17px; font-weight:700; letter-spacing:-.015em; text-transform:capitalize; color:var(--ca,var(--ink)); display:flex; align-items:center; gap:9px; }
+  .ca-icon-svg{ width:18px; height:18px; flex-shrink:0; color:var(--ca,var(--brand)); }
+  .charter .role{ margin:0 0 16px; font-size:14.5px; color:var(--ink); line-height:1.5; padding-bottom:14px; border-bottom:1px solid var(--ca-border,var(--line)); }
+  .charter .ch-grid{ display:grid; grid-template-columns:1fr 1fr; gap:13px 26px; }
+  .charter .ch-block h5{ margin:0 0 5px; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ca,var(--faint)); font-weight:700; opacity:.75; }
+  .charter .ch-block ul{ margin:0; padding-left:16px; } .charter .ch-block li{ font-size:13px; color:var(--muted); margin:4px 0; }
+  .charter .ch-block p{ margin:0; font-size:13px; color:var(--muted); line-height:1.55; }
   .claims-table td .lim{ display:block; color:var(--faint); font-size:12px; margin-top:4px; }
   .claims-table td .cev{ display:block; font-size:12px; color:var(--muted); margin-top:4px; }
   .claims-table td .claim-meta{ display:block; color:var(--faint); font:12px ui-monospace,Menlo,monospace; margin-top:5px; }
@@ -227,6 +233,44 @@ _MOVE_TAG = {
     "request-for-evidence": ("kind", "request evidence"),
     "request-evidence": ("kind", "request evidence"),
     "reframing": ("kind", "reframing"),
+}
+_LENS_ICONS: dict[str, str] = {
+    "academic": (
+        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="none" aria-hidden="true">'
+        '<path d="M2 5.5 9 3l7 2.5-7 2.5L2 5.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>'
+        '<path d="M5 6.8v4.2c1.1.6 2.5 1 4 1s2.9-.4 4-1V6.8" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>'
+        '<line x1="16" y1="5.5" x2="16" y2="9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
+        '</svg>'
+    ),
+    "economist": (
+        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">'
+        '<rect x="2" y="10" width="3" height="6" rx="1"/>'
+        '<rect x="7.5" y="6" width="3" height="10" rx="1"/>'
+        '<rect x="13" y="2" width="3" height="14" rx="1"/>'
+        '<polyline points="2,10 6.5,7 10.5,9 16,4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'
+        '</svg>'
+    ),
+    "historian": (
+        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">'
+        '<rect x="4" y="2" width="10" height="14" rx="2"/>'
+        '<path d="M4 5H3a2 2 0 000 4h1"/>'
+        '<line x1="7" y1="6" x2="11" y2="6" stroke-linecap="round"/>'
+        '<line x1="7" y1="9" x2="11" y2="9" stroke-linecap="round"/>'
+        '<line x1="7" y1="12" x2="9.5" y2="12" stroke-linecap="round"/>'
+        '</svg>'
+    ),
+    "practitioner": (
+        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">'
+        '<circle cx="9" cy="9" r="2.5"/>'
+        '<path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.22 3.22l1.42 1.42M13.36 13.36l1.42 1.42M3.22 14.78l1.42-1.42M13.36 4.64l1.42-1.42" stroke-linecap="round"/>'
+        '</svg>'
+    ),
+    "skeptic": (
+        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
+        '<circle cx="7.5" cy="7.5" r="5"/>'
+        '<line x1="11.5" y1="11.5" x2="16" y2="16" stroke-linecap="round"/>'
+        '</svg>'
+    ),
 }
 # Minimal Mermaid subset: a node is an id followed by a bracketed quoted label
 # (any of [..], (..), {..}, [[..]], {{..}}, ([..])); an edge is `a --> b` or the
@@ -517,7 +561,9 @@ def _lens_charters_html(charters) -> str:
                 + block("potential_conflicts", "Potential conflicts", False)
                 + block("escalation_triggers", "Escalation triggers", False))
         role_html = f'<p class="role">{text_refs(role)}</p>' if role else ""
-        cards += (f'<div class="charter"><h4>{e(name)}</h4>{role_html}'
+        slug = re.sub(r'[^a-z0-9]+', '-', name.lower().strip('-'))
+        icon = _LENS_ICONS.get(slug, "")
+        cards += (f'<div class="charter charter--{e(slug)}"><h4>{icon}{e(name)}</h4>{role_html}'
                   f'<div class="ch-grid">{grid}</div></div>')
     return f'<div class="charters">{cards}</div>' if cards else ""
 
