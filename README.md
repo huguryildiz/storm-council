@@ -21,6 +21,8 @@
 
 Storm Council takes a question and an intended decision, then runs a six-stage workflow through five independent research lenses. Each lens gathers evidence, makes claims, and cross-examines the others. Agreements and disagreements are recorded explicitly — not smoothed over. The result is a source-mapped synthesis, an argument map, a one-page decision brief, and an adversarial quality gate.
 
+Inspired by [Stanford OVAL's STORM](https://github.com/stanford-oval/storm) — which generates Wikipedia-style articles through simulated persona dialogue — Storm Council takes that multi-perspective idea in a different direction: toward *contested decisions*, with an explicit contradiction ledger and an adversarial quality gate instead of article prose.
+
 It runs as a **Claude Code plugin**: no API key, no separate billing. It uses your own Claude Code session. The methodology, evidence taxonomy, and design rationale are in [`docs/methodology.md`](docs/methodology.md).
 
 ---
@@ -92,6 +94,20 @@ python3 scripts/render_report.py <output_dir>/report_data.json -o <output_dir>/s
 
 Both scripts are pure standard library — no network, no LLM, no API key.
 
+### Academic retrieval (optional but recommended)
+
+This project ships with a `.mcp.json` that configures two academic MCP servers.
+When you open the project in Claude Code you will be prompted to enable them —
+accept, and the academic lens will search real peer-reviewed literature instead
+of relying on model knowledge.
+
+| MCP server | Coverage | Install |
+| --- | --- | --- |
+| `paper-search` | 20+ sources: arXiv, OpenAlex, PubMed, CrossRef, CORE, SSRN, Zenodo … | `uvx paper-search-mcp` |
+| `semantic-scholar` | 200M+ papers — deep citation graph & recommendations | `uvx semantic-scholar-fastmcp` |
+
+Both require [uv](https://docs.astral.sh/uv/getting-started/installation/) (`pip install uv` or `brew install uv`). No API keys needed.
+
 ---
 
 ## 📦 Output artifacts
@@ -119,6 +135,8 @@ Both scripts are pure standard library — no network, no LLM, no API key.
 ## 📚 Reference
 
 **Inspiration:** This workflow was sparked by [this post](https://x.com/heynavtoor/status/2067194761446920264) by [@heynavtoor](https://x.com/heynavtoor).
+
+**Prior art — Stanford OVAL STORM:** The name and core intuition trace back to [STORM](https://github.com/stanford-oval/storm) (Synthesis of Topic Outlines through Retrieval and Multi-perspective Question Asking), a research project from Stanford's OVAL lab. STORM generates Wikipedia-style articles by having simulated personas ask each other questions before writing. Storm Council extends that multi-perspective idea in a different direction: instead of article generation, it targets *contested decisions* — adding an explicit contradiction ledger, structured evidence taxonomy, and an adversarial quality gate. If you want to understand the conceptual lineage, start with the STORM paper.
 
 [`docs/methodology.md`](docs/methodology.md) — evidence taxonomy, contradiction types, quality-gate criteria, hub-and-spoke vs council tradeoffs, and design rationale.
 
