@@ -1,113 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128">
   <defs>
-    <!-- Deep space background -->
-    <radialGradient id="bg" cx="50%" cy="40%" r="62%">
-      <stop offset="0%" stop-color="#1A2744"/>
-      <stop offset="100%" stop-color="#080C14"/>
-    </radialGradient>
-
-    <!-- Bolt: white-hot at top, deep gold at bottom -->
-    <linearGradient id="bolt" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%"   stop-color="#FFFFFF"/>
-      <stop offset="20%"  stop-color="#FEF3C7"/>
-      <stop offset="60%"  stop-color="#F59E0B"/>
-      <stop offset="100%" stop-color="#78350F"/>
+    <!-- Dark council chamber, lit subtly from the top vertex -->
+    <linearGradient id="sc-pent" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#3D2E97"/>
+      <stop offset="100%" stop-color="#221862"/>
     </linearGradient>
-
-    <!-- Wide outer glow + tight inner glow for bolt -->
-    <filter id="bolt-glow" x="-100%" y="-60%" width="300%" height="220%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="5"   result="g-wide"/>
-      <feGaussianBlur in="SourceGraphic" stdDeviation="2"   result="g-mid"/>
-      <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="g-tight"/>
-      <feMerge>
-        <feMergeNode in="g-wide"/>
-        <feMergeNode in="g-mid"/>
-        <feMergeNode in="g-tight"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Pentagon edge glow -->
-    <filter id="pent-glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Node glow -->
-    <filter id="node-glow" x="-180%" y="-180%" width="460%" height="460%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Spark glow -->
-    <filter id="spark-glow" x="-200%" y="-200%" width="500%" height="500%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Ambient gold aura radiating from top node where bolt begins -->
-    <radialGradient id="aura" cx="50%" cy="14%" r="45%">
-      <stop offset="0%"   stop-color="#F59E0B" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    <radialGradient id="sc-core" cx="50%" cy="50%" r="55%">
+      <stop offset="0%"   stop-color="#6E58E4" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#6E58E4" stop-opacity="0"/>
     </radialGradient>
+    <filter id="sc-soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="0.7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="64" height="64" rx="13" fill="url(#bg)"/>
-  <!-- Gold ambient aura from bolt origin -->
-  <rect width="64" height="64" rx="13" fill="url(#aura)"/>
-
   <!--
-    Pentagon: 5-agent council, point-top, center (32,32), R=23
-    Vertices: top(32,9)  TL(10.1,24.9)  BL(18.5,50.6)  BR(45.5,50.6)  TR(53.9,24.9)
+    Outer form: point-top pentagon, center (32,33), R=29, rounded corners.
+    Vertices: top(32,4) (59.58,24.04) (49.05,56.46) (14.95,56.46) (4.42,24.04)
+    Fill + same-color round-join stroke softens the corners.
   -->
-  <!-- Subtle fill so pentagon reads as a chamber -->
-  <polygon
-    points="32,9 10.1,24.9 18.5,50.6 45.5,50.6 53.9,24.9"
-    fill="#1E3A8A" fill-opacity="0.10" stroke="none"/>
-  <!-- Glowing edges -->
-  <polygon
-    points="32,9 10.1,24.9 18.5,50.6 45.5,50.6 53.9,24.9"
-    fill="none"
-    stroke="#3B82F6" stroke-width="1.4" stroke-opacity="0.85"
-    filter="url(#pent-glow)"/>
+  <polygon points="32,4 59.58,24.04 49.05,56.46 14.95,56.46 4.42,24.04"
+           fill="url(#sc-pent)" stroke="#221862" stroke-width="5"
+           stroke-linejoin="round"/>
+  <!-- inner rim highlight for depth -->
+  <polygon points="32,4 59.58,24.04 49.05,56.46 14.95,56.46 4.42,24.04"
+           fill="none" stroke="#8A77E8" stroke-width="1" stroke-opacity="0.35"
+           stroke-linejoin="round" transform="translate(32,33) scale(0.86) translate(-32,-33)"/>
 
-  <!-- Zeus lightning bolt — top tip exactly at pentagon vertex (32,9) -->
-  <!-- Shape: classic angled Z-bolt, wider and bolder for Zeus feel -->
-  <path
-    d="M32,9 L45,30 L36,30 L32,50 L28,30 L19,30 Z"
-    fill="url(#bolt)"
-    filter="url(#bolt-glow)"/>
+  <!-- soft glow at the storm core -->
+  <circle cx="32" cy="33" r="16" fill="url(#sc-core)"/>
 
-  <!-- Bright specular highlight running down the bolt spine -->
-  <path
-    d="M32,9 L40,26 L35,26 L32,47"
-    stroke="rgba(255,255,255,0.5)" stroke-width="0.7"
-    fill="none" stroke-linecap="round"/>
-
-  <!-- 5 agent nodes at pentagon vertices -->
-  <!-- Top node: gold-tinted (bolt origin / Zeus crown) -->
-  <circle cx="32"   cy="9"    r="3.2" fill="#FDE68A" filter="url(#node-glow)" opacity="0.95"/>
-  <circle cx="10.1" cy="24.9" r="2.5" fill="#93C5FD" filter="url(#node-glow)" opacity="0.80"/>
-  <circle cx="18.5" cy="50.6" r="2.5" fill="#93C5FD" filter="url(#node-glow)" opacity="0.80"/>
-  <circle cx="45.5" cy="50.6" r="2.5" fill="#93C5FD" filter="url(#node-glow)" opacity="0.80"/>
-  <circle cx="53.9" cy="24.9" r="2.5" fill="#93C5FD" filter="url(#node-glow)" opacity="0.80"/>
-
-  <!-- Electric sparks crackling from the bolt tip -->
-  <g filter="url(#spark-glow)">
-    <line x1="32" y1="9" x2="26" y2="4.5" stroke="#FEF3C7" stroke-width="0.9" stroke-linecap="round" stroke-opacity="0.85"/>
-    <line x1="32" y1="9" x2="38" y2="4.5" stroke="#FEF3C7" stroke-width="0.9" stroke-linecap="round" stroke-opacity="0.85"/>
-    <line x1="32" y1="9" x2="31" y2="2.5" stroke="#FFFFFF"  stroke-width="0.7" stroke-linecap="round" stroke-opacity="0.70"/>
-    <line x1="32" y1="9" x2="23" y2="7"   stroke="#FDE68A"  stroke-width="0.6" stroke-linecap="round" stroke-opacity="0.55"/>
-    <line x1="32" y1="9" x2="41" y2="7"   stroke="#FDE68A"  stroke-width="0.6" stroke-linecap="round" stroke-opacity="0.55"/>
+  <!-- Inner ring: 5 spokes from the five perspectives into the core -->
+  <g stroke="#8B79E8" stroke-opacity="0.55" stroke-width="1.2" stroke-linecap="round">
+    <line x1="32" y1="18"    x2="32" y2="27"/>
+    <line x1="46.27" y1="28.36" x2="38" y2="31.5"/>
+    <line x1="40.82" y1="45.14" x2="35" y2="37.5"/>
+    <line x1="23.18" y1="45.14" x2="29" y2="37.5"/>
+    <line x1="17.73" y1="28.36" x2="26" y2="31.5"/>
   </g>
+
+  <!-- Five research-perspective nodes -->
+  <g fill="#E7E2FF" filter="url(#sc-soft)">
+    <circle cx="32"    cy="18"    r="2.5"/>
+    <circle cx="46.27" cy="28.36" r="2.5"/>
+    <circle cx="40.82" cy="45.14" r="2.5"/>
+    <circle cx="23.18" cy="45.14" r="2.5"/>
+    <circle cx="17.73" cy="28.36" r="2.5"/>
+  </g>
+
+  <!-- Contradiction: a thin broken link between two adjacent nodes (kept quiet) -->
+  <g stroke="#D8786A" stroke-opacity="0.85" stroke-width="1.1" stroke-linecap="round" fill="none">
+    <path d="M25.5,45.14 L28.6,45.7 L30,44.4"/>
+    <path d="M34,44.6 L35.4,45.8 L38.5,45.14"/>
+  </g>
+
+  <!-- Storm eye: two negative-space vortex arms swirling around a calm core -->
+  <g stroke="#F2EEFF" stroke-width="2.4" stroke-linecap="round" fill="none">
+    <path d="M30.6,25.8 C25.4,26.6 24.2,32 28.8,33.4"/>
+    <path d="M33.4,40.2 C38.6,39.4 39.8,34 35.2,32.6"/>
+  </g>
+
+  <!-- Verifiable core: a tiny check (quality gate) at the calm center -->
+  <path d="M30.3,33.1 L31.6,34.5 L34.1,31.4"
+        stroke="#FFD27A" stroke-width="1.2" stroke-linecap="round"
+        stroke-linejoin="round" fill="none"/>
 </svg>
