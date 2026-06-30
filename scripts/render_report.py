@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import csv
 import html
 import json
 import sys
@@ -32,6 +33,10 @@ CSS = """
     font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif; }
   .page{ max-width:820px; margin:32px auto; background:#fff; padding:56px 60px 44px;
     border:1px solid var(--line); border-radius:14px; box-shadow:0 1px 2px rgba(20,22,26,.04); }
+  .report-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:28px; margin:0 0 14px; }
+  .report-title-block{ min-width:0; }
+  .brand-logo{ flex:0 0 auto; margin-top:-8px; }
+  .brand-logo svg{ display:block; width:50px; height:50px; max-width:100%; }
   .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
   .eyebrow{ font-family:ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.16em;
     text-transform:uppercase; color:var(--brand); margin:0 0 18px; }
@@ -49,6 +54,12 @@ CSS = """
   .status.green .pill{ background:var(--green); } .status.red .pill{ background:var(--red); }
   .status p{ margin:8px 0 0; font-size:14px; color:#4a4636; }
   .status .verdict{ margin-top:10px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:#5a5642; }
+  .status .checks{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
+  .status .chk{ font-family:ui-monospace,Menlo,monospace; font-size:11.5px; padding:3px 9px; border-radius:999px; background:#fff; border:1px solid var(--line); color:var(--muted); }
+  .status .chk b{ color:var(--ink); }
+  .status .chk.green{ background:var(--green-bg); border-color:var(--green-line); color:var(--green); } .status .chk.green b{ color:var(--green); }
+  .status .chk.amber{ background:var(--amber-bg); border-color:var(--amber-line); color:var(--amber); } .status .chk.amber b{ color:var(--amber); }
+  .status .chk.red{ background:var(--red-bg); border-color:var(--red-line); color:var(--red); } .status .chk.red b{ color:var(--red); }
   .howto{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:0 0 34px; }
   .howto h3{ margin:0 0 10px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:700; }
   .howto ul{ margin:0; padding-left:18px; } .howto li{ font-size:14px; color:var(--muted); margin:6px 0; } .howto b{ color:var(--ink); }
@@ -74,21 +85,40 @@ CSS = """
   .src .sid{ font-family:ui-monospace,Menlo,monospace; color:var(--brand); margin-right:8px; }
   .src .ty{ font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--faint); }
   .src .syn{ color:var(--red); font-weight:600; }
+  .src .slink{ color:var(--ink); text-decoration:none; border-bottom:1px solid var(--brand-soft); }
+  .src .slink:hover{ border-bottom-color:var(--brand); }
+  a.cid.clink{ text-decoration:none; }
+  a.cid.clink:hover{ background:var(--brand); color:#fff; }
+  :target{ scroll-margin-top:16px; }
   .src .note{ display:block; color:var(--faint); font-size:12.5px; margin-top:2px; }
-  .finding-attrs{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
-  .attr{ display:inline-flex; align-items:baseline; gap:5px; font-size:12px; padding:3px 9px 3px 8px; border-radius:6px; line-height:1.4; }
-  .attr .attr-label{ font-family:ui-monospace,Menlo,monospace; font-size:10px; letter-spacing:.1em; font-weight:700; white-space:nowrap; }
-  .attr.supported{ background:#e7f6ee; color:var(--green); }
-  .attr.challenged{ background:#fdecea; color:var(--red); }
+  .findings{ display:flex; flex-direction:column; gap:16px; }
+  .fcard{ position:relative; border:1px solid var(--line); border-radius:14px; padding:22px 26px; background:#fff; }
+  .fcard.contested{ background:#fdf9f2; border-color:#efe2cf; }
+  .fcard .fnum{ position:absolute; top:18px; right:18px; width:26px; height:26px; border-radius:50%; background:var(--ink); color:#fff; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .fcard .fkicker{ font-family:ui-monospace,Menlo,monospace; font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; color:#9a6a1e; margin:0 38px 8px 0; }
+  .fcard .ftitle{ font-size:16.5px; line-height:1.35; margin:0 38px 10px 0; }
+  .fcard .fhead{ display:flex; align-items:baseline; gap:10px; margin:0 0 12px; }
+  .fcard .rel-pill{ font-family:ui-monospace,Menlo,monospace; font-size:10.5px; letter-spacing:.08em; color:var(--brand); background:var(--brand-soft); padding:3px 9px; border-radius:999px; }
+  .fcard .rel-score{ font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--muted); }
+  .fcard .rel-score b{ color:var(--ink); }
+  .fcard .fbody{ font-size:14.5px; line-height:1.62; color:var(--ink); }
+  .finding-attrs{ margin-top:14px; display:flex; flex-direction:column; gap:7px; }
+  .attr{ display:block; font-size:13.5px; color:var(--ink); line-height:1.5; }
+  .attr .attr-label{ display:inline-block; font-family:ui-monospace,Menlo,monospace; font-size:10px; letter-spacing:.09em; font-weight:700; padding:2px 7px; border-radius:5px; margin-right:8px; vertical-align:1px; }
+  .attr.supported .attr-label{ background:#e7f6ee; color:var(--green); }
+  .attr.challenged .attr-label{ background:#fdecea; color:var(--red); }
+  .attr.corrected .attr-label{ background:#fef3e2; color:#9a6a1e; }
   .attr .attr-note{ color:var(--muted); }
   .scores{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 14px; }
   .score{ font-family:ui-monospace,Menlo,monospace; font-size:12px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:7px 11px; } .score b{ color:var(--brand); }
   footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); font-size:12px; color:var(--faint); } footer p{ margin:6px 0; }
+  footer a{ color:var(--brand); text-decoration:none; border-bottom:1px solid var(--brand-soft); }
   @media print{ body{background:#fff} .page{border:0; box-shadow:none; margin:0; max-width:none} }
-  @media (max-width:640px){ .page{padding:30px 22px} h1{font-size:27px} }
+  @media (max-width:640px){ .page{padding:30px 22px} .report-header{display:block} .brand-logo{margin:0 0 20px} h1{font-size:27px} }
 """
 
-_STATUS_CLASS = {"pass": "green", "pass_with_caveats": "", "caveats": "", "illustrative": "",
+_STATUS_CLASS = {"pass": "green", "verified": "green", "source_checked": "green",
+                 "pass_with_caveats": "", "caveats": "", "illustrative": "",
                  "revise": "red", "blocked": "red"}
 _STRENGTH = {"strong": ("s-strong", "evidence: strong"), "moderate": ("s-mod", "evidence: moderate"),
              "weak": ("s-weak", "evidence: weak"), "unsupported": ("s-none", "unsupported")}
@@ -100,8 +130,25 @@ def e(x) -> str:
     return html.escape(str(x if x is not None else ""))
 
 
+_ANCHORS: set = set()
+
+
 def refs(ids) -> str:
-    return "".join(f' <span class="cid">{e(i)}</span>' for i in (ids or []))
+    out = []
+    for i in (ids or []):
+        if i in _ANCHORS:
+            out.append(f' <a class="cid clink" href="#ref-{e(i)}">{e(i)}</a>')
+        else:
+            out.append(f' <span class="cid">{e(i)}</span>')
+    return "".join(out)
+
+
+def _logo_svg() -> str:
+    icon = Path(__file__).resolve().parents[1] / "assets" / "icon.svg"
+    try:
+        return icon.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
 
 
 def build(data: dict) -> str:
@@ -111,15 +158,29 @@ def build(data: dict) -> str:
     p: list[str] = []
     a = p.append
 
+    _ANCHORS.clear()
+    for s in data.get("sources", []) or []:
+        if s.get("id"):
+            _ANCHORS.add(s["id"])
+    for c in data.get("contradictions", []) or []:
+        if c.get("id"):
+            _ANCHORS.add(c["id"])
+
     a("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />")
     a('<meta name="viewport" content="width=device-width, initial-scale=1" />')
     a(f"<title>{e(data.get('title','Storm Council report'))}</title>")
     a("<style>" + CSS + "</style>\n</head>\n<body>\n<main class=\"page\">")
 
+    logo_svg = _logo_svg()
+    a('<header class="report-header"><div class="report-title-block">')
     a(f'<p class="eyebrow">{e(data.get("eyebrow", "Storm Council · Decision Brief"))}</p>')
     a(f'<h1>{e(data.get("title",""))}</h1>')
     if data.get("subtitle"):
         a(f'<p class="subtitle">{e(data["subtitle"])}</p>')
+    a("</div>")
+    if logo_svg:
+        a(f'<div class="brand-logo" aria-label="Storm Council icon">{logo_svg}</div>')
+    a("</header>")
 
     meta = []
     if data.get("date"): meta.append(f'<span><b>Date</b> {e(data["date"])}</span>')
@@ -141,8 +202,16 @@ def build(data: dict) -> str:
                     'contradiction-handling %s · recommendation-support %s</p>' % (
                         e(verdict), e(scores.get("coverage","-")), e(scores.get("traceability","-")),
                         e(scores.get("contradiction","-")), e(scores.get("recommendation","-"))))
-        a('<div class="status %s"><span class="pill">%s</span><b>%s</b><p>%s</p>%s</div>' % (
-            cls, e(st.get("pill", "STATUS")), e(st.get("headline", "")), e(st.get("detail", "")), srow))
+        crow = ""
+        checks = st.get("checks")
+        if checks:
+            chips = "".join(
+                '<span class="chk %s"><b>%s</b> %s</span>' % (
+                    e(str(c.get("tone", "")).lower()), e(c.get("value", "")), e(c.get("label", "")))
+                for c in checks)
+            crow = f'<div class="checks">{chips}</div>'
+        a('<div class="status %s"><span class="pill">%s</span><b>%s</b><p>%s</p>%s%s</div>' % (
+            cls, e(st.get("pill", "STATUS")), e(st.get("headline", "")), e(st.get("detail", "")), crow, srow))
 
     howto = data.get("how_to_read") or [
         "<b>The panel is author-constructed.</b> Where the lenses agree, treat it as a strong hypothesis, not independent proof.",
@@ -159,26 +228,43 @@ def build(data: dict) -> str:
     if data.get("bottom_line"):
         sec("01", "Bottom line", f'<p class="lead">{e(data["bottom_line"])}</p>')
 
-    def _finding_li(f):
-        txt = e(f.get("text", ""))
-        claim_refs = refs(f.get("claims"))
+    def _attr(cls, label, d):
+        persp = e(" + ".join(p.title() for p in d.get("perspectives", []))) if d.get("perspectives") else ""
+        note = e(d.get("note", "")) if d.get("note") else ""
+        sep = " — " if persp and note else ""
+        pb = f"<b>{persp}</b>" if persp else ""
+        nn = f'<span class="attr-note">{note}</span>' if note else ""
+        return f'<span class="attr {cls}"><span class="attr-label">{label}</span>{pb}{sep}{nn}</span>'
+
+    def _finding_card(f, idx):
+        contested = str(f.get("reliability", "")).lower() in ("low", "contested", "weak")
+        num = f'<span class="fnum">{idx}</span>'
+        kicker = f'<p class="fkicker">{e(f["kicker"])}</p>' if f.get("kicker") else ""
+        title = f'<h4 class="ftitle">{e(f["title"])}</h4>' if f.get("title") else ""
+        rel, score = f.get("reliability"), f.get("score")
+        head = ""
+        if rel or score is not None:
+            rl = f'<span class="rel-pill">RELIABILITY: {e(str(rel).upper())}</span>' if rel else ""
+            sc = f'<span class="rel-score"><b>{e(score)}</b>/10</span>' if score is not None else ""
+            head = f'<div class="fhead">{rl}{sc}</div>'
+        body = f'<div class="fbody">{e(f.get("text",""))}{refs(f.get("claims"))}</div>'
         attrs = ""
-        sup = f.get("supported_by")
-        if sup:
-            persp = e(" + ".join(p.title() for p in sup.get("perspectives", [])))
-            note = f' <span class="attr-note">— {e(sup["note"])}</span>' if sup.get("note") else ""
-            attrs += f'<span class="attr supported"><span class="attr-label">SUPPORTED BY</span>{persp}{note}</span>'
-        chal = f.get("challenged_by")
-        if chal:
-            persp = e(" + ".join(p.title() for p in chal.get("perspectives", [])))
-            note = f' <span class="attr-note">— {e(chal["note"])}</span>' if chal.get("note") else ""
-            attrs += f'<span class="attr challenged"><span class="attr-label">CHALLENGED BY</span>{persp}{note}</span>'
+        if f.get("supported_by"):
+            attrs += _attr("supported", "SUPPORTED BY", f["supported_by"])
+        if f.get("challenged_by"):
+            attrs += _attr("challenged", "CHALLENGED BY", f["challenged_by"])
+        cor = f.get("corrected")
+        if cor:
+            ctext = cor if isinstance(cor, str) else (cor.get("note", "") if isinstance(cor, dict) else "")
+            if ctext:
+                attrs += f'<span class="attr corrected"><span class="attr-label">CORRECTED</span>{e(ctext)}</span>'
         attrs_div = f'<div class="finding-attrs">{attrs}</div>' if attrs else ""
-        return f"<li>{txt}{claim_refs}{attrs_div}</li>"
+        cls = "fcard contested" if contested else "fcard"
+        return f'<div class="{cls}">{num}{kicker}{title}{head}{body}{attrs_div}</div>'
 
     fnd = data.get("strongest_findings", [])
     if fnd:
-        body = '<ul class="clean">' + "".join(_finding_li(f) for f in fnd) + "</ul>"
+        body = '<div class="findings">' + "".join(_finding_card(f, i) for i, f in enumerate(fnd, 1)) + "</div>"
         sec("02", "Strongest evidence-backed findings", body)
 
     cons = data.get("contradictions", [])
@@ -186,9 +272,9 @@ def build(data: dict) -> str:
         rows = ""
         for c in cons:
             tcls, tlbl = _CONFLICT.get(str(c.get("status","")).lower(), ("part", c.get("status","")))
-            rows += ('<tr><td class="mono">%s</td><td><span class="tag kind">%s</span></td>'
+            rows += ('<tr id="ref-%s"><td class="mono">%s</td><td><span class="tag kind">%s</span></td>'
                      '<td>%s</td><td><span class="tag %s">%s</span></td></tr>' % (
-                         e(c.get("id","")), e(c.get("kind","")), e(c.get("stake","")), tcls, e(tlbl)))
+                         e(c.get("id","")), e(c.get("id","")), e(c.get("kind","")), e(c.get("stake","")), tcls, e(tlbl)))
         body = ('<table><thead><tr><th>Conflict</th><th>Kind</th><th>What is at stake</th>'
                 '<th>Status</th></tr></thead><tbody>' + rows + "</tbody></table>")
         sec("03", "Where the lenses disagree", body)
@@ -220,11 +306,14 @@ def build(data: dict) -> str:
     if srcs:
         items = ""
         for s in srcs:
-            title = (f'<span class="syn">{e(s.get("title",""))}</span>' if s.get("synthetic")
-                     else e(s.get("title","")))
+            label = e(s.get("title", ""))
+            url = s.get("url")
+            if url and not s.get("synthetic"):
+                label = f'<a class="slink" href="{e(url)}" target="_blank" rel="noopener">{label}</a>'
+            title = f'<span class="syn">{label}</span>' if s.get("synthetic") else label
             note = f'<span class="note">{e(s["note"])}</span>' if s.get("note") else ""
-            items += ('<li><span class="sid">%s</span> %s <span class="ty">· %s</span>%s</li>' % (
-                e(s.get("id","")), title, e(s.get("type","")), note))
+            items += ('<li id="ref-%s"><span class="sid">%s</span> %s <span class="ty">· %s</span>%s</li>' % (
+                e(s.get("id","")), e(s.get("id","")), title, e(s.get("type","")), note))
         sec("07", "Sources", '<ul class="src">' + items + "</ul>")
 
     rev = data.get("review", {})
@@ -246,14 +335,40 @@ def build(data: dict) -> str:
                 f'<p class="lead">Verdict <b>{e(verdict)}</b>.</p>{issues}')
         sec("08", "Independent review", body)
 
-    a('<footer><p><b>Storm Council</b> is inspired by research-first knowledge-curation systems '
-      'such as Stanford OVAL\'s STORM. It is independently developed and is <b>not</b> affiliated '
-      'with, endorsed by, or derived from Stanford University, Stanford OVAL, the STORM project, '
-      'Anthropic, Claude Code, or YouMind.</p>'
+    a('<footer><p><b>Storm Council</b> is inspired by research-first knowledge-curation systems, '
+      'especially Stanford OVAL\'s STORM line of work. For context, see '
+      '<a href="https://oval.cs.stanford.edu/">Stanford OVAL</a>, '
+      '<a href="https://storm.genie.stanford.edu/">the public STORM research preview</a>, '
+      '<a href="https://storm-project.stanford.edu/research/storm/">the Stanford STORM research page</a>, '
+      'and the <a href="https://github.com/stanford-oval/storm">stanford-oval/storm open-source repository</a>. '
+      'Storm Council is independently developed and is <b>not</b> affiliated with, endorsed by, '
+      'or derived from Stanford University, Stanford OVAL, or the STORM project.</p>'
       '<p>This brief supports research and deliberation. It does not replace domain expertise, '
       'source verification, or accountable human decision-making.</p></footer>')
     a("</main>\n</body>\n</html>\n")
     return "\n".join(p)
+
+
+def _enrich_source_urls(data: dict, base: Path) -> None:
+    """Fill missing source urls from a sibling 03_source_registry.csv so the
+    report links its sources even when report_data.json omits per-source urls."""
+    srcs = data.get("sources")
+    if not srcs:
+        return
+    reg = base / "03_source_registry.csv"
+    if not reg.exists():
+        return
+    url_by_id = {}
+    with reg.open(newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            u = (row.get("url") or "").strip()
+            if u and u.lower() != "null":
+                url_by_id[(row.get("source_id") or "").strip()] = u
+    for s in srcs:
+        if not s.get("url"):
+            u = url_by_id.get(s.get("id", ""))
+            if u:
+                s["url"] = u
 
 
 def main(argv=None) -> int:
@@ -262,6 +377,7 @@ def main(argv=None) -> int:
     ap.add_argument("-o", "--output", default="storm_council_report.html")
     args = ap.parse_args(argv)
     data = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    _enrich_source_urls(data, Path(args.input).parent)
     Path(args.output).write_text(build(data), encoding="utf-8")
     print(f"wrote {args.output}")
     return 0

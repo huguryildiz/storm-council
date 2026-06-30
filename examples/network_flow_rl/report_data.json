@@ -22,7 +22,23 @@
       "traceability": 100,
       "contradiction": 40,
       "recommendation": 100
-    }
+    },
+    "checks": [
+      {
+        "value": "9",
+        "label": "sources checked",
+        "tone": "green"
+      },
+      {
+        "value": "20",
+        "label": "claims traced",
+        "tone": "green"
+      },
+      {
+        "value": "2026-06-30",
+        "label": "live lookup"
+      }
+    ]
   },
   "bottom_line": "Use RL selectively, not as a general replacement for network-flow optimization. Classical flow solvers and traffic-engineering optimizers remain the baseline for feasibility-critical or auditable decisions. RL is worth evaluating as a bounded augmentation for dynamic traffic engineering, candidate selection, learned warm starts, or learning-accelerated optimization, provided a solver/shield enforces hard constraints and a shadow-mode benchmark proves value on real traffic.",
   "strongest_findings": [
@@ -38,7 +54,10 @@
           "academic"
         ],
         "note": "Official OR-Tools and NetworkX flow documentation plus ML/TE comparison evidence."
-      }
+      },
+      "title": "Classical flow solvers remain the mature default baseline",
+      "reliability": "high",
+      "score": 9
     },
     {
       "text": "RL has credible evidence in dynamic traffic-engineering settings, especially for critical-flow selection, datacenter traffic optimization, and MARL/GNN TE comparisons.",
@@ -60,7 +79,10 @@
           "skeptic"
         ],
         "note": "Production transfer and simulator fidelity remain open in X-003."
-      }
+      },
+      "title": "RL has credible evidence in dynamic traffic engineering",
+      "reliability": "medium",
+      "score": 6
     },
     {
       "text": "The strongest near-term pattern is hybrid: RL or ML proposes, ranks, warms, or accelerates while a solver, projection layer, or safety shield enforces constraints.",
@@ -76,7 +98,10 @@
           "historian"
         ],
         "note": "ML-for-CO survey evidence and Teal learning-accelerated WAN TE."
-      }
+      },
+      "title": "The strongest near-term pattern is hybrid: learn-then-solve",
+      "reliability": "high",
+      "score": 8
     },
     {
       "text": "Production adoption should start in benchmark replay, shadow mode, or bounded advisory roles before direct routing control.",
@@ -93,7 +118,10 @@
           "historian"
         ],
         "note": "Council convergence around safety, economics, and adoption precedent."
-      }
+      },
+      "title": "Adopt incrementally: benchmark replay, then shadow, then advisory",
+      "reliability": "medium",
+      "score": 7
     }
   ],
   "contradictions": [
