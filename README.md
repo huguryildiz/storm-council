@@ -128,7 +128,13 @@ of relying on model knowledge.
 | `semantic-scholar` | 200M+ papers — deep citation graph & recommendations | `uvx semantic-scholar-fastmcp` |
 | `fetch` | Full-text retrieval of any URL (reports, PDFs, policy docs) | `uvx mcp-server-fetch` |
 
-All three require [uv](https://docs.astral.sh/uv/getting-started/installation/) (`pip install uv` or `brew install uv`). No API keys needed.
+All three require [uv](https://docs.astral.sh/uv/getting-started/installation/) (`pip install uv` or `brew install uv`). No API keys needed — the free tier is sufficient for a single research run.
+
+**Optional:** For higher rate limits on Semantic Scholar (1 req/s instead of 100 req/5 min), get a free API key at [semanticscholar.org/product/api](https://www.semanticscholar.org/product/api) and add it to your shell profile:
+
+```bash
+export S2_API_KEY=<your-key>   # add to ~/.zshrc or ~/.zprofile
+```
 
 ---
 
