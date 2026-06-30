@@ -61,14 +61,12 @@ It runs as a **Claude Code plugin**: no API key, no separate billing. It uses yo
 
 ## ⚡ Quick start
 
-Once this repo is on GitHub:
-
 ```text
 /plugin marketplace add huguryildiz/storm-council
 /plugin install storm-council@storm-council
 ```
 
-To try it locally without GitHub:
+To install from a local clone:
 
 ```text
 /plugin marketplace add /absolute/path/to/storm-council
@@ -123,6 +121,8 @@ Both scripts are pure standard library — no network, no LLM, no API key.
 [`docs/methodology.md`](docs/methodology.md) — evidence taxonomy, contradiction types, quality-gate criteria, hub-and-spoke vs council tradeoffs, and design rationale.
 
 [`docs/safety-and-limitations.md`](docs/safety-and-limitations.md) — what Storm Council cannot do and when not to use it.
+
+[`agents/`](agents/) — the five research lens subagents (`practitioner`, `academic`, `skeptic`, `economist`, `historian`). Each can be dispatched independently in Council Mode via `storm-council:<lens>`.
 
 [`examples/university_timetabling/`](examples/university_timetabling/) — a complete run with five lenses, five explicit contradictions, and a `PASS_WITH_CAVEATS` quality gate. Start with `05_decision_brief.md`.
 
