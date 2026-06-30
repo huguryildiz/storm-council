@@ -1,0 +1,2 @@
+source_id,title,url,publisher,publication_date,source_type,accessed_at,credibility_notes,relevance_notes,doi,full_text_status,publication_status
+S-001,Average Score Study,https://doi.org/10.5555/average.score,Example Publisher,2024,peer_reviewed,2026-06-30,Peer reviewed fixture source,Average to best overclaim fixture,10.5555/average.score,full_text,PUBLISHED_VERIFIED

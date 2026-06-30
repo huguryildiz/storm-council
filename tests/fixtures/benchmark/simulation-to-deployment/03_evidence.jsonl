@@ -1,0 +1,1 @@
+{"evidence_id":"E-001","source_id":"S-001","locator":{"section":"5.1","paragraph_hint":"simulation environment description"},"evidence_excerpt":"We evaluate the controller in a packet-level simulator using synthetic traffic matrices; no production deployment was performed.","extraction_method":"full_text","supports_candidate_claims":["C-001"]}

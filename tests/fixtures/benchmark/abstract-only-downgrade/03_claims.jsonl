@@ -1,0 +1,1 @@
+{"claim_id":"C-001","perspective":"academic","claim_text":"Method X causes a large improvement over the operational baseline.","claim_type":"fact","claim_strength":"causal","confidence":0.86,"evidence_status":"supported","source_ids":["S-001"],"evidence_ids":["E-001"],"content_verification":{"status":"direct_support","full_text_status":"abstract_only"}}

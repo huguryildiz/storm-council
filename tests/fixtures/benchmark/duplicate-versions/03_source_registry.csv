@@ -1,0 +1,3 @@
+source_id,title,url,publisher,publication_date,source_type,accessed_at,credibility_notes,relevance_notes,doi,full_text_status,publication_status
+S-001,Shared DOI Study Publisher Version,https://doi.org/10.5555/shared.version,Example Publisher,2024,peer_reviewed,2026-06-30,Peer reviewed fixture source,Duplicate version fixture,10.5555/shared.version,full_text,PUBLISHED_VERIFIED
+S-002,Shared DOI Study Preprint Mirror,https://arxiv.org/abs/2401.00001,arXiv,2024,preprint,2026-06-30,Preprint mirror of same paper,Duplicate version fixture,10.5555/shared.version,full_text,PUBLISHED_VERIFIED

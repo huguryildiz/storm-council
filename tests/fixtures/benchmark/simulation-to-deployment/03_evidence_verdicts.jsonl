@@ -1,0 +1,1 @@
+{"claim_id":"C-001","evidence_id":"E-001","judged_claim":"The controller is proven safe for production deployment under live traffic.","verdict":"partial","scope_preserved":"overclaimed","rationale":"The passage describes synthetic simulation only and explicitly does not report production deployment.","human_review_required":true}

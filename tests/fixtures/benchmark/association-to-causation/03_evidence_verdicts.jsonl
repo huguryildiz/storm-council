@@ -1,0 +1,1 @@
+{"claim_id":"C-001","evidence_id":"E-001","judged_claim":"Adopting tool X causes teams to reduce incident rates by 20%.","verdict":"partial","scope_preserved":"overclaimed","rationale":"The passage reports an association and explicitly says the design cannot establish causality.","human_review_required":true}

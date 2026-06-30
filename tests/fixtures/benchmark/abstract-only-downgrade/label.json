@@ -1,0 +1,4 @@
+{
+  "expected_verdict": "REVISE",
+  "failure_mode": "abstract_only_downgrade"
+}

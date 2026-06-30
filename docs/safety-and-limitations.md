@@ -29,6 +29,15 @@ Council treats disagreement as a first-class artifact and explicitly checks for
 "unresolved contradictions hidden by the synthesis." An honest `unresolved` is
 preferred to a fake consensus.
 
+## Measured verifier coverage
+
+Storm Council's deterministic checks are regression-tested against the offline
+benchmark in [`docs/benchmark.md`](benchmark.md). The current suite measures
+false pass/block behavior plus locator, source-identity, overclaim,
+abstract-only, and contradiction carry-through cases. Treat those numbers as
+coverage for the saved fixture set, not proof that future model output is
+correct.
+
 ## Over-automation risk
 
 Scores are heuristic decision-support, not ground truth. A `PASS` means the

@@ -1,0 +1,1 @@
+{"claim_id":"C-001","evidence_id":"E-001","judged_claim":"Paper A demonstrates that optimizer X reduces tail latency in WAN routing.","verdict":"does_not_entail","scope_preserved":"overclaimed","rationale":"The passage is about CIFAR-10 image classification accuracy, not WAN routing or tail latency.","human_review_required":true}

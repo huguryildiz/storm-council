@@ -1,0 +1,3 @@
+{"claim_id":"C-001","perspective":"academic","claim_text":"The method has evaluation evidence for lower latency in the sampled workload.","claim_type":"fact","confidence":0.76,"evidence_status":"supported","source_ids":["S-001"],"counterevidence_ids":["C-002"]}
+{"claim_id":"C-002","perspective":"skeptic","claim_text":"The same evidence leaves production transfer unresolved.","claim_type":"inference","confidence":0.7,"evidence_status":"partially_supported","source_ids":["S-001"],"counterevidence_ids":["C-001"]}
+{"claim_id":"C-003","perspective":"practitioner","claim_text":"Require a local replay before deployment.","claim_type":"recommendation","confidence":0.72,"evidence_status":"partially_supported","source_ids":["S-001"],"counterevidence_ids":[]}

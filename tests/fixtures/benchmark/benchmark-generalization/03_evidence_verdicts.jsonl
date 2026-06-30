@@ -1,0 +1,1 @@
+{"claim_id":"C-001","evidence_id":"E-001","judged_claim":"Method X is superior on all benchmarks.","verdict":"partial","scope_preserved":"overclaimed","rationale":"The evidence reports one benchmark and an average score, not all benchmarks.","human_review_required":true}

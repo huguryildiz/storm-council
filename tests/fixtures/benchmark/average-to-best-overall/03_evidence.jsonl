@@ -1,0 +1,1 @@
+{"evidence_id":"E-001","source_id":"S-001","locator":{"table":"Table 2"},"evidence_excerpt":"Method X improves average score on Benchmark A compared with baseline Y.","extraction_method":"full_text","supports_candidate_claims":["C-001"]}

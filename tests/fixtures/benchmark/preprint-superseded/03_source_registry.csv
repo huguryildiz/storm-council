@@ -1,0 +1,2 @@
+source_id,title,url,publisher,publication_date,source_type,accessed_at,credibility_notes,relevance_notes,doi,full_text_status,publication_status
+S-001,Superseded Preprint,https://doi.org/10.5555/superseded.preprint,Example Publisher,2023,preprint,2026-06-30,Preprint later superseded by journal version,Superseded source fixture,10.5555/superseded.preprint,full_text,SUPERSEDED

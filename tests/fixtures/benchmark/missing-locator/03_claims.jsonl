@@ -1,0 +1,1 @@
+{"claim_id":"C-001","perspective":"academic","claim_text":"The method reduces latency in the cited evaluation.","claim_type":"fact","confidence":0.82,"evidence_status":"supported","source_ids":["S-001"],"evidence_ids":["E-001"],"content_verification":{"status":"direct_support","full_text_status":"full_text"}}

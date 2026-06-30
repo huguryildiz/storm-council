@@ -1,0 +1,1 @@
+{"claim_id":"C-001","evidence_id":"E-001","judged_claim":"The traffic-engineering system reduces 99th percentile latency by 30% versus the baseline.","verdict":"partial","scope_preserved":"overclaimed","rationale":"The passage reports average throughput, not 99th percentile latency.","human_review_required":true}

@@ -1,0 +1,9 @@
+[
+  {
+    "contradiction_id": "X-001",
+    "claim_ids": ["C-001", "C-002"],
+    "type": "scope_difference",
+    "summary": "Evaluation evidence and production transfer evidence point to different decision thresholds.",
+    "resolution_status": "unresolved"
+  }
+]

@@ -72,6 +72,26 @@ Storm Council keeps these levels separate:
 
 A citation is not proof by itself. A source can be real and relevant while still not supporting the specific claim. Title or abstract access may support discovery and weak relevance notes, but it cannot directly support strong empirical, causal, comparative, safety-critical, or quantitative claims.
 
+## What is verified vs human/domain-expert review
+
+`scripts/verify.py` machine-checks artifact integrity and deterministic guardrails:
+claim/source/evidence IDs resolve, supported facts cite registered sources,
+direct-support claims have locators, required evidence verdicts exist, duplicate
+or suspect source identity is surfaced, abstract-only support is gated, and open
+contradictions stay visible.
+
+It does not replace source retrieval, semantic entailment judgement, domain
+expertise, or production/legal/medical/financial review. A `PASS` or
+`PASS_WITH_CAVEATS` verdict means the saved artifacts cleared these checks, not
+that the recommendation is true or sufficient for deployment. High-stakes briefs
+support human decision-making; they do not replace qualified experts.
+
+The current offline adversarial benchmark and metric definitions are in
+[`docs/benchmark.md`](docs/benchmark.md). The report must not show a green
+`verified`, `source_checked`, or `pass` status unless the run includes the
+verification artifacts that justify it, at minimum a `06_quality_gate.json`
+written by `scripts/verify.py --write`.
+
 ---
 
 ## ⚡ Quick start

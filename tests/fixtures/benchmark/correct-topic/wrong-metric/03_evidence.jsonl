@@ -1,0 +1,1 @@
+{"evidence_id":"E-001","source_id":"S-001","locator":{"table":"Table 2","paragraph_hint":"row reporting average throughput"},"evidence_excerpt":"Table 2 reports a 30% increase in average throughput on Abilene replay compared with the baseline.","extraction_method":"full_text","supports_candidate_claims":["C-001"]}
