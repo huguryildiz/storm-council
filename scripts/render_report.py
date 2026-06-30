@@ -55,13 +55,27 @@ CSS = """
     letter-spacing:.08em; font-weight:700; color:#fff; background:var(--amber); padding:3px 9px; border-radius:999px; vertical-align:2px; margin-right:8px; }
   .status.green .pill{ background:var(--green); } .status.red .pill{ background:var(--red); }
   .status p{ margin:8px 0 0; font-size:14px; color:#4a4636; }
-  .status .verdict{ margin-top:10px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:#5a5642; }
+  .verdict-panel{ margin-top:14px; padding:12px 14px; border-radius:9px; background:rgba(255,255,255,.55); border:1px solid rgba(0,0,0,.07); display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; }
+  .verdict-panel-label{ font-family:ui-monospace,Menlo,monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); white-space:nowrap; }
+  .verdict-status-badge{ font-family:ui-monospace,Menlo,monospace; font-size:12px; font-weight:700; padding:4px 12px; border-radius:999px; letter-spacing:.03em; white-space:nowrap; }
+  .verdict-status-badge.vb-pass{ background:var(--green); color:#fff; }
+  .verdict-status-badge.vb-caveats{ background:var(--amber); color:#fff; }
+  .verdict-status-badge.vb-fail{ background:var(--red); color:#fff; }
+  .verdict-status-badge.vb-unknown{ background:var(--faint); color:#fff; }
+  .verdict-divider{ width:1px; height:28px; background:rgba(0,0,0,.1); flex-shrink:0; }
+  .verdict-scores{ display:flex; flex-wrap:wrap; gap:6px; }
+  .vscore{ display:flex; flex-direction:column; align-items:center; background:rgba(255,255,255,.7); border:1px solid rgba(0,0,0,.08); border-radius:8px; padding:6px 10px; min-width:68px; }
+  .vscore-val{ font-family:ui-monospace,Menlo,monospace; font-size:17px; font-weight:800; line-height:1; color:var(--ink); }
+  .vscore-key{ font-size:9.5px; color:var(--faint); letter-spacing:.04em; text-transform:uppercase; margin-top:3px; text-align:center; line-height:1.2; }
+  .vscore.ok .vscore-val{ color:var(--green); }
+  .vscore.warn .vscore-val{ color:var(--amber); }
+  .vscore.bad .vscore-val{ color:var(--red); }
   .status .checks{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
-  .status .chk{ font-family:ui-monospace,Menlo,monospace; font-size:11.5px; padding:3px 9px; border-radius:999px; background:#fff; border:1px solid var(--line); color:var(--muted); }
-  .status .chk b{ color:var(--ink); }
-  .status .chk.green{ background:var(--green-bg); border-color:var(--green-line); color:var(--green); } .status .chk.green b{ color:var(--green); }
-  .status .chk.amber{ background:var(--amber-bg); border-color:var(--amber-line); color:var(--amber); } .status .chk.amber b{ color:var(--amber); }
-  .status .chk.red{ background:var(--red-bg); border-color:var(--red-line); color:var(--red); } .status .chk.red b{ color:var(--red); }
+  .status .chk{ font-family:ui-monospace,Menlo,monospace; font-size:11.5px; padding:5px 13px; border-radius:999px; background:rgba(255,255,255,.65); border:1px solid rgba(0,0,0,.09); color:var(--muted); display:inline-flex; align-items:baseline; gap:4px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .status .chk b{ color:var(--ink); font-size:14px; font-weight:800; letter-spacing:-.015em; }
+  .status .chk.green{ border-color:var(--green-line); } .status .chk.green b{ color:var(--green); }
+  .status .chk.amber{ border-color:var(--amber-line); } .status .chk.amber b{ color:var(--amber); }
+  .status .chk.red{ border-color:var(--red-line); } .status .chk.red b{ color:var(--red); }
   .howto{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:0 0 34px; }
   .howto h3{ margin:0 0 10px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:700; }
   .howto ul{ margin:0; padding-left:18px; } .howto li{ font-size:14px; color:var(--muted); margin:6px 0; } .howto b{ color:var(--ink); }
@@ -69,7 +83,10 @@ CSS = """
   h2{ font-size:20px; font-weight:750; letter-spacing:-.01em; margin:0 0 12px; padding-top:10px; }
   h2 .num{ font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--brand); margin-right:10px; }
   p.lead{ margin:0 0 12px; }
+  .bottom-line-card{ background:var(--brand-soft); border-radius:14px; padding:24px 28px 24px 32px; box-shadow:inset 4px 0 0 var(--brand); }
+  .bottom-line-card p{ font-size:18px; line-height:1.68; font-weight:500; color:var(--ink); margin:0; letter-spacing:-.012em; }
   ul.clean{ margin:0; padding-left:20px; } ul.clean li{ margin:7px 0; }
+  ul.sub{ margin:4px 0 4px 20px; padding-left:16px; } ul.sub li{ margin:4px 0; font-size:13px; color:var(--muted); }
   .cid{ font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--brand); background:var(--brand-soft); padding:1px 6px; border-radius:5px; white-space:nowrap; }
   table{ width:100%; border-collapse:collapse; font-size:14px; }
   th,td{ text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
@@ -173,6 +190,35 @@ CSS = """
   .artifact p.lead{ font-size:14px; color:var(--ink); }
   .artifact ul.clean,.artifact ol{ margin:0 0 12px; padding-left:20px; }
   .artifact li{ margin:5px 0; font-size:14px; color:var(--muted); }
+  .qcard-grid{ display:grid; gap:8px; margin:10px 0 16px; }
+  .qcard{ border:1px solid var(--line); border-radius:8px; padding:11px 14px; background:#fff; }
+  .qhead{ display:flex; align-items:center; gap:10px; margin-bottom:0; }
+  .qterm{ font-size:12.5px; color:var(--ink); flex:1; background:var(--brand-soft); padding:3px 8px; border-radius:5px; font-family:ui-monospace,Menlo,monospace; }
+  .qbadge{ font-size:10.5px; font-family:ui-monospace,Menlo,monospace; padding:2px 8px; border-radius:999px; white-space:nowrap; font-weight:600; }
+  .qbadge.hits{ background:#d1fae5; color:#065f46; }
+  .qbadge.zero{ background:#f3f4f6; color:#9ca3af; }
+  .qresults{ margin-top:8px; border-top:1px solid var(--line); padding-top:6px; display:flex; flex-direction:column; gap:5px; }
+  .qresult{ font-size:12.5px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; line-height:1.4; }
+  .qtitle{ flex:1; }
+  .qtitle a{ color:var(--ink); text-decoration:none; font-weight:500; } .qtitle a:hover{ text-decoration:underline; color:var(--brand); }
+  .qauthors{ color:var(--muted); font-size:12px; }
+  .qvenue{ font-style:italic; color:var(--muted); font-size:12px; }
+  .qyear{ font-size:12px; color:var(--muted); margin-left:4px; }
+  .qcite{ display:inline-flex; align-items:center; font:10.5px ui-monospace,Menlo,monospace; padding:1px 7px; border-radius:999px; background:#eef0f3; color:var(--muted); white-space:nowrap; margin-top:2px; }
+  .qnull{ color:var(--muted); font-style:italic; font-size:12px; }
+  .lplan-kicker{ font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin:18px 0 2px; }
+  .lplan-intro{ font-size:13px; color:var(--muted); margin:0 0 12px; max-width:64ch; }
+  .lplan-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:12px; margin:0 0 16px; }
+  .lplan{ border:1px solid var(--line); border-radius:10px; padding:14px 16px; background:#fff; }
+  .lplan-head{ display:flex; align-items:center; gap:8px; margin:0 0 12px; padding:0 0 10px; border-bottom:1px solid var(--line); }
+  .lplan-ic{ flex:0 0 auto; display:inline-flex; line-height:0; }
+  .lplan-ic svg{ width:18px; height:18px; display:block; }
+  .lplan-name{ font-family:ui-monospace,Menlo,monospace; font-size:13px; font-weight:700; text-transform:capitalize; color:var(--ink); letter-spacing:.01em; }
+  .lplan-label{ display:block; font-family:ui-monospace,Menlo,monospace; font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:var(--faint); margin:0 0 4px; }
+  .lplan-val{ font-size:13px; line-height:1.55; color:var(--muted); }
+  .lplan-falsify{ background:var(--amber-bg); border:1px solid var(--amber-line); border-radius:8px; padding:9px 11px; margin-top:12px; }
+  .lplan-falsify .lplan-label{ color:var(--amber); }
+  .lplan-falsify .lplan-val{ color:#6b5d2e; }
   .artifact table{ margin:6px 0 14px; background:#fff; }
   .artifact code{ font-family:ui-monospace,Menlo,monospace; font-size:.92em; color:var(--brand); }
   .cx-detail{ margin-top:9px; }
@@ -200,6 +246,27 @@ CSS = """
   .am-ref{ font:10px ui-monospace,Menlo,monospace; fill:var(--brand); }
   .am-ref-plain{ fill:var(--faint); }
   .am-cap{ margin:9px 2px 0; font-size:12px; color:var(--faint); line-height:1.5; }
+  .argmap-interactive{ margin:0; }
+  .am-toolbar{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 14px; margin:0 0 10px; }
+  .am-filter{ display:flex; flex-wrap:wrap; gap:6px; }
+  .am-toggle{ display:inline-flex; align-items:center; gap:5px; font-family:ui-monospace,Menlo,monospace; font-size:11.5px;
+    color:var(--muted); background:var(--card); border:1px solid var(--line); border-radius:999px; padding:3px 10px; cursor:pointer; user-select:none; }
+  .am-toggle input{ accent-color:var(--brand); margin:0; }
+  .am-hint{ font-size:11.5px; color:var(--faint); }
+  .am-layout{ display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:var(--card); }
+  .am-lybtn{ font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--muted); background:transparent;
+    border:0; padding:4px 13px; cursor:pointer; }
+  .am-lybtn + .am-lybtn{ border-left:1px solid var(--line); }
+  .am-lybtn.is-active{ background:var(--brand); color:#fff; }
+  .am-cy{ display:none; width:100%; height:520px; border:1px solid var(--line); border-radius:10px; background:var(--card); }
+  .am-details{ margin:10px 0 0; border:1px solid var(--line); border-left:3px solid var(--brand); border-radius:8px;
+    background:#fff; padding:11px 14px; font-size:13.5px; line-height:1.55; }
+  .am-details .am-d-head{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .am-details .am-d-ref{ font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--brand); background:var(--brand-soft); padding:1px 7px; border-radius:5px; }
+  .am-details .am-d-note{ margin:6px 0 0; color:var(--muted); }
+  .am-details .am-jump{ display:inline-block; margin-top:8px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--brand); text-decoration:none; }
+  .am-details .am-jump:hover{ text-decoration:underline; }
+  @media print{ .am-toolbar,.am-cy,.am-details{ display:none !important; } .am-static{ display:block !important; } }
   .toc{ position:fixed; top:40px; left:calc(50% - 614px); width:190px; max-height:calc(100vh - 80px);
     overflow-y:auto; padding-right:6px; }
   .toc h4{ margin:0 0 10px 10px; font-family:ui-monospace,Menlo,monospace; font-size:10px; letter-spacing:.14em;
@@ -242,44 +309,8 @@ _MOVE_TAG = {
     "request-evidence": ("kind", "request evidence"),
     "reframing": ("kind", "reframing"),
 }
-_LENS_ICONS: dict[str, str] = {
-    "academic": (
-        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="none" aria-hidden="true">'
-        '<path d="M2 5.5 9 3l7 2.5-7 2.5L2 5.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>'
-        '<path d="M5 6.8v4.2c1.1.6 2.5 1 4 1s2.9-.4 4-1V6.8" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>'
-        '<line x1="16" y1="5.5" x2="16" y2="9.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
-        '</svg>'
-    ),
-    "economist": (
-        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">'
-        '<rect x="2" y="10" width="3" height="6" rx="1"/>'
-        '<rect x="7.5" y="6" width="3" height="10" rx="1"/>'
-        '<rect x="13" y="2" width="3" height="14" rx="1"/>'
-        '<polyline points="2,10 6.5,7 10.5,9 16,4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'
-        '</svg>'
-    ),
-    "historian": (
-        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">'
-        '<rect x="4" y="2" width="10" height="14" rx="2"/>'
-        '<path d="M4 5H3a2 2 0 000 4h1"/>'
-        '<line x1="7" y1="6" x2="11" y2="6" stroke-linecap="round"/>'
-        '<line x1="7" y1="9" x2="11" y2="9" stroke-linecap="round"/>'
-        '<line x1="7" y1="12" x2="9.5" y2="12" stroke-linecap="round"/>'
-        '</svg>'
-    ),
-    "practitioner": (
-        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">'
-        '<circle cx="9" cy="9" r="2.5"/>'
-        '<path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.22 3.22l1.42 1.42M13.36 13.36l1.42 1.42M3.22 14.78l1.42-1.42M13.36 4.64l1.42-1.42" stroke-linecap="round"/>'
-        '</svg>'
-    ),
-    "skeptic": (
-        '<svg class="ca-icon-svg" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'
-        '<circle cx="7.5" cy="7.5" r="5"/>'
-        '<line x1="11.5" y1="11.5" x2="16" y2="16" stroke-linecap="round"/>'
-        '</svg>'
-    ),
-}
+# Lens icons are defined once in LENS_ICONS (single global source of truth, below).
+# Charters render them via _lens_icon_ca(); see that helper near the LENS_ICONS block.
 # Minimal Mermaid subset: a node is an id followed by a bracketed quoted label
 # (any of [..], (..), {..}, [[..]], {{..}}, ([..])); an edge is `a --> b` or the
 # dotted `a -.-> b`, optionally carrying a |label|.
@@ -546,6 +577,18 @@ def _logo_svg() -> str:
         return ""
 
 
+def _cytoscape_js() -> str:
+    """Read the vendored Cytoscape.js library for inline embedding (no network).
+
+    Returns '' if the asset is absent, so the report degrades to the static SVG.
+    """
+    lib = Path(__file__).resolve().parents[1] / "assets" / "vendor" / "cytoscape.min.js"
+    try:
+        return lib.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
 def _clamped_score(value) -> float:
     try:
         score = float(value)
@@ -647,13 +690,253 @@ def _lens_snapshot_html(snapshot) -> str:
     )
 
 
+def _evidence_plan_html(text: str) -> str:
+    """Render evidence plan: query-result lines become premium cards; everything else uses _md_block."""
+    import re
+    query_re = re.compile(r'^- `(.+?)`: result_count=(\d+)')
+    paper_re = re.compile(
+        r'selected/top result: (.+?)'
+        r'(?: \| authors: (.+?))?'
+        r'(?: \| venue: (.+?))?'
+        r' \| paperId=(\w+) \| year=(\d+) \| citationCount=(\d+)'
+    )
+
+    # Split off the "Lens Plans" subsection — it gets dedicated premium-card treatment.
+    all_lines = text.splitlines()
+    lp_re = re.compile(r'^#{2,}\s+lens plans\s*$', re.IGNORECASE)
+    split_at = next((k for k, ln in enumerate(all_lines) if lp_re.match(ln.strip())), None)
+    if split_at is not None:
+        lens_html = _lens_plans_html("\n".join(all_lines[split_at + 1:]))
+        lines = all_lines[:split_at]
+    else:
+        lens_html = ""
+        lines = all_lines
+
+    out: list[str] = []
+    i = 0
+
+    while i < len(lines):
+        raw = lines[i]
+        s = raw.strip()
+        indent = len(raw) - len(raw.lstrip(" "))
+        m = query_re.match(s) if indent < 2 else None
+
+        if m:
+            # Collect all consecutive top-level query bullets into one card grid
+            cards = []
+            while i < len(lines):
+                raw2 = lines[i]
+                s2 = raw2.strip()
+                indent2 = len(raw2) - len(raw2.lstrip(" "))
+                m2 = query_re.match(s2) if indent2 < 2 else None
+                if m2:
+                    query, count = m2.group(1), int(m2.group(2))
+                    sub: list[str] = []
+                    i += 1
+                    while i < len(lines):
+                        sub_raw = lines[i]
+                        sub_s = sub_raw.strip()
+                        sub_ind = len(sub_raw) - len(sub_raw.lstrip(" "))
+                        if sub_ind >= 2 and (sub_s.startswith("- ") or sub_s.startswith("* ")):
+                            sub.append(sub_s[2:])
+                            i += 1
+                        elif not sub_s:
+                            i += 1
+                            break
+                        else:
+                            break
+                    cards.append((query, count, sub))
+                else:
+                    break
+
+            out.append('<div class="qcard-grid">')
+            for query, count, sub in cards:
+                tone = "zero" if count == 0 else "hits"
+                badge = f'<span class="qbadge {tone}">{count} result{"s" if count != 1 else ""}</span>'
+                results_html = ""
+                if sub:
+                    rows = []
+                    for item in sub:
+                        pm = paper_re.match(item)
+                        if pm:
+                            title, authors, venue, paper_id, year, cites = (
+                                pm.group(1), pm.group(2), pm.group(3), pm.group(4), pm.group(5), pm.group(6)
+                            )
+                            ss_url = f"https://www.semanticscholar.org/paper/{paper_id}"
+                            authors_html = (
+                                f'<span class="qauthors">{_rich_text(authors)}</span> '
+                                if authors else ""
+                            )
+                            venue_html = (
+                                f' <em class="qvenue">{_rich_text(venue)}.</em>'
+                                if venue else ""
+                            )
+                            rows.append(
+                                f'<div class="qresult">'
+                                f'<span class="qtitle">'
+                                f'{authors_html}'
+                                f'({year}). '
+                                f'<a href="{ss_url}" target="_blank" rel="noopener">{_rich_text(title)}</a>.'
+                                f'{venue_html}'
+                                f'</span>'
+                                f'<span class="qcite">cited by {cites}</span>'
+                                f'</div>'
+                            )
+                        else:
+                            rows.append(f'<div class="qresult"><span class="qnull">{_rich_text(item)}</span></div>')
+                    results_html = f'<div class="qresults">{"".join(rows)}</div>'
+                out.append(
+                    f'<div class="qcard">'
+                    f'<div class="qhead"><code class="qterm">{_rich_text(query)}</code>{badge}</div>'
+                    f'{results_html}</div>'
+                )
+            out.append('</div>')
+        else:
+            # Collect non-query lines and pass through _md_block
+            buf: list[str] = []
+            while i < len(lines):
+                raw2 = lines[i]
+                s2 = raw2.strip()
+                ind2 = len(raw2) - len(raw2.lstrip(" "))
+                if query_re.match(s2) and ind2 < 2:
+                    break
+                buf.append(raw2)
+                i += 1
+            if buf:
+                out.append(_md_block("\n".join(buf)))
+
+    return "".join(out) + lens_html
+
+
+# Stable accent per lens, echoing the council-posture tone semantics.
+_LENS_DOT = {
+    "practitioner": "var(--green)",
+    "academic": "var(--brand)",
+    "skeptic": "var(--red)",
+    "economist": "var(--amber)",
+    "historian": "var(--faint)",
+}
+
+# ── Lens icons: single global source of truth ─────────────────────────────────
+# One canonical icon per research lens, as Lucide line-icon geometry on a 24×24
+# viewBox, drawn in the lens accent via currentColor. EVERY place the report shows
+# a lens icon (charters, lens plans, anywhere new) MUST read from this mapping —
+# never define a second, divergent lens-icon set. See CLAUDE.md "Lens icons".
+LENS_ICONS = {
+    "practitioner": '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+    "academic": '<path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.84l8.57 3.9a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+    "skeptic": '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    "economist": '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+    "historian": '<path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>',
+}
+LENS_ICON_FALLBACK = '<circle cx="12" cy="12" r="9"/>'
+
+
+def _lens_icon_inner(name: str) -> str:
+    """Canonical inner SVG geometry for a lens, from the global LENS_ICONS map."""
+    return LENS_ICONS.get(name.lower(), LENS_ICON_FALLBACK)
+
+
+def _lens_icon_svg(name: str, accent: str) -> str:
+    return (
+        f'<span class="lplan-ic" style="color:{accent}" aria-hidden="true">'
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+        f'stroke-linecap="round" stroke-linejoin="round">{_lens_icon_inner(name)}</svg></span>'
+    )
+
+
+def _lens_icon_ca(name: str) -> str:
+    """Charter-header form of the canonical lens icon (uses .ca-icon-svg sizing)."""
+    return (
+        '<svg class="ca-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        f'{_lens_icon_inner(name)}</svg>'
+    )
+
+
+def _lens_plans_html(text: str) -> str:
+    """Render the Lens Plans subsection as premium per-lens cards.
+
+    Each `### lens` block carries one paragraph of the form
+    "Queries and sources: …. Disconfirming evidence would be …." — split into a
+    labeled retrieval field and a highlighted falsification field.
+    """
+    import re
+    lines = text.splitlines()
+    cards: list[str] = []
+    i = 0
+    while i < len(lines):
+        s = lines[i].strip()
+        h = re.match(r'^#{2,}\s+(.+?)\s*$', s)
+        if not h:
+            i += 1
+            continue
+        name = h.group(1).strip()
+        i += 1
+        body: list[str] = []
+        while i < len(lines) and not re.match(r'^#{2,}\s+', lines[i].strip()):
+            if lines[i].strip():
+                body.append(lines[i].strip())
+            i += 1
+        para = " ".join(body).strip()
+        if not para:
+            continue
+
+        idx = para.find("Disconfirming evidence")
+        if idx != -1:
+            queries = para[:idx].strip()
+            falsify = para[idx:].strip()
+        else:
+            queries, falsify = para, ""
+        queries = re.sub(r'^Queries and sources:\s*', '', queries).strip().rstrip('.').strip()
+        falsify = re.sub(r'^Disconfirming evidence\s+(?:would be|is|=)?\s*', '', falsify).strip()
+
+        dot = _LENS_DOT.get(name.lower(), "var(--brand)")
+        parts = [
+            '<div class="lplan">',
+            f'<div class="lplan-head">{_lens_icon_svg(name, dot)}'
+            f'<span class="lplan-name">{e(name)}</span></div>',
+        ]
+        if queries:
+            parts.append(
+                '<div class="lplan-field">'
+                '<span class="lplan-label">Queries &amp; sources</span>'
+                f'<div class="lplan-val">{_rich_text(queries)}</div></div>'
+            )
+        if falsify:
+            parts.append(
+                '<div class="lplan-falsify">'
+                '<span class="lplan-label">Disconfirming evidence</span>'
+                f'<div class="lplan-val">{_rich_text(falsify)}</div></div>'
+            )
+        parts.append('</div>')
+        cards.append("".join(parts))
+
+    if not cards:
+        return ""
+    return (
+        '<p class="lplan-kicker">Lens plans</p>'
+        '<p class="lplan-intro">What each lens set out to retrieve — and the evidence '
+        'that would have changed its mind.</p>'
+        f'<div class="lplan-grid">{"".join(cards)}</div>'
+    )
+
+
 def _md_block(text: str) -> str:
     """Render a tiny markdown subset to HTML, linkifying S-/C-/X- references."""
     out: list[str] = []
     list_mode = ""
+    sub_open = False
+
+    def close_sub():
+        nonlocal sub_open
+        if sub_open:
+            out.append("</ul>")
+            sub_open = False
 
     def close_list():
         nonlocal list_mode
+        close_sub()
         if list_mode:
             out.append(f"</{list_mode}>")
             list_mode = ""
@@ -696,8 +979,18 @@ def _md_block(text: str) -> str:
             close_list()
             out.append(f"<h4>{_rich_text(s.lstrip('# '))}</h4>")
         elif s.startswith("- ") or s.startswith("* "):
-            open_list("ul")
-            out.append(f"<li>{_rich_text(s[2:])}</li>")
+            indent = len(raw) - len(raw.lstrip(" "))
+            if indent >= 2:
+                if list_mode != "ul":
+                    open_list("ul")
+                if not sub_open:
+                    out.append('<ul class="sub">')
+                    sub_open = True
+                out.append(f"<li>{_rich_text(s[2:])}</li>")
+            else:
+                close_sub()
+                open_list("ul")
+                out.append(f"<li>{_rich_text(s[2:])}</li>")
         elif re.match(r"^\d+\.\s+", s):
             open_list("ol")
             item = re.sub(r"^\d+\.\s+", "", s)
@@ -717,11 +1010,21 @@ def _lens_charters_html(charters) -> str:
     for ch in charters:
         if not isinstance(ch, dict):
             continue
+        # Normalise alternate field-name conventions produced by different run sessions
+        _blind = ch.get("likely_blind_spots") or (
+            [ch["likely_blind_spot"]] if ch.get("likely_blind_spot") else [])
+        _conflicts = ch.get("potential_conflicts") or ch.get("conflicts_with_other_lenses") or []
+        ch = dict(ch,
+                  name=ch.get("name") or ch.get("lens", ""),
+                  role_charter=(ch.get("role_charter") or ch.get("focus")
+                                or ch.get("charter") or ch.get("role_focus", "")),
+                  likely_blind_spots=_blind,
+                  potential_conflicts=_conflicts)
         name = str(ch.get("name", "")).replace("_", " ")
-        role = ch.get("role_charter") or ch.get("focus") or ch.get("charter") or ""
+        role = ch.get("role_charter", "")
 
-        def block(key, head, as_list):
-            vals = ch.get(key) or []
+        def block(key, head, as_list, _ch=ch):
+            vals = _ch.get(key) or []
             if isinstance(vals, str):
                 vals = [vals]
             vals = [v for v in vals if v]
@@ -741,7 +1044,7 @@ def _lens_charters_html(charters) -> str:
                 + block("escalation_triggers", "Escalation triggers", False))
         role_html = f'<p class="role">{text_refs(role)}</p>' if role else ""
         slug = re.sub(r'[^a-z0-9]+', '-', name.lower().strip('-'))
-        icon = _LENS_ICONS.get(slug, "")
+        icon = _lens_icon_ca(slug)
         cards += (f'<div class="charter charter--{e(slug)}"><h4>{icon}{e(name)}</h4>{role_html}'
                   f'<div class="ch-grid">{grid}</div></div>')
     return f'<div class="charters">{cards}</div>' if cards else ""
@@ -936,22 +1239,23 @@ def _deliberation_html(moves) -> str:
         return ""
     out = ""
     for r in order:
-        out += f'<p class="round-h">Round {e(r)}</p><div class="moves">'
+        label = str(r).replace("round_", "").replace("_", " ").strip() or e(r)
+        out += f'<p class="round-h">Round {e(label)}</p><div class="moves">'
         for m in by_round[r]:
-            mt = str(m.get("move_type", "")).lower()
-            mcls, mlbl = _MOVE_TAG.get(mt, ("kind", mt or "move"))
-            lens = str(m.get("perspective", "")).replace("_", " ")
+            mt = str(m.get("move_type") or m.get("move") or "").lower().replace("_", "-")
+            mcls, mlbl = _MOVE_TAG.get(mt, ("kind", mt.replace("-", " ") or "move"))
+            lens = str(m.get("perspective") or m.get("lens") or "").replace("_", " ")
             tparts = []
-            if m.get("target_claim_id"):
-                tparts.append(refs([m["target_claim_id"]]).strip())
-            if m.get("conflict_id"):
-                tparts.append(refs([m["conflict_id"]]).strip())
+            for key in ("target_claim_id", "conflict_id", "target_id"):
+                if m.get(key):
+                    tparts.append(refs([m[key]]).strip())
             target = " ".join(p for p in tparts if p)
+            text = m.get("text") or m.get("statement") or ""
             out += ('<div class="move"><div class="mv-side">'
                     f'<span class="mv-lens">{e(lens)}</span>'
                     f'<span class="tag {mcls}">{e(mlbl)}</span>'
                     f'<span class="mv-target">{target}</span></div>'
-                    f'<div class="mv-text">{text_refs(m.get("text", ""))}</div></div>')
+                    f'<div class="mv-text">{text_refs(text)}</div></div>')
         out += "</div>"
     return out
 
@@ -1058,6 +1362,95 @@ def _am_node_class(nid: str) -> str:
     if nid == "Q":
         return "am-q"
     return ""
+
+
+_AM_TYPE_CLASS = {
+    "source": "am-src", "contradiction": "am-x", "claim": "am-claim",
+    "question": "am-q", "option": "am-opt", "action": "am-act", "other": "am-other",
+}
+
+
+def _am_node_type(nid: str) -> str:
+    """Semantic node type for filtering/coloring the interactive map."""
+    head, tail = nid[:1], nid[1:]
+    if head == "S" and tail.isdigit():
+        return "source"
+    if head == "X" and tail.isdigit():
+        return "contradiction"
+    if head == "C" and tail.isdigit():
+        return "claim"
+    if head == "N" and tail.isdigit():
+        return "action"
+    if nid == "Q":
+        return "question"
+    if len(nid) == 1 and nid.isalpha():
+        return "option"
+    return "other"
+
+
+def _cyto_node_note(ntype: str, ref: str, desc: str,
+                    sources_by_id: dict, contra_by_id: dict) -> str:
+    """Tooltip text for a node, enriched from report_data.json where available.
+
+    Falls back to the Mermaid label description. Never fabricates content.
+    """
+    if ntype == "source":
+        src = sources_by_id.get(ref)
+        if src:
+            bits = [str(src.get("title") or "").strip(), str(src.get("note") or "").strip()]
+            joined = " — ".join(b for b in bits if b)
+            if joined:
+                return joined
+    elif ntype == "contradiction":
+        x = contra_by_id.get(ref)
+        if x:
+            meta = " · ".join(b for b in (str(x.get("kind") or "").strip(),
+                                          str(x.get("status") or "").strip()) if b)
+            bits = [str(x.get("stake") or "").strip()]
+            if meta:
+                bits.append(meta)
+            joined = " — ".join(b for b in bits if b)
+            if joined:
+                return joined
+    return desc
+
+
+def _argument_map_cyto(mmd, data) -> dict:
+    """Build Cytoscape.js elements (nodes + edges) from the Mermaid argument map.
+
+    Topology comes from the same `_parse_mmd` used by the static SVG; node tooltips
+    are enriched by joining ids against the sources/contradictions already loaded in
+    `data`. Returns {"nodes": [], "edges": []} when nothing parses.
+    """
+    nodes, solid, dotted = _parse_mmd(mmd)
+    if not nodes:
+        return {"nodes": [], "edges": []}
+    sources_by_id = {s.get("id"): s for s in (data or {}).get("sources", []) if isinstance(s, dict)}
+    contra_by_id = {x.get("id"): x for x in (data or {}).get("contradictions", []) if isinstance(x, dict)}
+
+    cyto_nodes = []
+    for nid, label in nodes.items():
+        desc, node_refs = _node_parts(label)
+        ref = node_refs[0] if node_refs else ""
+        ntype = _am_node_type(nid)
+        cyto_nodes.append({
+            "data": {
+                "id": nid,
+                "label": desc or nid,
+                "ref": ref,
+                "ntype": ntype,
+                "note": _cyto_node_note(ntype, ref, desc, sources_by_id, contra_by_id),
+            },
+            "classes": _AM_TYPE_CLASS.get(ntype, "am-other"),
+        })
+
+    cyto_edges = []
+    for i, (s, d) in enumerate(solid):
+        cyto_edges.append({"data": {"id": f"e{i}", "source": s, "target": d}})
+    for j, (s, d) in enumerate(dotted):
+        cyto_edges.append({"data": {"id": f"d{j}", "source": s, "target": d}, "classes": "dotted"})
+
+    return {"nodes": cyto_nodes, "edges": cyto_edges}
 
 
 def _svg_ref(ref: str, x: float, y: float) -> str:
@@ -1181,6 +1574,155 @@ def _argument_map_svg(mmd) -> str:
     )
 
 
+_AM_FILTER_LABELS = [
+    ("question", "Question"), ("option", "Options"), ("claim", "Claims"),
+    ("source", "Sources"), ("contradiction", "Contradictions"),
+    ("action", "Next actions"), ("other", "Other"),
+]
+
+# Vanilla init for the inline Cytoscape graph. No Python interpolation here — the
+# graph data is read from the sibling <script type="application/json"> block, so
+# every {..} below is literal JS.
+_AM_CY_INIT_JS = """
+(function () {
+  if (typeof cytoscape === 'undefined') return;
+  var dataEl = document.getElementById('am-cy-data');
+  var container = document.getElementById('am-cy');
+  if (!dataEl || !container) return;
+  var elements;
+  try { elements = JSON.parse(dataEl.textContent); } catch (e) { return; }
+  if (!elements || !elements.nodes || !elements.nodes.length) return;
+
+  var staticEl = document.querySelector('.am-static');
+  if (staticEl) staticEl.style.display = 'none';
+  container.style.display = 'block';
+
+  var layouts = {
+    flow: { name: 'breadthfirst', directed: true, padding: 14, spacingFactor: 1.05, avoidOverlap: true },
+    network: { name: 'cose', padding: 14, animate: false, randomize: true, nodeRepulsion: 9000,
+               idealEdgeLength: 75, nodeOverlap: 14, gravity: 0.35, componentSpacing: 70 }
+  };
+  var activeLayout = 'flow';
+  function runLayout() { cy.layout(layouts[activeLayout]).run(); }
+  var cy = cytoscape({
+    container: container,
+    elements: elements,
+    wheelSensitivity: 0.2,
+    style: [
+      { selector: 'node', style: {
+          'label': 'data(label)', 'text-wrap': 'wrap', 'text-max-width': '120px',
+          'font-size': '9px', 'font-family': '-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif',
+          'text-valign': 'center', 'text-halign': 'center', 'color': '#15161a',
+          'background-color': '#ffffff', 'border-color': '#cfd3da', 'border-width': 1.2,
+          'shape': 'round-rectangle', 'width': 'label', 'height': 'label',
+          'padding': '8px' } },
+      { selector: 'node.am-q', style: { 'background-color': '#efecfb', 'border-color': '#5b46c8', 'font-weight': 'bold' } },
+      { selector: 'node.am-opt', style: { 'background-color': '#efecfb', 'border-color': '#5b46c8', 'font-weight': 'bold' } },
+      { selector: 'node.am-src', style: { 'background-color': '#eef6f1', 'border-color': '#9bd9b8' } },
+      { selector: 'node.am-x', style: { 'background-color': '#fdf6e3', 'border-color': '#eccb74' } },
+      { selector: 'node.am-act', style: { 'background-color': '#e7f6ee', 'border-color': '#9bd9b8' } },
+      { selector: 'node.am-other', style: { 'background-color': '#f4f5f7', 'border-color': '#e7e8ec' } },
+      { selector: 'edge', style: {
+          'width': 1.4, 'line-color': '#b9bdc7', 'target-arrow-color': '#9aa0ab',
+          'target-arrow-shape': 'triangle', 'arrow-scale': 0.9, 'curve-style': 'bezier' } },
+      { selector: 'edge.dotted', style: { 'line-style': 'dashed', 'line-color': '#cdb47a', 'target-arrow-color': '#cdb47a' } },
+      { selector: '.am-dim', style: { 'opacity': 0.12 } },
+      { selector: 'node.am-focus', style: { 'border-width': 3, 'border-color': '#5b46c8' } }
+    ],
+    layout: layouts.flow
+  });
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  var box = document.getElementById('am-details');
+  function showDetails(d) {
+    if (!box) return;
+    var ref = d.ref ? ' <span class="am-d-ref">' + esc(d.ref) + '</span>' : '';
+    var jump = d.ref ? '<a class="am-jump" href="#ref-' + esc(d.ref) + '">Open in report \\u2193</a>' : '';
+    box.innerHTML = '<div class="am-d-head"><b>' + esc(d.label) + '</b>' + ref + '</div>' +
+      (d.note ? '<p class="am-d-note">' + esc(d.note) + '</p>' : '') + jump;
+    box.style.display = 'block';
+  }
+  function hideDetails() { if (box) box.style.display = 'none'; }
+
+  cy.on('tap', 'node', function (evt) {
+    var n = evt.target;
+    cy.elements().addClass('am-dim').removeClass('am-focus');
+    n.closedNeighborhood().removeClass('am-dim');
+    n.addClass('am-focus');
+    showDetails(n.data());
+  });
+  cy.on('tap', function (evt) {
+    if (evt.target === cy) { cy.elements().removeClass('am-dim am-focus'); hideDetails(); }
+  });
+
+  var toggles = document.querySelectorAll('.am-filter input[data-type]');
+  Array.prototype.forEach.call(toggles, function (cb) {
+    cb.addEventListener('change', function () {
+      var t = cb.getAttribute('data-type');
+      cy.nodes('[ntype = "' + t + '"]').style('display', cb.checked ? 'element' : 'none');
+      runLayout();
+    });
+  });
+
+  var lybtns = document.querySelectorAll('.am-layout button[data-layout]');
+  Array.prototype.forEach.call(lybtns, function (btn) {
+    btn.addEventListener('click', function () {
+      activeLayout = btn.getAttribute('data-layout');
+      Array.prototype.forEach.call(lybtns, function (b) { b.classList.toggle('is-active', b === btn); });
+      runLayout();
+      cy.fit(undefined, 20);
+    });
+  });
+})();
+"""
+
+
+def _argument_map_interactive_html(mmd, data) -> str:
+    """Interactive Cytoscape argument map with a static-SVG print/no-JS fallback.
+
+    Returns '' when nothing parses. When the vendored library is absent, returns
+    just the static SVG so the report still shows the map.
+    """
+    static_svg = _argument_map_svg(mmd)
+    if not static_svg:
+        return ""
+    lib = _cytoscape_js()
+    if not lib:
+        return static_svg
+
+    elements = _argument_map_cyto(mmd, data)
+    present = {n["data"]["ntype"] for n in elements["nodes"]}
+    toggles = "".join(
+        f'<label class="am-toggle"><input type="checkbox" data-type="{e(t)}" checked> {e(lbl)}</label>'
+        for t, lbl in _AM_FILTER_LABELS if t in present
+    )
+    # JSON sits inside a <script> block — neutralise any "</script>" in the data.
+    elements_json = json.dumps(elements, ensure_ascii=False).replace("</", "<\\/")
+
+    return (
+        '<div class="argmap-interactive">'
+        '<div class="am-toolbar">'
+        f'<div class="am-filter">{toggles}</div>'
+        '<div class="am-layout" role="group" aria-label="Map layout">'
+        '<button type="button" class="am-lybtn is-active" data-layout="flow">Flow</button>'
+        '<button type="button" class="am-lybtn" data-layout="network">Network</button>'
+        '</div>'
+        '<span class="am-hint">Tap a node to focus · drag to pan · scroll to zoom</span>'
+        '</div>'
+        '<div class="am-cy" id="am-cy"></div>'
+        '<div class="am-details" id="am-details" style="display:none"></div>'
+        f'<div class="am-static">{static_svg}</div>'
+        f'<script type="application/json" id="am-cy-data">{elements_json}</script>'
+        f'<script>{lib}</script>'
+        f'<script>{_AM_CY_INIT_JS}</script>'
+        '</div>'
+    )
+
+
 def build(data: dict) -> str:
     counts = data.get("counts", {})
     st = data.get("status", {})
@@ -1239,10 +1781,41 @@ def build(data: dict) -> str:
         verdict = st.get("verdict", "")
         srow = ""
         if scores:
-            srow = ('<p class="verdict">Review verdict: <b>%s</b> · coverage %s · traceability %s · '
-                    'contradiction-handling %s · recommendation-support %s</p>' % (
-                        e(verdict), e(scores.get("coverage","-")), e(scores.get("traceability","-")),
-                        e(scores.get("contradiction","-")), e(scores.get("recommendation","-"))))
+            def _score_cls(v):
+                try:
+                    n = int(v)
+                    if n >= 80: return "ok"
+                    if n >= 50: return "warn"
+                    return "bad"
+                except (TypeError, ValueError):
+                    return ""
+            def _verdict_badge_cls(v):
+                vl = str(v).upper()
+                if vl == "PASS": return "vb-pass"
+                if "CAVEAT" in vl: return "vb-caveats"
+                if "FAIL" in vl: return "vb-fail"
+                return "vb-unknown"
+            score_items = [
+                (scores.get("coverage", "-"), "Coverage"),
+                (scores.get("traceability", "-"), "Traceability"),
+                (scores.get("contradiction", "-"), "Contradiction"),
+                (scores.get("recommendation", "-"), "Rec. Support"),
+            ]
+            score_html = "".join(
+                '<div class="vscore %s"><span class="vscore-val">%s</span>'
+                '<span class="vscore-key">%s</span></div>'
+                % (_score_cls(val), e(str(val)), e(label))
+                for val, label in score_items
+            )
+            srow = (
+                '<div class="verdict-panel">'
+                '<span class="verdict-panel-label">Review verdict</span>'
+                '<span class="verdict-status-badge %s">%s</span>'
+                '<span class="verdict-divider"></span>'
+                '<div class="verdict-scores">%s</div>'
+                '</div>'
+                % (_verdict_badge_cls(verdict), e(verdict), score_html)
+            )
         crow = ""
         checks = st.get("checks")
         if checks:
@@ -1273,7 +1846,7 @@ def build(data: dict) -> str:
         a(f'<section id="sec-{num}"><h2><span class="num">{num}</span>{e(title)}</h2>{body}</section>')
 
     if data.get("bottom_line"):
-        sec("Bottom line", f'<p class="lead">{text_refs(data["bottom_line"])}</p>')
+        sec("Bottom line", '<div class="bottom-line-card"><p>%s</p></div>' % text_refs(data["bottom_line"]))
 
     if data.get("decision_frame"):
         sec("Decision frame", f'<div class="artifact">{_md_block(data["decision_frame"])}</div>')
@@ -1336,7 +1909,7 @@ def build(data: dict) -> str:
     if evidence_html:
         sec("Evidence registry", evidence_html)
 
-    argmap_html = _argument_map_svg(data.get("argument_map"))
+    argmap_html = _argument_map_interactive_html(data.get("argument_map"), data)
     if argmap_html:
         sec("Argument map", argmap_html)
 
@@ -1399,7 +1972,7 @@ def build(data: dict) -> str:
         sec("Decision brief artifact", f'<div class="artifact">{_md_block(data["decision_brief"])}</div>')
 
     if data.get("evidence_plan"):
-        sec("Evidence plan", _md_block(data["evidence_plan"]))
+        sec("Evidence plan", _evidence_plan_html(data["evidence_plan"]))
 
     srcs = data.get("sources", [])
     if srcs:

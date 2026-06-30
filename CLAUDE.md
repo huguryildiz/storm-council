@@ -86,6 +86,44 @@ Push directly to `main`. No feature branches, no pull requests, unless explicitl
 
 **Preserving an example run:** copy the output folder from `/out/<run>/` into `examples/<name>/` and commit it there — that's the only way it gets into the repo.
 
+## Evidence plan paper rendering (APA-lite)
+
+In `_evidence_plan_html` (`scripts/render_report.py`), `selected/top result` lines are rendered as APA-lite:
+
+```text
+Authors (Year). Title. Venue.   [cited by N]
+```
+
+- **Authors** — muted small text (`.qauthors`), parsed from `| authors: …` field; omitted if absent
+- **(Year).** — inline after authors
+- **Title** — linked to `https://www.semanticscholar.org/paper/{paperId}`, opens in new tab
+- **Venue** — italic muted text (`.qvenue`), parsed from `| venue: …` field; omitted if absent
+- **cited by N** — monospace chip (`.qcite`) on the right; wording is always exactly `cited by N`
+
+The pipe-delimited format in `03_evidence_plan.md` (written by Stage 3) is:
+
+```text
+selected/top result: <title> | authors: <Last, F.> | venue: <Journal> | paperId=<id> | year=<YYYY> | citationCount=<N>
+```
+
+`authors` and `venue` are optional for backward compatibility; both are required when the API returns them.
+
+## Lens icons (single global source of truth)
+
+The five research-lens icons (academic, economist, historian, practitioner, skeptic)
+are defined **once** in `LENS_ICONS` in `scripts/render_report.py` — one canonical icon
+per lens, as Lucide line-icon geometry on a `0 0 24 24` viewBox, drawn in the lens accent
+via `currentColor`.
+
+- **Never** add a second, divergent lens-icon set. Every place the report shows a lens
+  icon must read from `LENS_ICONS`.
+- Render through the shared helpers: `_lens_icon_inner(name)` returns the canonical inner
+  geometry; `_lens_icon_svg(name, accent)` wraps it for lens-plan cards (`.lplan-ic`);
+  `_lens_icon_ca(name)` wraps it for charter headers (`.ca-icon-svg`). Unknown names fall
+  back to `LENS_ICON_FALLBACK`.
+- To change a lens's icon, edit only its entry in `LENS_ICONS`; both the charter and the
+  lens-plan renderings update together.
+
 ## Tests
 
 ```bash

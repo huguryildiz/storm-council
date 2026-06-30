@@ -22,6 +22,24 @@ their output.
 will run, the sources it expects to find, and what would count as
 disconfirming evidence.
 
+For each mandatory query, log results using exactly this pipe-delimited format
+so the HTML renderer can parse authors for APA-style display:
+
+```markdown
+- `<query string>`: result_count=<N>
+  - selected/top result: <title> | authors: <Last, F., Last, F.> | venue: <Journal or Conference Name> | paperId=<id> | year=<YYYY> | citationCount=<N>
+```
+
+If the API returns no results, write a single sub-item:
+
+```markdown
+  - no top-3 paper selected because <reason>.
+```
+
+Include up to 3 `selected/top result` sub-items per query. The `authors` field
+is required when author data is available from the retrieval tool; omit it only
+when the API returns no author metadata.
+
 **Then**, for each lens, produce **3–6 claims**. Every claim must be **atomic** —
 one proposition per claim. If a finding bundles several propositions
 (e.g. "method X improves quality *and* reduces solve time"), split it into

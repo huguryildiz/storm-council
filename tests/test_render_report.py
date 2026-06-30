@@ -294,6 +294,99 @@ class RenderReportTest(unittest.TestCase):
         html = render_report.build({"title": "A decision", "argument_map": "%% comment\n???"})
         self.assertNotIn('<svg class="argmap"', html)
 
+    def test_argument_map_cyto_builds_classified_elements(self):
+        mmd = (
+            "flowchart TD\n"
+            '  Q["Should we adopt X?"]\n'
+            '  Q --> A["Option A: status quo"]\n'
+            '  Q --> B["Option B: hybrid"]\n'
+            '  C002["C-002 benchmark gains"] --> S001["S-001 Teal"]\n'
+            '  C002 --> X001["X-001 benchmark vs production"]\n'
+            '  X001 --> B\n'
+            '  B --> N1["Shadow-mode pilot"]\n'
+            '  C002 -.->|counters| A\n'
+        )
+        data = {
+            "sources": [{"id": "S-001", "title": "Teal: WAN TE", "note": "WAN traffic engineering."}],
+            "contradictions": [{"id": "X-001", "kind": "scope_difference",
+                                "stake": "Benchmark vs production", "status": "partially_resolved"}],
+        }
+        g = render_report._argument_map_cyto(mmd, data)
+        node_ids = {n["data"]["id"] for n in g["nodes"]}
+        self.assertEqual(node_ids, {"Q", "A", "B", "C002", "S001", "X001", "N1"})
+        self.assertEqual(len(g["edges"]), 7)  # 6 solid + 1 dotted
+
+        by_id = {n["data"]["id"]: n for n in g["nodes"]}
+        self.assertIn("am-q", by_id["Q"]["classes"])
+        self.assertIn("am-src", by_id["S001"]["classes"])
+        self.assertIn("am-x", by_id["X001"]["classes"])
+        self.assertIn("am-claim", by_id["C002"]["classes"])
+        self.assertIn("am-opt", by_id["A"]["classes"])
+        self.assertIn("am-act", by_id["N1"]["classes"])
+
+        dotted = [edge for edge in g["edges"] if edge.get("classes") == "dotted"]
+        self.assertEqual(len(dotted), 1)
+        self.assertEqual(dotted[0]["data"]["source"], "C002")
+        self.assertEqual(dotted[0]["data"]["target"], "A")
+
+        # Tooltip note enriched from report_data.json, falling back to the label.
+        self.assertIn("Teal", by_id["S001"]["data"]["note"])
+        self.assertIn("Benchmark vs production", by_id["X001"]["data"]["note"])
+        self.assertEqual(by_id["N1"]["data"]["label"], "Shadow-mode pilot")
+
+    def test_argument_map_cyto_empty_on_no_nodes(self):
+        g = render_report._argument_map_cyto("not a graph", {})
+        self.assertEqual(g, {"nodes": [], "edges": []})
+
+    def test_cytoscape_js_reads_vendored_library(self):
+        lib = render_report._cytoscape_js()
+        self.assertIn("cytoscape", lib)
+        self.assertGreater(len(lib), 100000)
+
+    def test_interactive_map_has_canvas_filters_and_static_fallback(self):
+        mmd = (
+            "flowchart TD\n"
+            '  Q["Q?"]\n'
+            '  Q --> A["Option A"]\n'
+            '  C002["C-002 x"] --> S001["S-001 y"]\n'
+            '  C002 --> X001["X-001 z"]\n'
+        )
+        html = render_report._argument_map_interactive_html(mmd, {})
+        self.assertIn('class="am-cy"', html)              # interactive canvas
+        self.assertIn('type="application/json"', html)    # embedded elements
+        self.assertIn("cytoscape(", html)                 # init call
+        self.assertIn("am-filter", html)                  # filter UI
+        self.assertIn('class="am-static"', html)          # fallback wrapper
+        self.assertIn('<svg class="argmap"', html)        # static SVG kept
+
+    def test_interactive_map_falls_back_to_static_without_library(self):
+        mmd = 'flowchart TD\n  Q["Q?"]\n  Q --> A["Option A"]\n'
+        orig = render_report._cytoscape_js
+        render_report._cytoscape_js = lambda: ""
+        try:
+            html = render_report._argument_map_interactive_html(mmd, {})
+        finally:
+            render_report._cytoscape_js = orig
+        self.assertIn('<svg class="argmap"', html)        # static SVG still present
+        self.assertNotIn("cytoscape(", html)              # no init when lib absent
+        self.assertNotIn('class="am-cy"', html)           # no interactive canvas
+
+    def test_interactive_map_empty_on_no_nodes(self):
+        self.assertEqual(render_report._argument_map_interactive_html("garbage", {}), "")
+
+    def test_interactive_map_has_flow_and_network_layout_toggle(self):
+        mmd = (
+            "flowchart TD\n"
+            '  Q["Q?"]\n'
+            '  Q --> A["Option A"]\n'
+            '  C002["C-002 x"] --> S001["S-001 y"]\n'
+        )
+        html = render_report._argument_map_interactive_html(mmd, {})
+        self.assertIn('data-layout="flow"', html)
+        self.assertIn('data-layout="network"', html)
+        self.assertIn("breadthfirst", html)   # flow layout config in the init
+        self.assertIn("name: 'cose'", html)    # network (force-directed) layout config
+
     def test_council_deliberation_renders_move_log(self):
         html = render_report.build(
             {
