@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Should reinforcement learning be used for network flow optimization?</title>
+<style>
+  :root{
+    --ink:#15161a; --muted:#5b606b; --faint:#8a8f99; --line:#e7e8ec;
+    --brand:#5b46c8; --brand-soft:#efecfb;
+    --amber:#b7791f; --amber-bg:#fdf6e3; --amber-line:#eccb74;
+    --green:#1a7f51; --green-bg:#e7f6ee; --green-line:#9bd9b8;
+    --red:#b42318; --red-bg:#fdecea; --red-line:#f1b0a8;
+    --card:#fbfbfd;
+  }
+  *{box-sizing:border-box}
+  body{ margin:0; background:#f4f5f7; color:var(--ink);
+    font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif; }
+  .page{ max-width:820px; margin:32px auto; background:#fff; padding:56px 60px 44px;
+    border:1px solid var(--line); border-radius:14px; box-shadow:0 1px 2px rgba(20,22,26,.04); }
+  .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  .eyebrow{ font-family:ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--brand); margin:0 0 18px; }
+  h1{ font-size:34px; line-height:1.16; font-weight:800; letter-spacing:-.015em; margin:0 0 14px; }
+  .subtitle{ font-size:17px; color:var(--muted); margin:0 0 22px; max-width:62ch; }
+  .meta{ display:flex; flex-wrap:wrap; gap:6px 26px; padding:14px 0; margin:0 0 22px;
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--faint); }
+  .meta b{ color:var(--ink); font-weight:600; }
+  .status{ border-radius:10px; padding:16px 18px; margin:0 0 26px; border:1px solid var(--amber-line); background:var(--amber-bg); }
+  .status.green{ border-color:var(--green-line); background:var(--green-bg); }
+  .status.red{ border-color:var(--red-line); background:var(--red-bg); }
+  .status .pill{ display:inline-block; font-family:ui-monospace,Menlo,monospace; font-size:11px;
+    letter-spacing:.08em; font-weight:700; color:#fff; background:var(--amber); padding:3px 9px; border-radius:999px; vertical-align:2px; margin-right:8px; }
+  .status.green .pill{ background:var(--green); } .status.red .pill{ background:var(--red); }
+  .status p{ margin:8px 0 0; font-size:14px; color:#4a4636; }
+  .status .verdict{ margin-top:10px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:#5a5642; }
+  .howto{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:0 0 34px; }
+  .howto h3{ margin:0 0 10px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:700; }
+  .howto ul{ margin:0; padding-left:18px; } .howto li{ font-size:14px; color:var(--muted); margin:6px 0; } .howto b{ color:var(--ink); }
+  section{ margin:0 0 30px; }
+  h2{ font-size:20px; font-weight:750; letter-spacing:-.01em; margin:0 0 12px; padding-top:10px; }
+  h2 .num{ font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--brand); margin-right:10px; }
+  p.lead{ margin:0 0 12px; }
+  ul.clean{ margin:0; padding-left:20px; } ul.clean li{ margin:7px 0; }
+  .cid{ font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--brand); background:var(--brand-soft); padding:1px 6px; border-radius:5px; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th,td{ text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); font-weight:700; }
+  .tag{ display:inline-block; font-family:ui-monospace,Menlo,monospace; font-size:11px; padding:2px 7px; border-radius:5px; }
+  .tag.open{ background:#fdecea; color:var(--red); } .tag.part{ background:#fdf6e3; color:var(--amber); } .tag.done{ background:#e7f6ee; color:var(--green); } .tag.kind{ background:#eef0f3; color:var(--muted); }
+  .opt{ border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin:12px 0; background:var(--card); }
+  .opt h4{ margin:0 0 4px; font-size:16px; }
+  .opt .chip{ float:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; padding:3px 9px; border-radius:999px; font-weight:700; }
+  .chip.s-strong{ background:#e7f6ee; color:var(--green); } .chip.s-mod{ background:#fdf6e3; color:var(--amber); }
+  .chip.s-weak{ background:#fdecea; color:var(--red); } .chip.s-none{ background:#eef0f3; color:var(--muted); }
+  .opt .when{ font-size:13px; color:var(--faint); margin-top:8px; } .opt ul{ margin:8px 0 0; padding-left:18px; font-size:14px; }
+  .src{ list-style:none; padding:0; margin:0; }
+  .src li{ padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+  .src .sid{ font-family:ui-monospace,Menlo,monospace; color:var(--brand); margin-right:8px; }
+  .src .ty{ font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--faint); }
+  .src .syn{ color:var(--red); font-weight:600; }
+  .src .note{ display:block; color:var(--faint); font-size:12.5px; margin-top:2px; }
+  .finding-attrs{ margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+  .attr{ display:inline-flex; align-items:baseline; gap:5px; font-size:12px; padding:3px 9px 3px 8px; border-radius:6px; line-height:1.4; }
+  .attr .attr-label{ font-family:ui-monospace,Menlo,monospace; font-size:10px; letter-spacing:.1em; font-weight:700; white-space:nowrap; }
+  .attr.supported{ background:#e7f6ee; color:var(--green); }
+  .attr.challenged{ background:#fdecea; color:var(--red); }
+  .attr .attr-note{ color:var(--muted); }
+  .scores{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 14px; }
+  .score{ font-family:ui-monospace,Menlo,monospace; font-size:12px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:7px 11px; } .score b{ color:var(--brand); }
+  footer{ margin-top:38px; padding-top:18px; border-top:1px solid var(--line); font-size:12px; color:var(--faint); } footer p{ margin:6px 0; }
+  @media print{ body{background:#fff} .page{border:0; box-shadow:none; margin:0; max-width:none} }
+  @media (max-width:640px){ .page{padding:30px 22px} h1{font-size:27px} }
+</style>
+</head>
+<body>
+<main class="page">
+<p class="eyebrow">Storm Council · Decision Brief</p>
+<h1>Should reinforcement learning be used for network flow optimization?</h1>
+<p class="subtitle">A five-lens council evaluation of RL for network flow and traffic engineering: practitioner, academic, skeptic, economist, and historian.</p>
+<div class="meta"><span><b>Date</b> 2026-06-30</span><span><b>Mode</b> Council (bounded cross-examination)</span><span><b>Audience</b> Infrastructure engineering and network optimization leadership</span><span><b>Lenses</b> 5 · <b>Claims</b> 20 · <b>Sources</b> 9 · <b>Conflicts</b> 5</span></div>
+<div class="status "><span class="pill">SOURCE-CHECKED</span><b>Live source lookup used; production decision remains caveated.</b><p>The source registry was built from live lookups on 2026-06-30. The recommendation is still caveated because simulator fidelity, safety guardrails, and workload-specific economics require local validation before any production control decision.</p><p class="verdict">Review verdict: <b>PASS_WITH_CAVEATS</b> · coverage 100 · traceability 100 · contradiction-handling 40 · recommendation-support 100</p></div>
+<div class="howto"><h3>How to read this</h3><ul><li><b>The panel is author-constructed.</b> Where the lenses agree, treat it as a strong hypothesis, not independent proof.</li><li><b>Confidence (0.0-1.0) is separate from evidence status.</b> A high-confidence forecast is still a forecast.</li><li><b>Fact, inference, and recommendation are labelled separately.</b></li><li><b>Disagreements are kept on the record</b>, not resolved by force.</li></ul></div>
+<section><h2><span class="num">01</span>Bottom line</h2><p class="lead">Use RL selectively, not as a general replacement for network-flow optimization. Classical flow solvers and traffic-engineering optimizers remain the baseline for feasibility-critical or auditable decisions. RL is worth evaluating as a bounded augmentation for dynamic traffic engineering, candidate selection, learned warm starts, or learning-accelerated optimization, provided a solver/shield enforces hard constraints and a shadow-mode benchmark proves value on real traffic.</p></section>
+<section><h2><span class="num">02</span>Strongest evidence-backed findings</h2><ul class="clean"><li>Classical network-flow tooling is mature and remains the default baseline for static or feasibility-critical flow optimization. <span class="cid">C-001</span> <span class="cid">C-012</span><div class="finding-attrs"><span class="attr supported"><span class="attr-label">SUPPORTED BY</span>Practitioner + Academic <span class="attr-note">— Official OR-Tools and NetworkX flow documentation plus ML/TE comparison evidence.</span></span></div></li><li>RL has credible evidence in dynamic traffic-engineering settings, especially for critical-flow selection, datacenter traffic optimization, and MARL/GNN TE comparisons. <span class="cid">C-004</span> <span class="cid">C-011</span> <span class="cid">C-031</span><div class="finding-attrs"><span class="attr supported"><span class="attr-label">SUPPORTED BY</span>Practitioner + Academic + Economist <span class="attr-note">— CFR-RL, AuTO, and ICNP TE evidence.</span></span><span class="attr challenged"><span class="attr-label">CHALLENGED BY</span>Skeptic <span class="attr-note">— Production transfer and simulator fidelity remain open in X-003.</span></span></div></li><li>The strongest near-term pattern is hybrid: RL or ML proposes, ranks, warms, or accelerates while a solver, projection layer, or safety shield enforces constraints. <span class="cid">C-013</span> <span class="cid">C-020</span> <span class="cid">C-041</span><div class="finding-attrs"><span class="attr supported"><span class="attr-label">SUPPORTED BY</span>Academic + Skeptic + Historian <span class="attr-note">— ML-for-CO survey evidence and Teal learning-accelerated WAN TE.</span></span></div></li><li>Production adoption should start in benchmark replay, shadow mode, or bounded advisory roles before direct routing control. <span class="cid">C-023</span> <span class="cid">C-032</span> <span class="cid">C-033</span> <span class="cid">C-043</span><div class="finding-attrs"><span class="attr supported"><span class="attr-label">SUPPORTED BY</span>Skeptic + Economist + Historian <span class="attr-note">— Council convergence around safety, economics, and adoption precedent.</span></span></div></li></ul></section>
+<section><h2><span class="num">03</span>Where the lenses disagree</h2><table><thead><tr><th>Conflict</th><th>Kind</th><th>What is at stake</th><th>Status</th></tr></thead><tbody><tr><td class="mono">X-001</td><td><span class="tag kind">scope_difference</span></td><td>Replacement versus augmentation: should RL control the optimization or feed it?</td><td><span class="tag part">partly</span></td></tr><tr><td class="mono">X-002</td><td><span class="tag kind">tension</span></td><td>Static optimality and feasibility versus fast adaptation for online traffic engineering.</td><td><span class="tag part">partly</span></td></tr><tr><td class="mono">X-003</td><td><span class="tag kind">evidence_gap</span></td><td>Benchmark promise versus production transfer under traffic, topology, and failure shift.</td><td><span class="tag open">unresolved</span></td></tr><tr><td class="mono">X-004</td><td><span class="tag kind">tension</span></td><td>Safety guardrails versus economic upside from faster decisions.</td><td><span class="tag open">unresolved</span></td></tr><tr><td class="mono">X-005</td><td><span class="tag kind">tension</span></td><td>RL total cost of ownership versus value in high-frequency dynamic control.</td><td><span class="tag open">unresolved</span></td></tr></tbody></table></section>
+<section><h2><span class="num">04</span>Decision options &amp; trade-offs</h2><div class="opt"><span class="chip s-strong">evidence: strong</span><h4>A · Keep classical optimization only</h4><ul><li>Best fit for stable/offline flow optimization and auditable hard constraints.</li><li>Lowest operational complexity and easiest rollback.</li></ul><p class="when">When appropriate: Static planning, compliance-sensitive routing, or teams without ML operations capacity.</p></div><div class="opt"><span class="chip s-mod">evidence: moderate</span><h4>B · Hybrid learning-accelerated optimization</h4><ul><li>Uses learning for warm starts, ranking, or acceleration while retaining solver-backed constraints.</li><li>Needs benchmark harness and MLOps ownership.</li></ul><p class="when">When appropriate: Large or repeated TE problems where solver latency is meaningful.</p></div><div class="opt"><span class="chip s-mod">evidence: moderate</span><h4>C · Guarded RL for dynamic traffic engineering</h4><ul><li>Potential value for critical-flow selection, load balancing, and rapid response to traffic changes.</li><li>Must run in shadow or advisory mode first with explicit safety shields.</li></ul><p class="when">When appropriate: High-volume online TE where real-traffic replay shows value over incumbent optimizers.</p></div><div class="opt"><span class="chip s-none">unsupported</span><h4>D · End-to-end RL replacement</h4><ul><li>Does not preserve enough evidence of constraint guarantees, production transfer, or rollback safety.</li><li>Not recommended on current evidence.</li></ul><p class="when">When appropriate: Research exploration only, not production control.</p></div></section>
+<section><h2><span class="num">05</span>Recommended next actions</h2><ul class="clean"><li>Classify the target workload as offline flow planning, online traffic engineering, datacenter scheduling, or incident response. <span class="cid">X-002</span> <span class="cid">C-042</span></li><li>Build a replay benchmark using real traffic matrices, topology snapshots, and failure cases. <span class="cid">X-003</span> <span class="cid">C-032</span></li><li>Compare RL against min-cost/max-flow, LP/CP/TE optimizers, and the incumbent heuristic before any production decision. <span class="cid">C-001</span> <span class="cid">C-012</span> <span class="cid">C-033</span></li><li>Require a solver, projection layer, or shield to enforce hard constraints in any RL architecture. <span class="cid">X-004</span> <span class="cid">C-020</span> <span class="cid">C-023</span></li><li>Start with shadow mode or bounded advisory deployment; promote only after measured gains and rollback tests. <span class="cid">C-023</span> <span class="cid">C-043</span> <span class="cid">X-005</span></li></ul></section>
+<section><h2><span class="num">06</span>Evidence gaps &amp; frontier questions</h2><ul class="clean"><li>The target organization&#x27;s traffic distributions, topology changes, and failure patterns are unknown. <span class="cid">X-003</span></li><li>Residual incident risk after adding RL has not been quantified. <span class="cid">X-004</span></li><li>Total cost of ownership is workload-specific and not directly resolved by the literature. <span class="cid">X-005</span></li><li>The decision should be narrowed from generic network flow optimization to one concrete workload. <span class="cid">C-042</span></li></ul></section>
+<section><h2><span class="num">07</span>Sources</h2><ul class="src"><li><span class="sid">S-001</span> OR-Tools Min Cost Flow <span class="ty">· industry</span><span class="note">Official Google documentation for classical min-cost-flow tooling.</span></li><li><span class="sid">S-002</span> NetworkX flow algorithms documentation <span class="ty">· industry</span><span class="note">Official documentation for max-flow/min-cut algorithms.</span></li><li><span class="sid">S-003</span> B4: Experience with a Globally-Deployed Software Defined WAN <span class="ty">· peer-reviewed</span></li><li><span class="sid">S-004</span> Machine Learning for Combinatorial Optimization: a Methodological Tour d&#x27;Horizon <span class="ty">· peer-reviewed</span></li><li><span class="sid">S-005</span> Learning Combinatorial Optimization Algorithms over Graphs <span class="ty">· peer-reviewed</span></li><li><span class="sid">S-006</span> CFR-RL: Traffic Engineering with Reinforcement Learning in SDN <span class="ty">· peer-reviewed</span></li><li><span class="sid">S-007</span> AuTO: Scaling Deep Reinforcement Learning for Datacenter-Scale Automatic Traffic Optimization <span class="ty">· peer-reviewed</span></li><li><span class="sid">S-008</span> Is Machine Learning Ready for Traffic Engineering Optimization? <span class="ty">· peer-reviewed</span></li><li><span class="sid">S-009</span> Teal: Learning-Accelerated Optimization of WAN Traffic Engineering <span class="ty">· peer-reviewed</span></li></ul></section>
+<section><h2><span class="num">08</span>Independent review</h2><div class="scores"><span class="score">coverage <b>100</b></span><span class="score">traceability <b>100</b></span><span class="score">contradiction-handling <b>40</b></span><span class="score">recommendation-support <b>100</b></span></div><p class="lead">Verdict <b>PASS_WITH_CAVEATS</b>.</p><p class="lead"><b>Minor:</b></p><ul class="clean"><li>Open contradictions remain for human review: X-003, X-004, X-005</li></ul></section>
+<footer><p><b>Storm Council</b> is inspired by research-first knowledge-curation systems such as Stanford OVAL's STORM. It is independently developed and is <b>not</b> affiliated with, endorsed by, or derived from Stanford University, Stanford OVAL, the STORM project, Anthropic, Claude Code, or YouMind.</p><p>This brief supports research and deliberation. It does not replace domain expertise, source verification, or accountable human decision-making.</p></footer>
+</main>
+</body>
+</html>

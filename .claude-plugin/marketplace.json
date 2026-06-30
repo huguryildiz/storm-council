@@ -1,7 +1,8 @@
 {
-  "name": "storm-council",
+  "name": "huguryildiz",
   "owner": {
-    "name": "Storm Council contributors"
+    "name": "huguryildiz",
+    "url": "https://github.com/huguryildiz"
   },
   "description": "Storm Council — a contradiction-aware, evidence-grounded research workflow for Claude Code that surfaces competing perspectives, explicit contradictions, and a traceable decision brief.",
   "plugins": [

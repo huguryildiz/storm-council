@@ -1,0 +1,119 @@
+[
+  {
+    "name": "practitioner",
+    "role_charter": "Judge whether RL can be operated in real networks without creating fragile control loops.",
+    "priority_questions": [
+      "What parts of network flow optimization are static planning versus online adaptation?",
+      "Where do current LP/min-cost-flow/heuristic systems fail operationally?",
+      "What monitoring, simulator, fallback, and rollback mechanisms would RL require?"
+    ],
+    "expected_evidence_types": [
+      "Solver documentation",
+      "SDN and traffic-engineering deployment papers",
+      "Operational constraints from production network systems"
+    ],
+    "likely_blind_spots": [
+      "Discounting research progress because it is not yet productized."
+    ],
+    "potential_conflicts": [
+      "May accept RL as an augmentation layer while the skeptic rejects it as unsafe."
+    ],
+    "escalation_triggers": [
+      "A claim that RL can directly control production routing without a deterministic safety layer."
+    ]
+  },
+  {
+    "name": "academic",
+    "role_charter": "Ground the decision in algorithms, benchmarks, and reproducibility.",
+    "priority_questions": [
+      "Does RL beat strong flow-optimization baselines, or only shortest-path/ECMP heuristics?",
+      "Are results robust to topology, demand, and failure distribution shifts?",
+      "Is the method solving network flow, traffic engineering, or a narrower proxy problem?"
+    ],
+    "expected_evidence_types": [
+      "Peer-reviewed ML-for-CO surveys",
+      "RL traffic-engineering papers",
+      "Benchmark comparisons"
+    ],
+    "likely_blind_spots": [
+      "Under-weighting integration and incident-management costs."
+    ],
+    "potential_conflicts": [
+      "May see promise in learning-accelerated optimization that operators still view as immature."
+    ],
+    "escalation_triggers": [
+      "Results reported without reproducible baselines or ablations."
+    ]
+  },
+  {
+    "name": "skeptic",
+    "role_charter": "Stress-test claims about optimality, safety, generalization, and incentives.",
+    "priority_questions": [
+      "Are hard constraints guaranteed or merely encouraged by reward penalties?",
+      "Does RL optimize the real objective or a simulation proxy?",
+      "What happens under adversarial traffic, topology change, measurement error, or partial observability?"
+    ],
+    "expected_evidence_types": [
+      "Negative results",
+      "Limitations sections",
+      "Robustness studies",
+      "Missing benchmark evidence"
+    ],
+    "likely_blind_spots": [
+      "Reflexive dismissal of genuinely useful hybrid designs."
+    ],
+    "potential_conflicts": [
+      "Challenges practitioner and academic optimism around dynamic routing gains."
+    ],
+    "escalation_triggers": [
+      "Any recommendation that lacks explicit fallback and constraint enforcement."
+    ]
+  },
+  {
+    "name": "economist",
+    "role_charter": "Compare expected value, opportunity cost, staffing burden, and measurable benefit.",
+    "priority_questions": [
+      "What does RL add that cheaper solvers, heuristics, or forecasting cannot?",
+      "Is the target use case frequent and valuable enough to pay for RL infrastructure?",
+      "Who owns training data, simulator maintenance, model monitoring, and incident response?"
+    ],
+    "expected_evidence_types": [
+      "Cost model",
+      "Deployment architecture",
+      "Observed performance deltas",
+      "Operations labor estimates"
+    ],
+    "likely_blind_spots": [
+      "Overweighting measurable cost and underweighting resilience value."
+    ],
+    "potential_conflicts": [
+      "May support RL only where traffic variability creates measurable economic upside."
+    ],
+    "escalation_triggers": [
+      "A payoff claim without an experiment design or baseline."
+    ]
+  },
+  {
+    "name": "historian",
+    "role_charter": "Bring precedent from network optimization, SDN, and ML-for-combinatorial-optimization adoption.",
+    "priority_questions": [
+      "Which previous network-control innovations succeeded, and why?",
+      "Did they replace optimization/control systems or become hybrid overlays?",
+      "What repeated failure patterns apply to RL-for-network-flow work?"
+    ],
+    "expected_evidence_types": [
+      "SDN and traffic-engineering deployment history",
+      "Classic solver adoption",
+      "ML-for-optimization surveys"
+    ],
+    "likely_blind_spots": [
+      "Assuming past adoption patterns fully constrain a newer method."
+    ],
+    "potential_conflicts": [
+      "May favor hybridization even when the academic lens sees end-to-end RL as intellectually promising."
+    ],
+    "escalation_triggers": [
+      "Replacement framing that ignores operational trust, control-plane safety, and rollback history."
+    ]
+  }
+]

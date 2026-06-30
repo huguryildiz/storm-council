@@ -1,0 +1,12 @@
+flowchart TD
+  Q["Should we use RL for network flow optimization?"]
+  Q --> A["Static/offline flow problem?"]
+  Q --> B["Dynamic traffic-engineering problem?"]
+  A --> C["Use classical flow solvers as baseline and system of record<br/>C-001 C-012"]
+  B --> D["Consider guarded RL or learning-accelerated optimization<br/>C-004 C-011 C-031"]
+  D --> E["Keep solver/shield/fallback for hard constraints<br/>C-020 C-023 C-041"]
+  D --> F["Run shadow-mode benchmark on real traffic and failures<br/>C-021 C-032 C-033"]
+  F --> G["Pilot only if faster decisions or lower congestion beat incumbent<br/>X-003 X-005"]
+  C --> H["Verdict: do not replace solvers"]
+  E --> I["Verdict: use RL only as bounded augmentation"]
+  G --> I

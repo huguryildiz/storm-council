@@ -24,6 +24,13 @@ No text, prompts, diagrams, headings, code, or examples were copied from those
 sources. The workflow, prompt templates, role charters, schemas, examples, and
 documentation in this repository were written independently.
 
+## Bundled agent files
+
+The five research lens subagents in `agents/` (`academic`, `economist`,
+`historian`, `practitioner`, `skeptic`) are original works written for this
+project. They reference no third-party content and carry no separate license
+beyond the Apache 2.0 license that covers this repository.
+
 ## Synthetic data notice
 
 The bundled university-timetabling example is produced by a **deterministic mock
@@ -31,6 +38,12 @@ adapter**, not by live retrieval. It cites real, well-known works for realism an
 **one explicitly synthetic source (`S-010`)** used to exercise the review stage.
 Every artifact carries a banner saying so. Treat all example sources as
 illustrative and verify them independently before relying on anything.
+
+## Dependencies
+
+The `scripts/verify.py` and `scripts/render_report.py` scripts use the Python
+standard library only — no third-party packages, no network requests, no LLM
+calls, no API key.
 
 ## License
 

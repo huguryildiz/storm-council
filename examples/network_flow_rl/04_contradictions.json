@@ -1,0 +1,62 @@
+[
+  {
+    "conflict_id": "X-001",
+    "topic": "Replacement versus augmentation",
+    "claim_a_id": "C-012",
+    "claim_b_id": "C-004",
+    "relationship": "scope_difference",
+    "why_it_matters": "A recommendation to replace flow solvers is much riskier than a recommendation to use RL for online candidate selection or warm starts.",
+    "evidence_balance": "supports_a",
+    "resolution_status": "partially_resolved",
+    "next_question": "Specify the target workload and decide whether RL is replacing optimization or feeding it.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-002",
+    "topic": "Optimality and feasibility versus fast adaptation",
+    "claim_a_id": "C-001",
+    "claim_b_id": "C-031",
+    "relationship": "tension",
+    "why_it_matters": "Static flow problems reward exactness and certificates, while online traffic engineering may reward low-latency decisions under changing demand.",
+    "evidence_balance": "mixed",
+    "resolution_status": "partially_resolved",
+    "next_question": "Classify the workload as offline planning, online TE, or incident response before selecting a method.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-003",
+    "topic": "Benchmark evidence and simulator fidelity",
+    "claim_a_id": "C-011",
+    "claim_b_id": "C-021",
+    "relationship": "evidence_gap",
+    "why_it_matters": "Promising benchmark results do not automatically transfer to production if traffic, topology, and failures differ from training/evaluation.",
+    "evidence_balance": "insufficient",
+    "resolution_status": "unresolved",
+    "next_question": "Run shadow-mode replay on real traffic matrices and failure scenarios against the incumbent optimizer.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-004",
+    "topic": "Safety guardrails versus economic upside",
+    "claim_a_id": "C-020",
+    "claim_b_id": "C-031",
+    "relationship": "tension",
+    "why_it_matters": "Even if RL improves speed or utilization, hard constraints and failure safety can dominate the decision.",
+    "evidence_balance": "mixed",
+    "resolution_status": "unresolved",
+    "next_question": "Define a shielded architecture and quantify the residual incident risk versus measured performance gain.",
+    "human_review_required": true
+  },
+  {
+    "conflict_id": "X-005",
+    "topic": "Total cost of ownership",
+    "claim_a_id": "C-030",
+    "claim_b_id": "C-031",
+    "relationship": "tension",
+    "why_it_matters": "The same RL system can be unjustified overhead in stable planning and valuable in high-frequency online control.",
+    "evidence_balance": "insufficient",
+    "resolution_status": "unresolved",
+    "next_question": "Estimate engineering cost, simulator cost, traffic volatility, decision frequency, and value per avoided congestion event.",
+    "human_review_required": true
+  }
+]

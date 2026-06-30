@@ -1,0 +1,298 @@
+{
+  "eyebrow": "Storm Council · Decision Brief",
+  "title": "Should reinforcement learning be used for network flow optimization?",
+  "subtitle": "A five-lens council evaluation of RL for network flow and traffic engineering: practitioner, academic, skeptic, economist, and historian.",
+  "date": "2026-06-30",
+  "mode": "Council (bounded cross-examination)",
+  "audience": "Infrastructure engineering and network optimization leadership",
+  "counts": {
+    "lenses": 5,
+    "claims": 20,
+    "sources": 9,
+    "conflicts": 5
+  },
+  "status": {
+    "level": "source_checked",
+    "pill": "SOURCE-CHECKED",
+    "headline": "Live source lookup used; production decision remains caveated.",
+    "detail": "The source registry was built from live lookups on 2026-06-30. The recommendation is still caveated because simulator fidelity, safety guardrails, and workload-specific economics require local validation before any production control decision.",
+    "verdict": "PASS_WITH_CAVEATS",
+    "scores": {
+      "coverage": 100,
+      "traceability": 100,
+      "contradiction": 40,
+      "recommendation": 100
+    }
+  },
+  "bottom_line": "Use RL selectively, not as a general replacement for network-flow optimization. Classical flow solvers and traffic-engineering optimizers remain the baseline for feasibility-critical or auditable decisions. RL is worth evaluating as a bounded augmentation for dynamic traffic engineering, candidate selection, learned warm starts, or learning-accelerated optimization, provided a solver/shield enforces hard constraints and a shadow-mode benchmark proves value on real traffic.",
+  "strongest_findings": [
+    {
+      "text": "Classical network-flow tooling is mature and remains the default baseline for static or feasibility-critical flow optimization.",
+      "claims": [
+        "C-001",
+        "C-012"
+      ],
+      "supported_by": {
+        "perspectives": [
+          "practitioner",
+          "academic"
+        ],
+        "note": "Official OR-Tools and NetworkX flow documentation plus ML/TE comparison evidence."
+      }
+    },
+    {
+      "text": "RL has credible evidence in dynamic traffic-engineering settings, especially for critical-flow selection, datacenter traffic optimization, and MARL/GNN TE comparisons.",
+      "claims": [
+        "C-004",
+        "C-011",
+        "C-031"
+      ],
+      "supported_by": {
+        "perspectives": [
+          "practitioner",
+          "academic",
+          "economist"
+        ],
+        "note": "CFR-RL, AuTO, and ICNP TE evidence."
+      },
+      "challenged_by": {
+        "perspectives": [
+          "skeptic"
+        ],
+        "note": "Production transfer and simulator fidelity remain open in X-003."
+      }
+    },
+    {
+      "text": "The strongest near-term pattern is hybrid: RL or ML proposes, ranks, warms, or accelerates while a solver, projection layer, or safety shield enforces constraints.",
+      "claims": [
+        "C-013",
+        "C-020",
+        "C-041"
+      ],
+      "supported_by": {
+        "perspectives": [
+          "academic",
+          "skeptic",
+          "historian"
+        ],
+        "note": "ML-for-CO survey evidence and Teal learning-accelerated WAN TE."
+      }
+    },
+    {
+      "text": "Production adoption should start in benchmark replay, shadow mode, or bounded advisory roles before direct routing control.",
+      "claims": [
+        "C-023",
+        "C-032",
+        "C-033",
+        "C-043"
+      ],
+      "supported_by": {
+        "perspectives": [
+          "skeptic",
+          "economist",
+          "historian"
+        ],
+        "note": "Council convergence around safety, economics, and adoption precedent."
+      }
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "X-001",
+      "kind": "scope_difference",
+      "stake": "Replacement versus augmentation: should RL control the optimization or feed it?",
+      "status": "partly"
+    },
+    {
+      "id": "X-002",
+      "kind": "tension",
+      "stake": "Static optimality and feasibility versus fast adaptation for online traffic engineering.",
+      "status": "partly"
+    },
+    {
+      "id": "X-003",
+      "kind": "evidence_gap",
+      "stake": "Benchmark promise versus production transfer under traffic, topology, and failure shift.",
+      "status": "unresolved"
+    },
+    {
+      "id": "X-004",
+      "kind": "tension",
+      "stake": "Safety guardrails versus economic upside from faster decisions.",
+      "status": "unresolved"
+    },
+    {
+      "id": "X-005",
+      "kind": "tension",
+      "stake": "RL total cost of ownership versus value in high-frequency dynamic control.",
+      "status": "unresolved"
+    }
+  ],
+  "options": [
+    {
+      "name": "A · Keep classical optimization only",
+      "strength": "strong",
+      "points": [
+        "Best fit for stable/offline flow optimization and auditable hard constraints.",
+        "Lowest operational complexity and easiest rollback."
+      ],
+      "when": "Static planning, compliance-sensitive routing, or teams without ML operations capacity."
+    },
+    {
+      "name": "B · Hybrid learning-accelerated optimization",
+      "strength": "moderate",
+      "points": [
+        "Uses learning for warm starts, ranking, or acceleration while retaining solver-backed constraints.",
+        "Needs benchmark harness and MLOps ownership."
+      ],
+      "when": "Large or repeated TE problems where solver latency is meaningful."
+    },
+    {
+      "name": "C · Guarded RL for dynamic traffic engineering",
+      "strength": "moderate",
+      "points": [
+        "Potential value for critical-flow selection, load balancing, and rapid response to traffic changes.",
+        "Must run in shadow or advisory mode first with explicit safety shields."
+      ],
+      "when": "High-volume online TE where real-traffic replay shows value over incumbent optimizers."
+    },
+    {
+      "name": "D · End-to-end RL replacement",
+      "strength": "unsupported",
+      "points": [
+        "Does not preserve enough evidence of constraint guarantees, production transfer, or rollback safety.",
+        "Not recommended on current evidence."
+      ],
+      "when": "Research exploration only, not production control."
+    }
+  ],
+  "next_actions": [
+    {
+      "text": "Classify the target workload as offline flow planning, online traffic engineering, datacenter scheduling, or incident response.",
+      "refs": [
+        "X-002",
+        "C-042"
+      ]
+    },
+    {
+      "text": "Build a replay benchmark using real traffic matrices, topology snapshots, and failure cases.",
+      "refs": [
+        "X-003",
+        "C-032"
+      ]
+    },
+    {
+      "text": "Compare RL against min-cost/max-flow, LP/CP/TE optimizers, and the incumbent heuristic before any production decision.",
+      "refs": [
+        "C-001",
+        "C-012",
+        "C-033"
+      ]
+    },
+    {
+      "text": "Require a solver, projection layer, or shield to enforce hard constraints in any RL architecture.",
+      "refs": [
+        "X-004",
+        "C-020",
+        "C-023"
+      ]
+    },
+    {
+      "text": "Start with shadow mode or bounded advisory deployment; promote only after measured gains and rollback tests.",
+      "refs": [
+        "C-023",
+        "C-043",
+        "X-005"
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "text": "The target organization's traffic distributions, topology changes, and failure patterns are unknown.",
+      "refs": [
+        "X-003"
+      ]
+    },
+    {
+      "text": "Residual incident risk after adding RL has not been quantified.",
+      "refs": [
+        "X-004"
+      ]
+    },
+    {
+      "text": "Total cost of ownership is workload-specific and not directly resolved by the literature.",
+      "refs": [
+        "X-005"
+      ]
+    },
+    {
+      "text": "The decision should be narrowed from generic network flow optimization to one concrete workload.",
+      "refs": [
+        "C-042"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "S-001",
+      "title": "OR-Tools Min Cost Flow",
+      "type": "industry",
+      "note": "Official Google documentation for classical min-cost-flow tooling."
+    },
+    {
+      "id": "S-002",
+      "title": "NetworkX flow algorithms documentation",
+      "type": "industry",
+      "note": "Official documentation for max-flow/min-cut algorithms."
+    },
+    {
+      "id": "S-003",
+      "title": "B4: Experience with a Globally-Deployed Software Defined WAN",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-004",
+      "title": "Machine Learning for Combinatorial Optimization: a Methodological Tour d'Horizon",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-005",
+      "title": "Learning Combinatorial Optimization Algorithms over Graphs",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-006",
+      "title": "CFR-RL: Traffic Engineering with Reinforcement Learning in SDN",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-007",
+      "title": "AuTO: Scaling Deep Reinforcement Learning for Datacenter-Scale Automatic Traffic Optimization",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-008",
+      "title": "Is Machine Learning Ready for Traffic Engineering Optimization?",
+      "type": "peer-reviewed"
+    },
+    {
+      "id": "S-009",
+      "title": "Teal: Learning-Accelerated Optimization of WAN Traffic Engineering",
+      "type": "peer-reviewed"
+    }
+  ],
+  "review": {
+    "verdict": "PASS_WITH_CAVEATS",
+    "scores": {
+      "coverage": 100,
+      "traceability": 100,
+      "contradiction": 40,
+      "recommendation": 100
+    },
+    "blocking": [],
+    "major": [],
+    "minor": [
+      "Open contradictions remain for human review: X-003, X-004, X-005"
+    ]
+  }
+}

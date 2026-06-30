@@ -63,14 +63,14 @@ It runs as a **Claude Code plugin**: no API key, no separate billing. It uses yo
 
 ```text
 /plugin marketplace add huguryildiz/storm-council
-/plugin install storm-council@storm-council
+/plugin install storm-council@huguryildiz
 ```
 
 To install from a local clone:
 
 ```text
 /plugin marketplace add /absolute/path/to/storm-council
-/plugin install storm-council@storm-council
+/plugin install storm-council@huguryildiz
 ```
 
 Invoke with natural language or the `/storm-council` shortcut:
