@@ -346,5 +346,73 @@ class ContradictionShapeTest(unittest.TestCase):
             self.assertFalse(any("missing claim" in b.lower() for b in gate["blocking_issues"]))
 
 
+class ContradictionResolutionGateTest(unittest.TestCase):
+    def _two_claim_run(self, base, contradictions):
+        _write_run(
+            base,
+            claims=[
+                {"claim_id": "C-001", "perspective": "academic", "claim_text": "A.",
+                 "claim_type": "fact", "evidence_status": "supported", "source_ids": ["S-001"]},
+                {"claim_id": "C-002", "perspective": "skeptic", "claim_text": "B.",
+                 "claim_type": "inference", "evidence_status": "partially_supported",
+                 "source_ids": ["S-001"]},
+            ],
+            sources=[{"source_id": "S-001", "title": "Real",
+                      "url": "https://arxiv.org/abs/2004.11986",
+                      "source_type": "peer_reviewed", "credibility_notes": "ok"}],
+            contradictions=contradictions,
+        )
+
+    def test_resolution_requires_basis(self):
+        # A "resolved" status with no basis is flagged and does not count as handled.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._two_claim_run(base, [
+                {"id": "X-001", "claim_ids": ["C-001", "C-002"],
+                 "resolution_status": "resolved"},
+            ])
+            gate = verify_mod.verify(base)
+            self.assertEqual(gate["contradiction_handling_score"], 0)
+            self.assertTrue(any("without an evidence/move basis" in m
+                                for m in gate["minor_issues"]))
+
+    def test_contradiction_score_ignores_baseless_resolution(self):
+        # Identical run except for a credited resolution -> score jumps 0 -> 100.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._two_claim_run(base, [
+                {"id": "X-001", "claim_ids": ["C-001", "C-002"],
+                 "resolution_status": "resolved",
+                 "resolution": {"basis": "none", "evidence_ids": [], "move_ids": []}},
+            ])
+            baseless = verify_mod.verify(base)["contradiction_handling_score"]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._two_claim_run(base, [
+                {"id": "X-001", "claim_ids": ["C-001", "C-002"],
+                 "resolution_status": "resolved",
+                 "resolution": {"basis": "deliberation", "evidence_ids": [],
+                                "move_ids": ["M-004"],
+                                "rationale": "Skeptic conceded the scoped point."}},
+            ])
+            credited = verify_mod.verify(base)["contradiction_handling_score"]
+
+        self.assertEqual(baseless, 0)
+        self.assertEqual(credited, 100)
+
+    def test_canonical_id_alias_still_resolves(self):
+        # `id` is preferred, but the deprecated `conflict_id` alias still resolves.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._two_claim_run(base, [
+                {"conflict_id": "X-001", "claim_ids": ["C-001", "C-002"],
+                 "resolution_status": "unresolved"},
+            ])
+            gate = verify_mod.verify(base)
+            self.assertFalse(any("missing claim" in b.lower()
+                                 for b in gate["blocking_issues"]))
+
+
 if __name__ == "__main__":
     unittest.main()

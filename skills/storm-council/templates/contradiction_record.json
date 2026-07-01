@@ -1,4 +1,5 @@
 {
+  "id": "X-001",
   "conflict_id": "X-001",
   "contradiction_id": "X-001",
   "topic": "Short label for what is in conflict.",
@@ -8,7 +9,14 @@
   "why_it_matters": "Why this disagreement affects the decision.",
   "evidence_balance": "supports_a|supports_b|mixed|insufficient",
   "resolution_status": "resolved|partially_resolved|unresolved|open|leaning|unresolvable_now",
+  "resolution": {
+    "basis": "evidence|deliberation|concession|none",
+    "evidence_ids": ["E-004"],
+    "move_ids": ["M-004"],
+    "rationale": "How the tension was settled or narrowed. A resolved/partially_resolved status is only credited toward the contradiction score when basis != none AND it cites at least one E-### or M-###."
+  },
   "next_question": "The question that would move this forward.",
   "decisive_missing_evidence": "Primary source, full-text passage, benchmark, or head-to-head comparison needed.",
-  "human_review_required": true
+  "human_review_required": true,
+  "_schema_notes": "`id` is canonical; `conflict_id`/`contradiction_id` are deprecated aliases kept for one release. `resolution` is optional; when absent the contradiction is treated as basis:none (uncredited)."
 }

@@ -17,9 +17,10 @@ SPEC.loader.exec_module(render_report)
 class RenderReportTest(unittest.TestCase):
     def test_report_includes_brand_logo_and_project_links(self):
         html = render_report.build({"title": "A decision", "bottom_line": "Use care."})
+        icon_svg = (ROOT / "assets" / "icon.svg").read_text(encoding="utf-8").strip()
 
         self.assertIn('<div class="brand-logo"', html)
-        self.assertIn("<svg", html)
+        self.assertIn(icon_svg, html)
         self.assertIn('href="https://oval.cs.stanford.edu/"', html)
         self.assertIn('href="https://storm.genie.stanford.edu/"', html)
         self.assertIn('href="https://github.com/stanford-oval/storm"', html)
@@ -143,6 +144,24 @@ class RenderReportTest(unittest.TestCase):
             html,
         )
         self.assertNotIn('<span class="cid">C-001</span>', html)
+
+    def test_strongest_findings_are_ranked_by_score_descending(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "strongest_findings": [
+                    {"text": "Eight-point finding.", "score": 8, "claims": ["C-001"]},
+                    {"text": "Nine-point finding.", "score": 9, "claims": ["C-002"]},
+                    {"text": "Also eight-point finding.", "score": 8, "claims": ["C-003"]},
+                    {"text": "Unscored finding.", "claims": ["C-004"]},
+                ],
+            }
+        )
+
+        self.assertLess(html.index("Nine-point finding."), html.index("Eight-point finding."))
+        self.assertLess(html.index("Eight-point finding."), html.index("Also eight-point finding."))
+        self.assertLess(html.index("Also eight-point finding."), html.index("Unscored finding."))
+        self.assertIn('<span class="fnum">1</span>', html)
 
     def test_inline_claim_ids_render_as_clickable_chips(self):
         html = render_report.build(
@@ -922,6 +941,105 @@ class RenderReportTest(unittest.TestCase):
                          "publication_identity": {"retraction_status": "retracted"}}],
         })
         self.assertIn("retracted", html)
+
+
+class LayerRenderingTest(unittest.TestCase):
+    def _rich_data(self):
+        mmd = "flowchart TD\n  C1[Claim C-001]:::claim --> D1[Decision]:::decision"
+        return {
+            "title": "Layered decision",
+            "bottom_line": "Proceed with care.",
+            "claims": [{"claim_id": "C-001", "perspective": "academic",
+                        "claim_text": "A claim.", "claim_type": "fact",
+                        "evidence_status": "supported", "confidence": 0.5,
+                        "source_ids": ["S-001"]}],
+            "sources": [{"id": "S-001", "title": "A source", "type": "peer_reviewed"}],
+            "argument_map": mmd,
+            "decision_frame": "# Frame\n\nRaw stage markdown.",
+            "run_manifest": {"generated_at": "2026-06-30T22:45:00+00:00",
+                             "dispatch_mode": "independent_subagents",
+                             "models_per_lens": {"academic": "claude-opus-4-8"},
+                             "retrieval_tools_used": ["web_search"],
+                             "schema_version": "1.1"},
+            "deliberation": [{"move_id": "M-001", "round": "R1", "lens": "skeptic",
+                              "target_id": "C-001", "move": "challenge",
+                              "statement": "Does the passage entail the claim?",
+                              "effect": {"change_type": "confidence_delta",
+                                         "field": "confidence", "before": 0.73,
+                                         "after": 0.5, "resolves": ["X-001"]}}],
+        }
+
+    def test_layer_all_matches_default(self):
+        data = self._rich_data()
+        self.assertEqual(render_report.build(data), render_report.build(data, "all"))
+
+    def test_layer_brief_excludes_registries(self):
+        html = render_report.build(self._rich_data(), "brief")
+        self.assertIn("Proceed with care.", html)
+        self.assertNotIn("Claims &amp; evidence ledger", html)
+        self.assertNotIn(">Sources<", html)
+        self.assertNotIn("Run manifest", html)
+        self.assertNotIn("Decision frame", html)
+
+    def test_brief_has_no_cytoscape(self):
+        html = render_report.build(self._rich_data(), "brief")
+        self.assertNotIn("Cytoscape Consortium", html)
+        self.assertNotIn("am-cy-data", html)  # the interactive-map data script
+
+    def test_report_layer_keeps_ledger_drops_raw_and_cytoscape(self):
+        html = render_report.build(self._rich_data(), "report")
+        self.assertIn("Claims &amp; evidence ledger", html)
+        self.assertNotIn("Cytoscape Consortium", html)
+        self.assertNotIn("Run manifest", html)
+        self.assertNotIn("Raw stage markdown.", html)
+
+    def test_appendix_hosts_cytoscape_and_manifest(self):
+        html = render_report.build(self._rich_data(), "appendix")
+        self.assertIn("am-cy-data", html)
+        self.assertIn("Run manifest", html)
+        self.assertNotIn("Proceed with care.", html)
+
+    def test_run_manifest_renders_in_appendix(self):
+        html = render_report.build(self._rich_data(), "appendix")
+        self.assertIn("Run manifest", html)
+        self.assertIn("independent subagents", html)
+        self.assertIn("web_search", html)
+
+    def test_move_effect_updates_rendered_claim(self):
+        html = render_report.build(self._rich_data(), "report")
+        self.assertIn("claim-delta", html)
+        self.assertIn("0.73", html)
+        self.assertIn("after R1 challenge", html)
+
+    def test_deliberation_renders_effect(self):
+        html = render_report.build(self._rich_data(), "appendix")
+        self.assertIn("mv-effect", html)
+        self.assertIn("M-001", html)
+        self.assertIn("resolves", html)
+
+    def test_deliberation_without_effect_is_backward_compatible(self):
+        moves = [{"round": "round_1", "lens": "academic", "target_id": "C-002",
+                  "move": "support", "statement": "Agreed."}]
+        html = render_report._deliberation_html(moves)
+        self.assertIn("Agreed.", html)
+        self.assertNotIn("mv-effect", html)
+
+    def test_contradiction_resolution_renders_in_detail(self):
+        detail = {"topic": "T", "resolution_status": "partially_resolved",
+                  "resolution": {"basis": "deliberation", "evidence_ids": [],
+                                 "move_ids": ["M-004"],
+                                 "rationale": "Skeptic narrowed the tension."}}
+        html = render_report._cx_detail_html(detail, {})
+        self.assertIn("Resolution basis", html)
+        self.assertIn("deliberation", html)
+        self.assertIn("credited", html)
+        self.assertIn("Skeptic narrowed the tension.", html)
+
+    def test_baseless_resolution_renders_uncredited(self):
+        detail = {"topic": "T", "resolution": {"basis": "none",
+                                               "evidence_ids": [], "move_ids": []}}
+        html = render_report._cx_detail_html(detail, {})
+        self.assertIn("uncredited", html)
 
 
 if __name__ == "__main__":

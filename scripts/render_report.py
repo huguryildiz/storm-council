@@ -1102,9 +1102,10 @@ def _lens_charters_html(charters) -> str:
     return f'<div class="charters">{cards}</div>' if cards else ""
 
 
-def _claims_table_html(claims) -> str:
+def _claims_table_html(claims, effects_by_claim=None) -> str:
     if not isinstance(claims, list) or not claims:
         return ""
+    effects_by_claim = effects_by_claim or {}
     rows = ""
     for c in claims:
         if not isinstance(c, dict):
@@ -1120,6 +1121,14 @@ def _claims_table_html(claims) -> str:
         meta_chips = []
         if c.get("confidence") is not None:
             meta_chips.append(f'<span class="claim-chip">⚡ {e(str(c.get("confidence")))}</span>')
+        eff = effects_by_claim.get(cid)
+        if isinstance(eff, dict) and eff.get("before") not in (None, ""):
+            rnd = eff.get("round")
+            when = f' after R{e(_round_label(rnd))} {e(str(eff.get("move_type") or "challenge"))}' if rnd else ""
+            meta_chips.append(
+                '<span class="claim-chip claim-delta">%s %s &rarr; %s%s</span>' % (
+                    e(str(eff.get("field") or "confidence")),
+                    e(str(eff.get("before"))), e(str(eff.get("after"))), when))
         if c.get("created_at"):
             try:
                 from datetime import datetime, timezone
@@ -1308,6 +1317,115 @@ def _evidence_table_html(evidence, sources_by_id=None, verdicts=None) -> str:
     )
 
 
+def _round_label(r) -> str:
+    """Normalise a round identifier to its bare ordinal ('round_1'/'R1' -> '1')."""
+    s = str(r).strip()
+    low = s.lower()
+    if low.startswith("round_"):
+        low = low[6:]
+    elif low.startswith("round"):
+        low = low[5:]
+    elif low[:1] == "r" and low[1:2].isdigit():
+        low = low[1:]
+    return low.replace("_", " ").strip() or s
+
+
+def _move_effect_html(effect) -> str:
+    """Render a deliberation move's consequence: what a challenge changed."""
+    if not isinstance(effect, dict):
+        return ""
+    ct = str(effect.get("change_type") or "").lower()
+    if ct in ("", "none"):
+        return ""
+    field = effect.get("field") or "confidence"
+    before, after = effect.get("before"), effect.get("after")
+    if ct == "withdrawn":
+        desc = "claim withdrawn"
+    elif ct == "scope_narrowed":
+        desc = f"{e(field)} scope narrowed" + (
+            f": {text_refs(after)}" if after not in (None, "") else "")
+    elif ct in ("confidence_delta", "status_change") or (before not in (None, "") or after not in (None, "")):
+        arrow = f'{e(str(before))} &rarr; {e(str(after))}' if before not in (None, "") else e(str(after))
+        desc = f"{e(field)} {arrow}"
+    else:
+        desc = e(ct.replace("_", " "))
+    resolves = effect.get("resolves") or []
+    res_html = f' · resolves {refs(resolves).strip()}' if resolves else ""
+    return f'<div class="mv-effect"><span class="mv-effect-label">Effect</span> {desc}{res_html}</div>'
+
+
+def _claim_effects_from_deliberation(moves) -> dict:
+    """Map claim_id -> its last confidence/status effect, for the claims ledger.
+
+    Lets the ledger show a before&rarr;after delta ('0.73 &rarr; 0.61 after R1
+    challenge') driven by cross-examination moves."""
+    out: dict = {}
+    if not isinstance(moves, list):
+        return out
+    for m in moves:
+        if not isinstance(m, dict):
+            continue
+        eff = m.get("effect")
+        if not isinstance(eff, dict):
+            continue
+        ct = str(eff.get("change_type") or "").lower()
+        if ct in ("", "none"):
+            continue
+        target = m.get("target_id") or m.get("target_claim_id")
+        if not target or not str(target).startswith("C-"):
+            continue
+        out[target] = {
+            "change_type": ct,
+            "field": eff.get("field") or "confidence",
+            "before": eff.get("before"),
+            "after": eff.get("after"),
+            "round": m.get("round"),
+            "move_type": m.get("move") or m.get("move_type"),
+        }
+    return out
+
+
+def _run_manifest_html(m) -> str:
+    """Render the minimal run manifest (dispatch mode, models/lenses, retrieval
+    tools, timestamp, schema/version) in the appendix. Attests the *claim* of
+    independent dispatch — not proof of it; the copy says so."""
+    if not isinstance(m, dict) or not m:
+        return ""
+    rows = ""
+
+    def _row(label, val_html):
+        return f'<tr><th scope="row">{e(label)}</th><td>{val_html}</td></tr>'
+
+    if m.get("generated_at"):
+        rows += _row("Generated", _fmt_datetime_html(str(m["generated_at"])))
+    if m.get("dispatch_mode"):
+        rows += _row("Dispatch mode", e(str(m["dispatch_mode"]).replace("_", " ")))
+    if m.get("independent_contexts") is not None:
+        rows += _row("Independent contexts", "yes" if m["independent_contexts"] else "no")
+    mpl = m.get("models_per_lens")
+    if isinstance(mpl, dict) and mpl:
+        items = "".join(
+            f'<li><b style="text-transform:capitalize">{e(str(k))}</b>: {e(str(v))}</li>'
+            for k, v in mpl.items())
+        rows += _row("Models per lens", f'<ul class="clean">{items}</ul>')
+    tools = m.get("retrieval_tools_used")
+    if isinstance(tools, list) and tools:
+        chips = "".join(f'<span class="tag kind">{e(str(t))}</span> ' for t in tools)
+        rows += _row("Retrieval tools used", chips)
+    elif isinstance(tools, list):
+        rows += _row("Retrieval tools used", '<span class="tag open">none — claims are unsupported</span>')
+    if m.get("schema_version"):
+        rows += _row("Schema version", e(str(m["schema_version"])))
+    if m.get("generator_version"):
+        rows += _row("Generator version", e(str(m["generator_version"])))
+    if not rows:
+        return ""
+    note = ('<p class="lead">This manifest records how the run was dispatched. It attests the '
+            '<b>claim</b> of independent lens contexts and the tools invoked — it is not itself '
+            'proof that the lenses reasoned independently.</p>')
+    return f'{note}<table class="manifest-table"><tbody>{rows}</tbody></table>'
+
+
 def _deliberation_html(moves) -> str:
     if not isinstance(moves, list) or not moves:
         return ""
@@ -1337,16 +1455,22 @@ def _deliberation_html(moves) -> str:
                     tparts.append(refs([m[key]]).strip())
             target = " ".join(p for p in tparts if p)
             text = m.get("text") or m.get("statement") or ""
+            mid = m.get("move_id")
+            mid_html = f'<span class="mv-id mono">{e(mid)}</span>' if mid else ""
+            effect_html = _move_effect_html(m.get("effect"))
             meta = _field_details((
                 ("round", m.get("round")),
                 ("move", m.get("move") or m.get("move_type")),
+                ("move_id", mid),
+                ("effect", m.get("effect")),
                 ("created_at", m.get("created_at")),
             ), "Move metadata")
             out += ('<div class="move"><div class="mv-side">'
+                    f'{mid_html}'
                     f'<span class="mv-lens">{e(lens)}</span>'
                     f'<span class="tag {mcls}">{e(mlbl)}</span>'
                     f'<span class="mv-target">{target}</span></div>'
-                    f'<div class="mv-text">{text_refs(text)}{meta}</div></div>')
+                    f'<div class="mv-text">{text_refs(text)}{effect_html}{meta}</div></div>')
         out += "</div>"
     return out
 
@@ -1368,6 +1492,7 @@ def _cx_detail_html(detail: dict, claim_by_id: dict) -> str:
         meta.append(f"Relationship: {detail.get('relationship')}")
     if detail.get("resolution_status"):
         meta.append(f"Resolution: {detail.get('resolution_status')}")
+    resolution = detail.get("resolution") if isinstance(detail.get("resolution"), dict) else None
     if detail.get("human_review_required") is not None:
         meta.append("Human review required: " + ("yes" if detail.get("human_review_required") else "no"))
     if meta:
@@ -1391,6 +1516,24 @@ def _cx_detail_html(detail: dict, claim_by_id: dict) -> str:
         inner += f'<p class="cx-nq">Next question: {text_refs(detail["next_question"])}</p>'
     if detail.get("decisive_missing_evidence"):
         inner += f'<p class="cx-nq">Decisive missing evidence: {text_refs(detail["decisive_missing_evidence"])}</p>'
+    if resolution:
+        basis = str(resolution.get("basis") or "none").lower()
+        ev_ids = resolution.get("evidence_ids") or []
+        mv_ids = resolution.get("move_ids") or []
+        refs_html = ""
+        if ev_ids:
+            refs_html += f' · evidence {refs(ev_ids).strip()}'
+        if mv_ids:
+            refs_html += f' · moves {refs(mv_ids).strip()}'
+        credited = basis not in ("", "none") and (ev_ids or mv_ids)
+        badge_cls = "done" if credited else "open"
+        badge = "credited" if credited else "uncredited"
+        inner += ('<div class="cx-resolution"><p class="cx-meta">'
+                  f'Resolution basis: <span class="tag kind">{e(basis)}</span> '
+                  f'<span class="tag {badge_cls}">{badge}</span>{refs_html}</p>')
+        if resolution.get("rationale"):
+            inner += f'<p class="cx-why">{text_refs(resolution["rationale"])}</p>'
+        inner += "</div>"
     if not inner:
         return ""
     return f'<details class="cx-detail"><summary>Positions &amp; detail</summary>{inner}</details>'
@@ -1822,7 +1965,29 @@ def _argument_map_interactive_html(mmd, data) -> str:
     )
 
 
-def build(data: dict) -> str:
+_LAYERS = ("brief", "report", "appendix", "all")
+
+
+def _layer_visible(layer: str, tier: str) -> bool:
+    """Which section tiers render for a given output layer.
+
+    ``all`` renders everything (byte-identical to the historic single file);
+    ``report`` is the curated brief plus its analytical backbone; ``appendix``
+    is the raw-artifact / heavy-interactive dump on its own."""
+    if layer == "all":
+        return True
+    if layer == "brief":
+        return tier == "brief"
+    if layer == "report":
+        return tier in ("brief", "report")
+    if layer == "appendix":
+        return tier == "appendix"
+    return True
+
+
+def build(data: dict, layer: str = "all") -> str:
+    if layer not in _LAYERS:
+        layer = "all"
     counts = data.get("counts", {})
     st = data.get("status", {})
     scores = st.get("scores", {})
@@ -1852,7 +2017,14 @@ def build(data: dict) -> str:
     a("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />")
     a('<meta name="viewport" content="width=device-width, initial-scale=1" />')
     a(f"<title>{e(data.get('title','Storm Council report'))}</title>")
-    a("<style>" + CSS + "</style>\n</head>\n<body>\n<main class=\"page\">")
+    a("<style>" + CSS + "</style>")
+    if layer == "brief":
+        # Print-friendly rules scoped to the standalone brief only, so the
+        # default `all` output stays byte-identical to the historic report.
+        a("<style>@media print{.toc{display:none!important}"
+          ".page{max-width:none;padding:0}"
+          "section,.fcard,.opt,.bottom-line-card{break-inside:avoid}}</style>")
+    a("</head>\n<body>\n<main class=\"page\">")
 
     logo_svg = _logo_svg()
     a('<header class="report-header"><div class="report-title-block">')
@@ -1931,6 +2103,7 @@ def build(data: dict) -> str:
         "<b>Confidence (0.0-1.0) is separate from evidence status.</b> A high-confidence forecast is still a forecast.",
         "<b>Fact, inference, and recommendation are labelled separately.</b>",
         "<b>Disagreements are kept on the record</b>, not resolved by force.",
+        "<b>A Contradiction score of 50 means no contradictions were logged</b> — a neutral \"no data\" reading, not a penalty. It only drops toward 0 when logged contradictions are left unresolved.",
     ]
     a('<div class="howto"><h3>How to read this</h3><ul>' +
       "".join(f"<li>{li}</li>" for li in howto) + "</ul></div>")
@@ -1938,21 +2111,23 @@ def build(data: dict) -> str:
     section_no = [0]
     toc_items: list = []
 
-    def sec(title, body):
+    def sec(title, body, tier="report"):
+        if not _layer_visible(layer, tier):
+            return
         section_no[0] += 1
         num = f"{section_no[0]:02d}"
         toc_items.append((num, title))
         a(f'<section id="sec-{num}"><h2><span class="num">{num}</span>{e(title)}</h2>{body}</section>')
 
     if data.get("bottom_line"):
-        sec("Bottom line", '<div class="bottom-line-card"><p>%s</p></div>' % text_refs(data["bottom_line"]))
+        sec("Bottom line", '<div class="bottom-line-card"><p>%s</p></div>' % text_refs(data["bottom_line"]), "brief")
 
     if data.get("decision_frame"):
-        sec("Decision frame", f'<div class="artifact">{_md_block(data["decision_frame"])}</div>')
+        sec("Decision frame", f'<div class="artifact">{_md_block(data["decision_frame"])}</div>', "appendix")
 
     charters_html = _lens_charters_html(data.get("lens_charters"))
     if charters_html:
-        sec("The five council lenses", charters_html)
+        sec("The five council lenses", charters_html, "report")
 
     def _attr(cls, label, d):
         persp = e(" + ".join(p.title() for p in d.get("perspectives", []))) if d.get("perspectives") else ""
@@ -1988,12 +2163,27 @@ def build(data: dict) -> str:
         cls = "fcard contested" if contested else "fcard"
         return f'<div class="{cls}">{num}{kicker}{title}{head}{body}{attrs_div}</div>'
 
+    def _finding_score(f):
+        try:
+            return float(f.get("score"))
+        except (TypeError, ValueError):
+            return float("-inf")
+
     fnd = data.get("strongest_findings", [])
     if fnd:
-        body = '<div class="findings">' + "".join(_finding_card(f, i) for i, f in enumerate(fnd, 1)) + "</div>"
-        sec("Strongest evidence-backed findings", body)
+        ranked_findings = sorted(
+            enumerate(fnd),
+            key=lambda item: (-_finding_score(item[1]), item[0]),
+        )
+        body = (
+            '<div class="findings">'
+            + "".join(_finding_card(f, i) for i, (_, f) in enumerate(ranked_findings, 1))
+            + "</div>"
+        )
+        sec("Strongest evidence-backed findings", body, "brief")
 
-    claims_html = _claims_table_html(data.get("claims"))
+    effects_by_claim = _claim_effects_from_deliberation(data.get("deliberation"))
+    claims_html = _claims_table_html(data.get("claims"), effects_by_claim)
     if claims_html:
         confidence_kpi = (
             '<div class="kpi-card"><span class="kpi-icon">⚡</span><div>'
@@ -2005,7 +2195,7 @@ def build(data: dict) -> str:
             'confidence ≥ 0.8 on any claim whose status is not <code>supported</code> as possible '
             'overconfidence &mdash; worth a second look.</p></div></div>'
         )
-        sec("Claims & evidence ledger", confidence_kpi + claims_html)
+        sec("Claims & evidence ledger", confidence_kpi + claims_html, "report")
 
     _sources_by_id = {
         (s.get("id") or s.get("source_id")): s
@@ -2016,11 +2206,14 @@ def build(data: dict) -> str:
         data.get("evidence"), _sources_by_id or None, data.get("evidence_verdicts")
     )
     if evidence_html:
-        sec("Evidence registry", evidence_html)
+        sec("Evidence registry", evidence_html, "report")
 
-    argmap_html = _argument_map_interactive_html(data.get("argument_map"), data)
-    if argmap_html:
-        sec("Argument map", argmap_html)
+    # The interactive Cytoscape map (and its ~373 KB inline library) is heavy;
+    # keep it in the appendix so brief/report stay lightweight and printable.
+    if _layer_visible(layer, "appendix"):
+        argmap_html = _argument_map_interactive_html(data.get("argument_map"), data)
+        if argmap_html:
+            sec("Argument map", argmap_html, "appendix")
 
     cons = data.get("contradictions", [])
     lens_snapshot = _lens_snapshot_html(data.get("lens_snapshot"))
@@ -2032,24 +2225,26 @@ def build(data: dict) -> str:
         for c in cons:
             tcls, tlbl = _CONFLICT.get(str(c.get("status","")).lower(), ("part", c.get("status","")))
             stake = text_refs(c.get("stake", ""))
+            # The one-page brief shows only the summary row; the expandable
+            # positions/resolution detail belongs to the fuller layers.
             det = cdetail.get(c.get("id"))
-            if isinstance(det, dict):
+            if layer != "brief" and isinstance(det, dict):
                 stake += _cx_detail_html(det, claim_by_id)
             rows += ('<tr id="ref-%s"><td class="mono">%s</td><td><span class="tag kind">%s</span></td>'
                      '<td>%s</td><td><span class="tag %s">%s</span></td></tr>' % (
                          e(c.get("id","")), e(c.get("id","")), e(c.get("kind","")), stake, tcls, e(tlbl)))
         body = (lens_snapshot + '<table><thead><tr><th>Conflict</th><th>Kind</th><th>What is at stake</th>'
                 '<th>Status</th></tr></thead><tbody>' + rows + "</tbody></table>")
-        sec("Where the lenses disagree", body)
+        sec("Where the lenses disagree", body, "brief")
     elif lens_snapshot:
-        sec("Lens posture snapshot", lens_snapshot)
+        sec("Lens posture snapshot", lens_snapshot, "report")
 
     if data.get("contradiction_ledger"):
-        sec("Contradiction ledger notes", f'<div class="artifact">{_md_block(data["contradiction_ledger"])}</div>')
+        sec("Contradiction ledger notes", f'<div class="artifact">{_md_block(data["contradiction_ledger"])}</div>', "appendix")
 
     delib_html = _deliberation_html(data.get("deliberation"))
     if delib_html:
-        sec("Council deliberation", delib_html)
+        sec("Council deliberation", delib_html, "appendix")
 
     opts = data.get("options", [])
     if opts:
@@ -2060,28 +2255,28 @@ def build(data: dict) -> str:
             when = f'<p class="when">When appropriate: {text_refs(o["when"])}</p>' if o.get("when") else ""
             body += ('<div class="opt"><span class="chip %s">%s</span><h4>%s</h4><ul>%s</ul>%s</div>' % (
                 ccls, e(clbl), e(o.get("name","")), pts, when))
-        sec("Decision options & trade-offs", body)
+        sec("Decision options & trade-offs", body, "brief")
 
     acts = data.get("next_actions", [])
     if acts:
         body = '<ul class="clean">' + "".join(
             f'<li>{text_refs(x.get("text",""))}{refs(x.get("refs"))}</li>' for x in acts) + "</ul>"
-        sec("Recommended next actions", body)
+        sec("Recommended next actions", body, "brief")
 
     gaps = data.get("gaps", [])
     if gaps:
         body = '<ul class="clean">' + "".join(
             f'<li>{text_refs(g.get("text",""))}{refs(g.get("refs"))}</li>' for g in gaps) + "</ul>"
-        sec("Evidence gaps & frontier questions", body)
+        sec("Evidence gaps & frontier questions", body, "brief")
 
     if data.get("source_mapped_synthesis"):
-        sec("Source-mapped synthesis notes", f'<div class="artifact">{_md_block(data["source_mapped_synthesis"])}</div>')
+        sec("Source-mapped synthesis notes", f'<div class="artifact">{_md_block(data["source_mapped_synthesis"])}</div>', "appendix")
 
     if data.get("decision_brief"):
-        sec("Decision brief artifact", f'<div class="artifact">{_md_block(data["decision_brief"])}</div>')
+        sec("Decision brief artifact", f'<div class="artifact">{_md_block(data["decision_brief"])}</div>', "appendix")
 
     if data.get("evidence_plan"):
-        sec("Evidence plan", _evidence_plan_html(data["evidence_plan"]))
+        sec("Evidence plan", _evidence_plan_html(data["evidence_plan"]), "appendix")
 
     srcs = data.get("sources", [])
     if srcs:
@@ -2134,10 +2329,14 @@ def build(data: dict) -> str:
                 '<details class="bibtex-detail"><summary>BibTeX records</summary>'
                 f'<pre>{e(data["source_bibtex"])}</pre></details>'
             )
-        sec("Sources", source_body)
+        sec("Sources", source_body, "report")
+
+    manifest_html = _run_manifest_html(data.get("run_manifest"))
+    if manifest_html:
+        sec("Run manifest", manifest_html, "appendix")
 
     if data.get("adversarial_review"):
-        sec("Adversarial review notes", f'<div class="artifact">{_md_block(data["adversarial_review"])}</div>')
+        sec("Adversarial review notes", f'<div class="artifact">{_md_block(data["adversarial_review"])}</div>', "appendix")
 
     rev = data.get("review", {})
     if rev:
@@ -2160,7 +2359,7 @@ def build(data: dict) -> str:
         )
         body = (f'<div class="scores">{chips}</div>'
                 f'<p class="lead">Verdict <b>{e(verdict)}</b>.</p>{summary}{issues}')
-        sec("Independent review", body)
+        sec("Independent review", body, "brief")
 
     a('<footer><p><b>Storm Council</b> is inspired by research-first knowledge-curation systems, '
       'especially Stanford OVAL\'s STORM line of work. For context, see '
@@ -2249,11 +2448,18 @@ def _read_jsonl(path: Path) -> list:
     return rows
 
 
-def _fold_in_artifacts(data: dict, base: Path) -> None:
+def _fold_in_artifacts(data: dict, base: Path, layer: str = "all") -> None:
     """Read sibling stage artifacts from the report's directory and fold them
     into ``data`` so the report stays complete even when report_data.json is a
     summary. Anything the summary already carries wins; anything absent degrades
-    to nothing rendered. Pure local file reads — no network."""
+    to nothing rendered. Pure local file reads — no network.
+
+    Structured data (claims, evidence, deliberation, manifest, …) is always
+    folded because it can feed report/brief sections. The bulky raw-markdown
+    stage dumps and the Mermaid/evidence-plan payloads only render in the
+    appendix, so they are folded solely for ``appendix``/``all`` — this is what
+    keeps the brief and standard report free of duplicated raw artifacts."""
+    want_appendix = layer in ("appendix", "all")
     if not data.get("lens_charters"):
         f = base / "02_perspective_scan.json"
         if f.exists():
@@ -2266,18 +2472,25 @@ def _fold_in_artifacts(data: dict, base: Path) -> None:
             elif isinstance(parsed, dict) and isinstance(parsed.get("lenses"), list):
                 data["lens_charters"] = parsed["lenses"]
 
-    for key, filename in (
-        ("decision_frame", "01_decision_frame.md"),
-        ("contradiction_ledger", "04_contradiction_ledger.md"),
-        ("source_mapped_synthesis", "05_synthesis.md"),
-        ("decision_brief", "05_decision_brief.md"),
-        ("adversarial_review", "06_adversarial_review.md"),
-        ("source_bibtex", "03_sources.bib"),
-    ):
-        if not data.get(key):
-            f = base / filename
-            if f.exists():
-                data[key] = f.read_text(encoding="utf-8")
+    # BibTeX feeds the report-tier Sources section (APA formatting), so it is
+    # folded for every layer; the raw stage-markdown dumps are appendix-only.
+    if not data.get("source_bibtex"):
+        f = base / "03_sources.bib"
+        if f.exists():
+            data["source_bibtex"] = f.read_text(encoding="utf-8")
+
+    if want_appendix:
+        for key, filename in (
+            ("decision_frame", "01_decision_frame.md"),
+            ("contradiction_ledger", "04_contradiction_ledger.md"),
+            ("source_mapped_synthesis", "05_synthesis.md"),
+            ("decision_brief", "05_decision_brief.md"),
+            ("adversarial_review", "06_adversarial_review.md"),
+        ):
+            if not data.get(key):
+                f = base / filename
+                if f.exists():
+                    data[key] = f.read_text(encoding="utf-8")
 
     if not data.get("claims"):
         f = base / "03_claims.jsonl"
@@ -2300,7 +2513,7 @@ def _fold_in_artifacts(data: dict, base: Path) -> None:
             if verdicts:
                 data["evidence_verdicts"] = verdicts
 
-    if not data.get("argument_map"):
+    if want_appendix and not data.get("argument_map"):
         f = base / "05_argument_map.mmd"
         if f.exists():
             data["argument_map"] = f.read_text(encoding="utf-8")
@@ -2320,13 +2533,25 @@ def _fold_in_artifacts(data: dict, base: Path) -> None:
             except ValueError:
                 arr = None
             if isinstance(arr, list):
+                # Canonical id is `id`; `conflict_id`/`contradiction_id` remain
+                # as one-release deprecated aliases.
                 data["contradiction_detail"] = {
-                    x.get("conflict_id"): x
+                    (x.get("id") or x.get("conflict_id") or x.get("contradiction_id")): x
                     for x in arr
-                    if isinstance(x, dict) and x.get("conflict_id")
+                    if isinstance(x, dict) and (x.get("id") or x.get("conflict_id") or x.get("contradiction_id"))
                 }
 
-    if not data.get("evidence_plan"):
+    if not data.get("run_manifest"):
+        f = base / "run_manifest.json"
+        if f.exists():
+            try:
+                manifest = json.loads(f.read_text(encoding="utf-8"))
+            except ValueError:
+                manifest = None
+            if isinstance(manifest, dict):
+                data["run_manifest"] = manifest
+
+    if want_appendix and not data.get("evidence_plan"):
         f = base / "03_evidence_plan.md"
         if f.exists():
             data["evidence_plan"] = f.read_text(encoding="utf-8")
@@ -2367,13 +2592,17 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Render a Storm Council report (JSON -> HTML).")
     ap.add_argument("input", help="report_data.json")
     ap.add_argument("-o", "--output", default="storm_council_report.html")
+    ap.add_argument("--layer", choices=_LAYERS, default="all",
+                    help="which layer to render: brief (1-page decision), report "
+                         "(brief + analysis), appendix (raw artifacts + interactive "
+                         "map + manifest), or all (default; single combined file)")
     args = ap.parse_args(argv)
     data = json.loads(Path(args.input).read_text(encoding="utf-8"))
     base = Path(args.input).parent
     _enrich_source_urls(data, base)
-    _fold_in_artifacts(data, base)
-    Path(args.output).write_text(build(data), encoding="utf-8")
-    print(f"wrote {args.output}")
+    _fold_in_artifacts(data, base, args.layer)
+    Path(args.output).write_text(build(data, args.layer), encoding="utf-8")
+    print(f"wrote {args.output} (layer={args.layer})")
     return 0
 
 

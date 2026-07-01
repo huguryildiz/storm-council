@@ -285,7 +285,24 @@ def _contradiction_claim_ids(x: dict) -> list:
 
 
 def _contradiction_id(x: dict) -> str:
-    return x.get("conflict_id") or x.get("contradiction_id") or "?"
+    # Canonical id is `id`; `conflict_id`/`contradiction_id` are deprecated aliases.
+    return x.get("id") or x.get("conflict_id") or x.get("contradiction_id") or "?"
+
+
+def _resolution_is_credited(x: dict) -> bool:
+    """A self-declared resolution only counts toward the contradiction score
+    when it names a real basis and cites the evidence (E-###) or deliberation
+    moves (M-###) that settled it. A bare ``resolution_status`` with no basis —
+    or ``basis:"none"`` — is uncredited: it does not improve the score."""
+    if x.get("resolution_status") not in {"resolved", "partially_resolved"}:
+        return False
+    res = x.get("resolution")
+    if not isinstance(res, dict):
+        return False
+    basis = str(res.get("basis") or "").lower()
+    if basis in ("", "none"):
+        return False
+    return bool((res.get("evidence_ids") or []) or (res.get("move_ids") or []))
 
 
 # --------------------------------------------------------------------------- #
@@ -503,11 +520,18 @@ def verify(d: Path) -> dict:
         traceability = max(0, traceability - 25)
 
     if contradictions:
-        handled = [x for x in contradictions
-                   if x.get("resolution_status") in {"resolved", "partially_resolved"}]
+        handled = [x for x in contradictions if _resolution_is_credited(x)]
         contradiction_handling = _pct(len(handled), len(contradictions))
     else:
         contradiction_handling = 50
+
+    # Self-declared "resolved" without an evidence/move basis must not be
+    # mistaken for real handling — flag it (minor, never blocking on old runs).
+    baseless_resolved = [
+        _contradiction_id(x) for x in contradictions
+        if x.get("resolution_status") in {"resolved", "partially_resolved"}
+        and not _resolution_is_credited(x)
+    ]
 
     options = report.get("options", [])
     actions = report.get("next_actions", [])
@@ -566,6 +590,10 @@ def verify(d: Path) -> dict:
     open_x = [_contradiction_id(x) for x in contradictions if x.get("resolution_status") == "unresolved"]
     if open_x:
         minor.append("Open contradictions remain for human review: " + ", ".join(open_x))
+    if baseless_resolved:
+        minor.append(
+            "Contradictions marked resolved without an evidence/move basis "
+            "(not counted as handled): " + ", ".join(baseless_resolved))
 
     # --- verdict ------------------------------------------------------------ #
     if evidence_absent:

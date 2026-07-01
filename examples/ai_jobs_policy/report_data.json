@@ -36,7 +36,7 @@
     "scores": {
       "coverage": 100,
       "traceability": 100,
-      "contradiction": 50,
+      "contradiction": 38,
       "recommendation": 100
     }
   },
@@ -410,13 +410,14 @@
     "scores": {
       "coverage": 100,
       "traceability": 100,
-      "contradiction": 50,
+      "contradiction": 38,
       "recommendation": 100
     },
     "blocking": [],
     "major": [],
     "minor": [
-      "Open contradictions remain for human review: X-002, X-005, X-007, X-008"
+      "Open contradictions remain for human review: X-002, X-005, X-007, X-008",
+      "Contradictions marked resolved without an evidence/move basis (not counted as handled): X-006"
     ]
   }
 }

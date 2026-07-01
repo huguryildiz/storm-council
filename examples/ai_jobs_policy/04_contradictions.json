@@ -1,5 +1,6 @@
 [
   {
+    "id": "X-001",
     "conflict_id": "X-001",
     "contradiction_id": "X-001",
     "topic": "Broad AI tax versus targeted tax reform",
@@ -16,9 +17,19 @@
     "resolution_status": "partially_resolved",
     "next_question": "Can a country define a narrow automation-bias correction without taxing augmenting AI uses?",
     "decisive_missing_evidence": "Country-specific tax-base design with incidence analysis and evidence on affected worker outcomes.",
-    "human_review_required": true
+    "human_review_required": true,
+    "resolution": {
+      "basis": "deliberation",
+      "evidence_ids": [],
+      "move_ids": [
+        "M-002",
+        "M-010"
+      ],
+      "rationale": "Economist and skeptic reframed the tax question as targeted public risk management with incidence and tax-base design."
+    }
   },
   {
+    "id": "X-002",
     "conflict_id": "X-002",
     "contradiction_id": "X-002",
     "topic": "High AI exposure versus limited current observed disruption",
@@ -39,6 +50,7 @@
     "human_review_required": true
   },
   {
+    "id": "X-003",
     "conflict_id": "X-003",
     "contradiction_id": "X-003",
     "topic": "Labor-market adjustment versus distributional harm",
@@ -55,9 +67,18 @@
     "resolution_status": "partially_resolved",
     "next_question": "Which workers and places face persistent losses from AI adoption rather than temporary transition costs?",
     "decisive_missing_evidence": "Worker-level panel evidence linking AI adoption to earnings, displacement, retraining, and regional outcomes.",
-    "human_review_required": true
+    "human_review_required": true,
+    "resolution": {
+      "basis": "deliberation",
+      "evidence_ids": [],
+      "move_ids": [
+        "M-004"
+      ],
+      "rationale": "Historian scoped adaptation to require transition institutions, not time alone."
+    }
   },
   {
+    "id": "X-004",
     "conflict_id": "X-004",
     "contradiction_id": "X-004",
     "topic": "Productivity gains versus job protection",
@@ -74,9 +95,18 @@
     "resolution_status": "partially_resolved",
     "next_question": "Which policy package preserves useful AI adoption while compensating displaced workers?",
     "decisive_missing_evidence": "Microsimulation comparing a broad automation tax, tax-neutrality reform, wage insurance, and training under plausible AI adoption scenarios.",
-    "human_review_required": true
+    "human_review_required": true,
+    "resolution": {
+      "basis": "deliberation",
+      "evidence_ids": [],
+      "move_ids": [
+        "M-008"
+      ],
+      "rationale": "Practitioner favored operationally legible worker-facing tools over taxing a vague category."
+    }
   },
   {
+    "id": "X-005",
     "conflict_id": "X-005",
     "contradiction_id": "X-005",
     "topic": "Administrative feasibility of taxing AI automation",
@@ -96,6 +126,7 @@
     "human_review_required": true
   },
   {
+    "id": "X-006",
     "conflict_id": "X-006",
     "contradiction_id": "X-006",
     "topic": "Robot-tax theory versus AI-specific fiscal guidance",
@@ -114,6 +145,7 @@
     "human_review_required": true
   },
   {
+    "id": "X-007",
     "conflict_id": "X-007",
     "contradiction_id": "X-007",
     "topic": "Historical adaptation versus AI novelty",
@@ -133,6 +165,7 @@
     "human_review_required": true
   },
   {
+    "id": "X-008",
     "conflict_id": "X-008",
     "contradiction_id": "X-008",
     "topic": "Evidence for an implemented broad AI slowdown",

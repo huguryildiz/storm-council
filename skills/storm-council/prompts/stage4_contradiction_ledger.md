@@ -16,7 +16,8 @@ build the contradiction ledger.
 
 For every genuine conflict, write a record:
 
-- `contradiction_id` — stable, e.g. `X-001`.
+- `id` — stable canonical id, e.g. `X-001` (keep `conflict_id`/`contradiction_id`
+  as aliases for one release).
 - `topic` — short label for what is in conflict.
 - `claim_ids` — the specific claims in tension (reference by ID only).
 - `relationship` — classify it:
@@ -32,7 +33,14 @@ For every genuine conflict, write a record:
   `time_horizon`, `population_or_domain`, `limitations`).
 - `why_it_matters` — why this disagreement affects the decision.
 - `evidence_balance` — `supports_a` | `supports_b` | `mixed` | `insufficient`.
-- `resolution_status` — `open` | `leaning` | `resolved` | `unresolvable_now`.
+- `resolution_status` — `open` | `leaning` | `resolved` | `partially_resolved` |
+  `unresolvable_now`.
+- `resolution` — required when status is `resolved`/`partially_resolved`. Give
+  `basis` (`evidence` | `deliberation` | `concession` | `none`), the
+  `evidence_ids` (`E-###`) and/or `move_ids` (`M-###`) that settled it, and a
+  short `rationale`. **A `resolved`/`partially_resolved` status only counts
+  toward the contradiction score when `basis != none` and it cites at least one
+  `E-###` or `M-###`.** A bare status with no basis is uncredited.
 - `next_question` — the single question that, if answered, would most
   reduce this conflict.
 - `decisive_missing_evidence` — the primary source, passage, or head-to-head
@@ -61,7 +69,14 @@ conflicts. Each lens responds to a targeted `claim_id` or `evidence_id` with
 exactly one structured move — **support**, **challenge**, **qualification**,
 **request_for_evidence**, or **reframing**. Challenges should ask whether the
 cited passage actually entails the atomic claim and whether the claim preserves
-source scope. Keep it **bounded**: ≤2 rounds,
+source scope. Each move carries a stable `move_id` (`M-001`, `M-002`, …) and
+must state its **`effect`** — what it changed — using
+[`../templates/deliberation_move.json`](../templates/deliberation_move.json):
+`change_type` ∈ `none` | `confidence_delta` | `status_change` | `scope_narrowed`
+| `withdrawn`, the `field` it moved, `before`/`after` values, and the `resolves`
+list of `X-###` it (partially) settles. A move with no real consequence uses
+`change_type: none`. When a move settles a contradiction, cite that `move_id`
+in the contradiction's `resolution.move_ids`. Keep it **bounded**: ≤2 rounds,
 ≤5 items per lens, and stop when no new high-impact contradiction appears. Log
 the exchange in `04_council_deliberation.md`/`.jsonl`. Never force consensus —
 an honest "unresolved" is a valid outcome.
