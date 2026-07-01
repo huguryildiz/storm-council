@@ -14,7 +14,7 @@ skills/storm-council/prompts/          # stage1–stage6 prompt templates
 agents/                                # five lens subagents: academic, economist, historian, practitioner, skeptic
 scripts/verify.py                      # deterministic quality-gate scorer (pure stdlib, no network)
 scripts/render_report.py               # HTML report renderer (pure stdlib, no network)
-examples/                              # full example runs (network_flow_rl, university_timetabling)
+examples/                              # full example runs (network_flow_rl, ai_jobs_policy)
 docs/                                  # methodology, safety-and-limitations, claim-traceability
 .claude-plugin/plugin.json             # plugin manifest
 ```

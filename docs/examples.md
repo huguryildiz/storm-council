@@ -1,53 +1,44 @@
-# Worked example — RL for university course timetabling
+# Worked examples
 
-The bundled example
-([`examples/university_timetabling/expected_artifacts/`](../examples/university_timetabling/expected_artifacts/)) runs
-the question:
+Two complete, committed runs live under [`examples/`](../examples/). Both are
+**Council Mode** runs (bounded cross-examination) with live retrieval,
+source-mapped claims, explicit contradictions, and a deterministic
+`PASS_WITH_CAVEATS` quality gate. Open `storm_council_report.html` in either folder
+for the rendered report.
 
-> Whether and when reinforcement learning should complement (not replace)
-> CP-SAT/MIP for university course timetabling.
+## `network_flow_rl` — RL vs. classical optimization for network flow control
 
-The committed artifacts were produced by a deterministic run and are
-banner-marked as non-retrieval; treat the sources as illustrative.
+[`examples/network_flow_rl/`](../examples/network_flow_rl/) runs the question:
 
-## What the example demonstrates
+> Should RL replace or augment classical optimization for real-time network flow
+> control?
 
-- **Operational concerns** (practitioner): CP-SAT/MIP already solve production
-  timetabling with auditable, constraint-guaranteed schedules.
-- **Academic evidence limits** (academic): RL-for-combinatorial-optimization
-  evidence is mostly on routing/packing and rarely beats strong OR baselines on
-  constrained scheduling.
-- **Skepticism about hype** (skeptic): vendor gains lack reproducible baselines;
-  absence of head-to-head studies signals immaturity.
-- **Cost / infrastructure trade-offs** (economist): TCO and opportunity cost vs
-  operational-resilience value — an internal tension.
-- **Historical lessons** (historian): each prior "autonomous scheduling" wave
-  over-promised and settled into niche or hybrid use.
+Five lenses · 28 claims · 9 sources · 8 explicit contradictions. This run
+demonstrates the **v2 evidence path** — `03_evidence.jsonl` with locators and
+`03_evidence_verdicts.jsonl` entailment judgements.
 
-## The five contradictions
+**The (honest) outcome.** The synthesis does not force a verdict: do **not** replace
+classical LP/MIP/CP-SAT-style optimization with an RL-primary controller on the
+retrieved evidence; use RL only as bounded augmentation. The gate returns
+`PASS_WITH_CAVEATS`, with contradictions left open for human review.
 
-| ID | Type | What disagrees |
-| --- | --- | --- |
-| `X-001` | tension | RL's complementary value vs reproducibility skepticism |
-| `X-002` | definition_conflict | "use RL" = replace the solver vs augment soft/dynamic objectives |
-| `X-003` | tension (time horizon) | current evidence vs near-term pilot potential |
-| `X-004` | tension (stakeholder) | ML budget opportunity cost vs operational resilience |
-| `X-005` | evidence_gap | no peer-reviewed RL-vs-CP-SAT head-to-head for this domain |
+## `ai_jobs_policy` — taxing vs. letting markets adjust to AI automation
 
-## The (honest) outcome
+[`examples/ai_jobs_policy/`](../examples/ai_jobs_policy/) runs the question:
 
-The synthesis does **not** force a verdict. Its recommendation: keep solver-based
-timetabling, optionally pilot learning-augmented OR, and commission the missing
-benchmark before any RL investment. The quality gate returns
-`PASS_WITH_CAVEATS` — useful, but with open disagreements (`X-001`, `X-004`,
-`X-005`) and low-credibility sources flagged for human review.
+> Should governments tax or slow AI-driven automation to protect jobs, or let labor
+> markets adjust?
 
-## What to read, in order
+Five lenses · 26 claims · 12 sources · 8 explicit contradictions · live web
+retrieval. Its recommendation: neither a blanket automation tax nor laissez-faire
+adjustment, but a targeted transition compact — again `PASS_WITH_CAVEATS`, with the
+disagreements kept on the record.
+
+## What to read, in order (either example)
 
 1. `05_decision_brief.md` — the one-page answer.
 2. `04_contradiction_ledger.md` — where the perspectives disagree and why.
-3. `04_council_deliberation.md` — the bounded cross-examination that narrowed
-   the definitional conflict (`X-002`).
+3. `04_council_deliberation.md` — the bounded cross-examination between lenses.
 4. `03_evidence_plan.md` + `03_claims.jsonl` — the claims and their sources.
 5. `06_adversarial_review.md` — the independent reviewer's checks and scores.
 6. `05_argument_map.mmd` — the visual map of the argument.

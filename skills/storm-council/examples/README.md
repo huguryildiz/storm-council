@@ -1,12 +1,12 @@
 # Skill examples
 
-A complete, regenerable worked example lives at the repository root:
+Two complete, regenerable worked examples live at the repository root:
 
-- Full artifacts: [`examples/university_timetabling/expected_artifacts/`](../../../examples/university_timetabling/expected_artifacts/)
+- [`examples/network_flow_rl/`](../../../examples/network_flow_rl/) — *"Should RL replace or augment classical optimization for real-time network flow control?"*
+- [`examples/ai_jobs_policy/`](../../../examples/ai_jobs_policy/) — *"Should governments tax or slow AI-driven automation to protect jobs, or let labor markets adjust?"*
 
-It shows all six stages for the question *"Whether and when reinforcement
-learning should complement CP-SAT/MIP in university course timetabling"*,
-including five explicit contradictions and an inconclusive-but-useful brief
+Each shows all six stages for a five-lens Council Mode run with live retrieval,
+eight explicit contradictions, and an inconclusive-but-useful brief
 (quality gate: `PASS_WITH_CAVEATS`).
 
 ## Invocations to try

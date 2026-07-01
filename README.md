@@ -193,7 +193,7 @@ export S2_API_KEY=<your-key>   # add to ~/.zshrc or ~/.zprofile
 
 [`agents/`](agents/) — the five research lens subagents (`practitioner`, `academic`, `skeptic`, `economist`, `historian`). Each can be dispatched independently in Council Mode via `storm-council:<lens>`.
 
-[`examples/university_timetabling/expected_artifacts/`](examples/university_timetabling/expected_artifacts/) — a complete run with five lenses, five explicit contradictions, and a `PASS_WITH_CAVEATS` quality gate. Start with `05_decision_brief.md`.
+[`examples/ai_jobs_policy/`](examples/ai_jobs_policy/) — a complete Council Mode run with five lenses, eight explicit contradictions, live web retrieval, and a `PASS_WITH_CAVEATS` quality gate. Start with `05_decision_brief.md`.
 
 [`examples/network_flow_rl/`](examples/network_flow_rl/) — a second complete run demonstrating the v2 evidence path (`03_evidence.jsonl` with locators). Start with `05_decision_brief.md`.
 

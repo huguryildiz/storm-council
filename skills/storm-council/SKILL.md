@@ -148,7 +148,7 @@ neither is hand-asserted by the model. After stage 6:
    (`03_claims.jsonl`, `03_evidence.jsonl`, optional
    `03_evidence_verdicts.jsonl`, `04_contradictions.json`,
    `03_source_registry.csv`). See
-   [the example](../../examples/university_timetabling/expected_artifacts/report_data.json).
+   [the example](../../examples/network_flow_rl/report_data.json).
 
    For each entry in `strongest_findings`, optionally add perspective attribution:
    ```json
