@@ -1,0 +1,40 @@
+site_name: Storm Council Wiki
+site_description: Contradiction-aware research workflow documentation.
+repo_url: https://github.com/huguryildiz/storm-council
+repo_name: huguryildiz/storm-council
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Methodology: methodology.md
+  - Examples: examples.md
+  - Claim Traceability: claim-traceability.md
+  - Benchmark: benchmark.md
+  - Safety and Limitations: safety-and-limitations.md
+  - Audits:
+      - Report Improvement Audit: report-improvement-audit.md
+      - Publication Content Verification Audit: publication-content-verification-audit.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - toc:
+      permalink: true
