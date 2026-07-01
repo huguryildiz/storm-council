@@ -1071,6 +1071,33 @@ class LayerRenderingTest(unittest.TestCase):
         html = render_report._cx_detail_html(detail, {})
         self.assertIn("uncredited", html)
 
+    def test_confidence_requires_basis(self):
+        # A claim that records its confidence provenance renders the basis/band
+        # alongside the float, and does not raise the soft-warn.
+        with_basis = render_report._claims_table_html([
+            {"claim_id": "C-001", "perspective": "academic", "claim_type": "fact",
+             "evidence_status": "supported", "confidence": 0.61,
+             "confidence_basis": "one full-text safe-RL survey; scope-narrowed after M-001",
+             "confidence_band": "moderate"}])
+        self.assertIn("0.61", with_basis)
+        self.assertIn("one full-text safe-RL survey", with_basis)
+        self.assertIn("moderate", with_basis)
+        self.assertNotIn("basis not recorded", with_basis)
+        # A pre-Phase-4 claim (float, no basis) is never blocking — the row still
+        # renders — but carries a visible soft-warn instead of a bare number.
+        without_basis = render_report._claims_table_html([
+            {"claim_id": "C-002", "perspective": "academic", "claim_type": "fact",
+             "evidence_status": "supported", "confidence": 0.61}])
+        self.assertIn("C-002", without_basis)
+        self.assertIn("basis not recorded", without_basis)
+
+    def test_kpi_copy_no_calibration_claim(self):
+        html = render_report.build(self._rich_data(), "report")
+        # The confidence KPI must explicitly disclaim calibration rather than let
+        # a bare 2-decimal number read as a calibrated probability.
+        self.assertIn("not a calibrated probability", html)
+        self.assertIn("basis", html)
+
 
 if __name__ == "__main__":
     unittest.main()

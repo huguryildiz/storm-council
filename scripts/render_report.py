@@ -184,6 +184,8 @@ CSS = """
   .claims-table td .cev{ display:block; font-size:12px; color:var(--muted); margin-top:4px; }
   .claims-table td .claim-meta{ display:block; margin-top:6px; }
   .claim-chip{ display:inline-flex; align-items:center; gap:4px; font:11px ui-monospace,Menlo,monospace; padding:2px 8px; border-radius:999px; background:#eef0f3; color:var(--muted); margin-right:4px; }
+  .claim-chip.claim-basis{ background:#eef2fb; color:#3a5bb8; text-transform:capitalize; }
+  .claim-chip.claim-basis-missing{ background:#fef3e2; color:#9a6a1e; }
   .evidence-table .excerpt{ color:var(--muted); font-size:12.5px; line-height:1.45; }
   .verdict-list{ display:flex; flex-direction:column; gap:4px; min-width:130px; }
   .verdict-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
@@ -1120,7 +1122,22 @@ def _claims_table_html(claims, effects_by_claim=None) -> str:
         cev_html = f'<span class="cev">counters{refs(cev)}</span>' if cev else ""
         meta_chips = []
         if c.get("confidence") is not None:
-            meta_chips.append(f'<span class="claim-chip">⚡ {e(str(c.get("confidence")))}</span>')
+            basis = c.get("confidence_basis")
+            band = c.get("confidence_band")
+            conf_title = f' title="{e(str(basis))}"' if basis else ""
+            meta_chips.append(f'<span class="claim-chip"{conf_title}>⚡ {e(str(c.get("confidence")))}</span>')
+            # Confidence provenance (Phase 4): a bare float must carry a basis or
+            # band so it never reads as calibrated. Missing on old artifacts is a
+            # visible soft-warn, never blocking.
+            if band or basis:
+                label = e(str(band)) if band else "basis noted"
+                btitle = f' title="{e(str(basis))}"' if basis else ""
+                meta_chips.append(f'<span class="claim-chip claim-basis"{btitle}>{label}</span>')
+            else:
+                meta_chips.append(
+                    '<span class="claim-chip claim-basis-missing" title="No confidence '
+                    'basis recorded (evidence tier × verdict × full-text status).">'
+                    'basis not recorded</span>')
         eff = effects_by_claim.get(cid)
         if isinstance(eff, dict) and eff.get("before") not in (None, ""):
             rnd = eff.get("round")
@@ -2213,11 +2230,15 @@ def build(data: dict, layer: str = "all") -> str:
             '<div class="kpi-card"><span class="kpi-icon">⚡</span><div>'
             '<b class="kpi-title">Confidence score (0.0–1.0)</b>'
             '<p class="kpi-desc">The number next to the lightning-bolt icon is the lens’s own subjective '
-            'strength of belief in that claim &mdash; e.g. <code>0.88</code> means the lens is fairly but not '
-            'fully certain. It is intentionally <b>separate from the Status column</b>: a high-confidence forecast '
-            'is still a forecast, not evidence. As a rule of thumb, the Stage 6 adversarial review flags '
-            'confidence ≥ 0.8 on any claim whose status is not <code>supported</code> as possible '
-            'overconfidence &mdash; worth a second look.</p></div></div>'
+            'strength of belief in that claim &mdash; <b>not a calibrated probability</b>. Nothing in this '
+            'workflow back-tests these numbers against outcomes, so <code>0.88</code> means only that the lens '
+            'is fairly but not fully certain; it does not mean the claim is right 88&nbsp;% of the time. '
+            'Each score carries a <b>basis</b> (the evidence tier, verdict, and full-text status behind it) '
+            'shown beside the number &mdash; read the basis, not the digits. It is intentionally '
+            '<b>separate from the Status column</b>: a high-confidence forecast is still a forecast, not '
+            'evidence. As a rule of thumb, the Stage 6 adversarial review flags confidence ≥ 0.8 on any claim '
+            'whose status is not <code>supported</code> as possible overconfidence &mdash; worth a second '
+            'look.</p></div></div>'
         )
         sec("Claims & evidence ledger", confidence_kpi + claims_html, "report")
 

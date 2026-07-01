@@ -10,6 +10,8 @@
   "claim_type": "fact|inference|forecast|recommendation|assumption",
   "claim_strength": "descriptive|comparative|causal|quantitative|recommendation",
   "confidence": 0.0,
+  "confidence_basis": "one full-text safe-RL survey; scope-narrowed after M-001",
+  "confidence_band": "low|moderate|high",
   "evidence_status": "supported|partially_supported|unsupported|contested",
   "source_ids": ["S-001"],
   "evidence_ids": ["E-001"],

@@ -57,7 +57,21 @@ Every claim is a structured record:
   evidence bar (see below).
 - `evidence_status` — `supported` | `partially_supported` | `unsupported` |
   `contested`.
-- `confidence` — 0.0–1.0.
+- `confidence` — 0.0–1.0. This is the lens's subjective strength of belief, **not
+  a calibrated probability** — nothing back-tests it, so never present the digits
+  as if they were.
+- `confidence_basis` **and/or** `confidence_band` — every `confidence` float must
+  carry its provenance so the number is never read as calibrated. Set them from
+  **evidence tier × verdict × `full_text_status`**:
+  - `confidence_band`: `high` only when a `peer_reviewed`/`official` source
+    (`source_class`) gives `direct_support` on `full_text`; `moderate` for
+    `partial_support`, a `preprint`/`gray` tier, or `abstract_only` full text;
+    `low` for `run_log`-only support, `indirect_support`, `unsupported`/`contested`
+    status, or `metadata_only`. Abstract-only or run-log support caps the band at
+    `moderate`/`low` no matter the float.
+  - `confidence_basis`: one short phrase naming the tier + verdict + full-text
+    status (and any deliberation move that moved it), e.g.
+    `"one full-text safe-RL survey; scope-narrowed after M-001"`.
 - `source_ids` — e.g. `["S-001"]`. **Every `fact`/`inference` presented as
   supported must cite at least one source ID**, with a URL where one exists.
 - `evidence_ids` — e.g. `["E-001"]`. The specific passages/tables/figures that
