@@ -43,8 +43,17 @@ import difflib
 import io
 import json
 import re
+import os
 import sys
 from pathlib import Path
+
+# Loaded standalone (spec_from_file_location) or run as a script: make the sibling
+# ``report`` package importable so status/score thresholds stay shared with the
+# renderer (report/thresholds.py) and can't drift.
+_PKG_DIR = os.path.dirname(os.path.abspath(__file__))
+if _PKG_DIR not in sys.path:
+    sys.path.insert(0, _PKG_DIR)
+from report.thresholds import POSITIVE_LEVELS as _POSITIVE_LEVELS, SCORE_WARN_MIN
 
 _ID = re.compile(r"\b[CSXE]-\d{3,}\b")
 _LOW_QUALITY = {"blog", "other", "news"}
@@ -657,11 +666,10 @@ def verify(d: Path) -> dict:
         major.append(
             "Supported claims rest only on run-log provenance (no external source): "
             + ", ".join(run_log_only_support))
-    if (options or actions) and recommendation < 50:
+    if (options or actions) and recommendation < SCORE_WARN_MIN:
         major.append(f"Recommendations weakly justified (support score {recommendation}).")
 
     # --- status banner honesty ----------------------------------------------- #
-    _POSITIVE_LEVELS = {"pass", "verified", "source_checked"}
     report_status_level = str((report.get("status") or {}).get("level", "")).lower()
     if report_status_level in _POSITIVE_LEVELS and not (d / "06_quality_gate.json").exists():
         major.append(

@@ -21,9 +21,7 @@ from report.layers.lenses import _evidence_plan_html, _lens_charters_html, _lens
 CSS = (Path(__file__).resolve().parent.parent / "styles.css").read_text(encoding="utf-8")
 
 
-_STATUS_CLASS = {"pass": "green", "verified": "green", "source_checked": "green",
-                 "pass_with_caveats": "", "caveats": "", "illustrative": "",
-                 "revise": "red", "blocked": "red"}
+from report.thresholds import STATUS_CLASS as _STATUS_CLASS, score_class as _score_cls
 
 
 _LAYERS = ("brief", "report", "appendix", "all")
@@ -113,14 +111,6 @@ def build(data: dict, layer: str = "all") -> str:
         verdict = st.get("verdict", "")
         srow = ""
         if scores:
-            def _score_cls(v):
-                try:
-                    n = int(v)
-                    if n >= 80: return "ok"
-                    if n >= 50: return "warn"
-                    return "bad"
-                except (TypeError, ValueError):
-                    return ""
             def _verdict_badge_cls(v):
                 vl = str(v).upper()
                 if vl == "PASS": return "vb-pass"
