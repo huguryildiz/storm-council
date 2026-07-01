@@ -561,5 +561,54 @@ class SourceClassIntegrityTest(unittest.TestCase):
             self.assertTrue(any("run-log provenance" in m for m in gate["major_issues"]), name)
 
 
+class LensIndependenceTest(unittest.TestCase):
+    """Phase 5: an optional, minor-only read of whether the lens *outputs*
+    actually diverged — complementing run_manifest.json, which only attests the
+    claim of independent contexts."""
+
+    _SOURCES = [{"source_id": "S-001", "title": "Real",
+                 "url": "https://arxiv.org/abs/2004.11986",
+                 "source_type": "peer_reviewed", "credibility_notes": "ok"}]
+
+    def _claim(self, cid, perspective, text):
+        return {"claim_id": cid, "perspective": perspective, "claim_text": text,
+                "claim_type": "fact", "evidence_status": "supported",
+                "source_ids": ["S-001"]}
+
+    def test_converged_lens_output_flagged(self):
+        # Two lenses producing near-identical claim text ⇒ minor advisory.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            shared = "Reinforcement learning does not replace exact min-cost-flow solvers."
+            _write_run(base, sources=self._SOURCES, contradictions=[], claims=[
+                self._claim("C-001", "economist", shared),
+                self._claim("C-002", "historian", shared),
+            ])
+            gate = verify_mod.verify(base)
+            self.assertTrue(any("lens outputs converged" in m.lower()
+                                for m in gate["minor_issues"]))
+            self.assertEqual(gate["blocking_issues"], [])
+
+    def test_distinct_lens_output_not_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(base, sources=self._SOURCES, contradictions=[], claims=[
+                self._claim("C-001", "economist",
+                            "Total cost of ownership favors the incumbent solver by 3x."),
+                self._claim("C-002", "historian",
+                            "Prior optimization-ML waves stalled at the integration boundary."),
+            ])
+            gate = verify_mod.verify(base)
+            self.assertFalse(any("lens outputs converged" in m.lower()
+                                 for m in gate["minor_issues"]))
+
+    def test_examples_do_not_trip_convergence(self):
+        # Guard against over-fitting: the shipped bundles must not converge.
+        for name in ("network_flow_rl", "ai_jobs_policy"):
+            gate = verify_mod.verify(ROOT / "examples" / name)
+            self.assertFalse(any("lens outputs converged" in m.lower()
+                                 for m in gate["minor_issues"]), name)
+
+
 if __name__ == "__main__":
     unittest.main()

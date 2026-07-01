@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import difflib
 import io
 import json
 import re
@@ -401,6 +402,31 @@ def verify(d: Path) -> dict:
         minor.append(
             f"Verdicts not individually reasoned: {max_repeat} evidence verdicts share "
             "one identical rationale (verification may be rubber-stamping).")
+
+    # --- lens independence: output convergence (Phase 5) ------------------- #
+    # run_manifest.json can *assert* independent lens contexts; this reads the
+    # actual claim text for the fact. If two lenses produced near-identical
+    # claims, their independence is not evident from the output. Minor only,
+    # never blocking; thresholded high (>=0.85) so merely related lenses do not
+    # trip it, and skipped entirely when a lens has no claim text.
+    lens_text: dict = {}
+    for c in claims:
+        p, t = c.get("perspective"), (c.get("claim_text") or c.get("text") or "")
+        if p and t.strip():
+            lens_text.setdefault(p, []).append(t.strip())
+    converged = []
+    lenses_sorted = sorted(lens_text)
+    for i in range(len(lenses_sorted)):
+        for j in range(i + 1, len(lenses_sorted)):
+            a = "\n".join(lens_text[lenses_sorted[i]])
+            b = "\n".join(lens_text[lenses_sorted[j]])
+            ratio = difflib.SequenceMatcher(None, a, b).ratio()
+            if ratio >= 0.85:
+                converged.append(f"{lenses_sorted[i]}~{lenses_sorted[j]} ({ratio:.0%})")
+    if converged:
+        minor.append(
+            "Lens outputs converged (independence not evident from claim text): "
+            + ", ".join(converged))
 
     # --- source credibility / identity ------------------------------------- #
     def _is_low(s):
