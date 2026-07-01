@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "generator_version": "storm-council/verify.py",
-  "sealed_at": "2026-07-01T17:58:32+00:00",
+  "sealed_at": "2026-07-01T18:22:27+00:00",
   "tool": {
     "name": "verify.py",
     "invocation": "seal"
@@ -67,8 +67,8 @@
     },
     {
       "path": "04_contradictions.json",
-      "sha256": "b16b16acc44d35fd83f33e732acb585a4f7ba9dd63422f009617b4c470c39c8c",
-      "bytes": 12565
+      "sha256": "b9319a9955e596af1ebae3f044ee93a679f1a1719d732b5594143a2c25c63da3",
+      "bytes": 12741
     },
     {
       "path": "04_council_deliberation.jsonl",
@@ -111,6 +111,11 @@
       "bytes": 2720
     },
     {
+      "path": "decision_tripwires.json",
+      "sha256": "5486ba4b6a1d5affbef18baec08e24ebd7eb6c58fea7871b7450a41040478667",
+      "bytes": 2854
+    },
+    {
       "path": "report_data.json",
       "sha256": "6f7c837e281c90a2f739f0527b9a997b7a2e97645bd308733d2cf136b5bae8f9",
       "bytes": 13707
@@ -122,8 +127,8 @@
     },
     {
       "path": "storm_council_report.html",
-      "sha256": "7e89e434db65ccf98ce9c32ae667ed4aebffd455a495a4a3f18bd1dbe4f6a60e",
-      "bytes": 619158
+      "sha256": "d4983a6e67e42e420d2396a9c65e3759556d1440ae7df84e9b5141c8c7233753",
+      "bytes": 642538
     }
   ],
   "signature": null,

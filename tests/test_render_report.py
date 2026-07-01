@@ -1251,6 +1251,90 @@ class DecisionCriticalityRenderTest(unittest.TestCase):
         self.assertIn("am-pivotal", html)
 
 
+class TripwireRenderTest(unittest.TestCase):
+    def _tripwire(self, **over):
+        tw = {
+            "id": "T-001",
+            "condition": "A new RCT overturns the safety finding.",
+            "threshold_or_event": "One peer-reviewed direct contradiction appears.",
+            "claim_ids": ["C-016"],
+            "option": None,
+            "direction": "weakens",
+            "monitoring_source": "manual literature scan",
+            "monitor_kind": "manual_watch",
+            "refresh_cadence": "quarterly",
+            "reversal_cost": "medium",
+            "action": "Re-open C-016 for review.",
+        }
+        tw.update(over)
+        return tw
+
+    def test_tripwires_section_renders_revisit_table(self):
+        html = render_report.build({
+            "title": "A decision",
+            "decision_tripwires": [self._tripwire()],
+        })
+        self.assertIn("Revisit this decision if", html)
+        self.assertIn("T-001", html)
+        self.assertIn("A new RCT overturns the safety finding.", html)
+        self.assertIn("C-016", html)
+        self.assertIn("Re-open", html)
+        self.assertIn("for review.", html)
+
+    def test_tripwires_absent_renders_nothing(self):
+        html = render_report.build({"title": "A decision"})
+        self.assertNotIn("Revisit this decision if", html)
+
+    def test_tripwire_monitor_kind_badge_distinguishes_auto_vs_manual(self):
+        html = render_report.build({
+            "title": "A decision",
+            "decision_tripwires": [
+                self._tripwire(id="T-001", monitor_kind="auto_recheckable",
+                               monitoring_source="S-001", direction="invalidates",
+                               reversal_cost="high"),
+                self._tripwire(id="T-002", claim_ids=["C-002"],
+                               monitor_kind="manual_watch",
+                               monitoring_source="next literature scan",
+                               reversal_cost="low"),
+            ],
+        })
+        self.assertIn('<span class="tag kind">auto</span>', html)
+        self.assertIn('<span class="tag part">manual</span>', html)
+
+    def test_tripwires_render_in_brief_layer(self):
+        html = render_report.build({
+            "title": "A decision",
+            "decision_tripwires": [self._tripwire()],
+        }, layer="brief")
+        self.assertIn("Revisit this decision if", html)
+
+    def test_option_level_triggers_view_derived_from_tripwires(self):
+        html = render_report.build({
+            "title": "A decision",
+            "options": [{"name": "Option C", "strength": "strong", "points": ["..."]}],
+            "decision_tripwires": [self._tripwire(
+                id="T-002", claim_ids=[], option="Option C", direction="invalidates",
+                monitor_kind="auto_recheckable", monitoring_source="S-007",
+                reversal_cost="high", action="Halt rollout.")],
+        })
+        self.assertIn("Decision options &amp; trade-offs", html)
+        self.assertIn("Revisit if", html)
+        self.assertIn("T-002", html)
+        self.assertIn('href="#ref-T-002"', html)
+
+    def test_tripwires_are_sorted_by_reversal_cost_then_id(self):
+        html = render_report.build({
+            "title": "A decision",
+            "decision_tripwires": [
+                self._tripwire(id="T-003", reversal_cost="low"),
+                self._tripwire(id="T-002", reversal_cost="high"),
+                self._tripwire(id="T-001", reversal_cost="high"),
+            ],
+        })
+        self.assertLess(html.index("T-001"), html.index("T-002"))
+        self.assertLess(html.index("T-002"), html.index("T-003"))
+
+
 class ResolutionPlanRenderTest(unittest.TestCase):
     """07d: the report renders resolution_plan fields inside the contradiction
     detail and as an ordered 'How to resolve the disagreements that matter'

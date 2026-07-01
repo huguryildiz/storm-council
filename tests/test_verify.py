@@ -16,7 +16,7 @@ SPEC.loader.exec_module(verify_mod)
 
 
 def _write_run(base: Path, *, claims=None, sources=None, contradictions=None,
-               evidence=None, report=None):
+               evidence=None, report=None, tripwires=None):
     if claims is not None:
         (base / "03_claims.jsonl").write_text(
             "\n".join(json.dumps(c) for c in claims) + "\n", encoding="utf-8")
@@ -38,6 +38,9 @@ def _write_run(base: Path, *, claims=None, sources=None, contradictions=None,
             json.dumps(contradictions), encoding="utf-8")
     if report is not None:
         (base / "report_data.json").write_text(json.dumps(report), encoding="utf-8")
+    if tripwires is not None:
+        (base / "decision_tripwires.json").write_text(
+            json.dumps(tripwires), encoding="utf-8")
 
 
 class HelperTest(unittest.TestCase):
@@ -1072,6 +1075,145 @@ class DecisionCriticalityTest(unittest.TestCase):
             base = self._base(tmp)  # no decision_criticality.json written
             gate = verify_mod.verify(base)
             self.assertNotIn("decision_criticality", " ".join(gate["minor_issues"]))
+
+
+class TripwireTest(unittest.TestCase):
+    """08: decision_tripwires.json is optional, advisory-only, and must bind to
+    real claims or option names before it counts as decision-relevant."""
+
+    def _claim(self, cid="C-001"):
+        return {"claim_id": cid, "perspective": "academic", "claim_text": "Claim.",
+                "claim_type": "fact", "evidence_status": "supported",
+                "source_ids": ["S-001"]}
+
+    def _source(self, sid="S-001", doi="10.1145/3603269.3604857"):
+        return {"source_id": sid, "title": "Source", "url": f"https://doi.org/{doi}",
+                "doi": doi, "source_type": "peer_reviewed",
+                "source_class": "peer_reviewed", "full_text_status": "full_text",
+                "credibility_notes": "ok"}
+
+    def _tripwire(self, **over):
+        tw = {
+            "id": "T-001",
+            "condition": "A new source changes the claim.",
+            "threshold_or_event": "Publisher metadata changes or a manual review finds contrary evidence.",
+            "claim_ids": ["C-001"],
+            "option": None,
+            "direction": "weakens",
+            "monitoring_source": "manual literature scan",
+            "monitor_kind": "manual_watch",
+            "refresh_cadence": "quarterly",
+            "reversal_cost": "medium",
+            "action": "Re-open the affected claim before relying on it.",
+        }
+        tw.update(over)
+        return tw
+
+    def _run(self, tmp, tripwires=None, *, claims=None, sources=None, report=None):
+        base = Path(tmp)
+        _write_run(
+            base,
+            claims=claims if claims is not None else [self._claim()],
+            sources=sources if sources is not None else [self._source()],
+            contradictions=[],
+            report=report if report is not None else {"options": [{"name": "Option C"}]},
+            tripwires=tripwires,
+        )
+        return verify_mod.verify(base)
+
+    def _tripwire_minors(self, gate):
+        return [m for m in gate["minor_issues"] if "tripwire" in m.lower() or "T-" in m]
+
+    def test_tripwire_bound_to_real_claim_is_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire()])
+            self.assertFalse(any("T-001" in m for m in self._tripwire_minors(gate)))
+
+    def test_unbound_tripwire_raises_decorative_advisory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(claim_ids=[], option=None)])
+            self.assertTrue(any("T-001 is unbound" in m and "decorative" in m
+                                for m in gate["minor_issues"]))
+
+    def test_tripwire_with_unresolved_claim_id_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(claim_ids=["C-999"])])
+            self.assertTrue(any("T-001 references missing claim C-999" in m
+                                for m in gate["minor_issues"]))
+
+    def test_tripwire_bound_to_option_name_is_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(claim_ids=[], option="Option C")])
+            self.assertFalse(any("unbound" in m for m in self._tripwire_minors(gate)))
+
+    def test_tripwire_with_unresolved_option_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(option="Missing Option")])
+            self.assertTrue(any("T-001 references missing option 'Missing Option'" in m
+                                for m in gate["minor_issues"]))
+
+    def test_invalid_direction_enum_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(direction="maybe")])
+            self.assertTrue(any("T-001 has invalid/missing direction" in m
+                                for m in gate["minor_issues"]))
+
+    def test_invalid_reversal_cost_enum_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(reversal_cost="extreme")])
+            self.assertTrue(any("T-001 has invalid/missing reversal_cost" in m
+                                for m in gate["minor_issues"]))
+
+    def test_auto_recheckable_with_resolvable_source_is_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(
+                monitor_kind="auto_recheckable", monitoring_source="S-001")])
+            self.assertFalse(any("not actually auto-recheckable" in m
+                                 for m in self._tripwire_minors(gate)))
+
+    def test_auto_recheckable_with_doi_is_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(
+                monitor_kind="auto_recheckable",
+                monitoring_source="https://doi.org/10.1145/3603269.3604857")])
+            self.assertFalse(any("not actually auto-recheckable" in m
+                                 for m in self._tripwire_minors(gate)))
+
+    def test_auto_recheckable_with_unresolvable_source_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._tripwire(
+                monitor_kind="auto_recheckable",
+                monitoring_source="next literature scan")])
+            self.assertTrue(any("not actually auto-recheckable" in m
+                                for m in gate["minor_issues"]))
+
+    def test_absent_tripwires_file_produces_zero_new_issues(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp)
+            self.assertEqual(self._tripwire_minors(gate), [])
+
+    def test_tripwires_never_affect_scores(self):
+        with tempfile.TemporaryDirectory() as tmp_b, tempfile.TemporaryDirectory() as tmp_c:
+            broken = self._run(tmp_b, [self._tripwire(
+                id="bad", claim_ids=["C-999"], option="Missing Option",
+                direction="maybe", reversal_cost="extreme",
+                monitor_kind="auto_recheckable", monitoring_source="not resolvable")])
+            clean = self._run(tmp_c, [self._tripwire()])
+            keys = ("coverage_score", "traceability_score",
+                    "contradiction_handling_score", "recommendation_support_score")
+            self.assertEqual(broken["blocking_issues"], [])
+            self.assertEqual(broken["major_issues"], clean["major_issues"])
+            for key in keys:
+                self.assertEqual(broken[key], clean[key], f"{key} moved")
+
+
+class TripwireRecheckInterfaceTest(unittest.TestCase):
+    def test_auto_recheckable_tripwire_monitoring_source_resolves_inside_bundle(self):
+        source = {"source_id": "S-004", "doi": "10.1145/2486001.2486012"}
+        tripwire = {"id": "T-001", "monitor_kind": "auto_recheckable",
+                    "monitoring_source": "S-004"}
+        source_ids = {source["source_id"]}
+        self.assertIn(tripwire["monitoring_source"], source_ids)
 
 
 class ResolutionPlanTest(unittest.TestCase):

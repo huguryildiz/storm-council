@@ -69,6 +69,9 @@
         "A \u00b7 Stay with LP/MIP/CP-SAT",
         "B \u00b7 Hybrid RL augmentation"
       ],
+      "linked_tripwires": [
+        "T-001"
+      ],
       "status": "proposed"
     },
     "human_review_required": true
@@ -101,6 +104,9 @@
       "linked_options": [
         "B \u00b7 Hybrid RL augmentation"
       ],
+      "linked_tripwires": [
+        "T-002"
+      ],
       "status": "proposed"
     },
     "human_review_required": true
@@ -131,6 +137,9 @@
       ],
       "linked_options": [
         "A \u00b7 Stay with LP/MIP/CP-SAT"
+      ],
+      "linked_tripwires": [
+        "T-003"
       ],
       "status": "proposed"
     },

@@ -30,6 +30,10 @@
         "A - Blanket AI automation tax or broad slowdown",
         "D - Narrow temporary tax in defined sectors"
       ],
+      "linked_tripwires": [
+        "T-001",
+        "T-002"
+      ],
       "status": "proposed"
     },
     "human_review_required": true,
@@ -73,6 +77,9 @@
       ],
       "linked_options": [
         "B - Let labor markets adjust with minimal intervention"
+      ],
+      "linked_tripwires": [
+        "T-004"
       ],
       "status": "proposed"
     },
@@ -225,6 +232,9 @@
       ],
       "linked_options": [
         "A - Blanket AI automation tax or broad slowdown"
+      ],
+      "linked_tripwires": [
+        "T-003"
       ],
       "status": "proposed"
     },

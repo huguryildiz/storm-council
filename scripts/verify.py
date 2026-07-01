@@ -92,6 +92,12 @@ _OPEN_STATUSES = {"unresolved", "open", "leaning"}
 _VOI_BANNED_KEYS = {"evsi", "evpi", "evppi", "enbs", "expected_value",
                     "probability", "prior", "utility", "payoff"}
 
+# Decision tripwires (08, schema §7.11 / S12). Advisory-only: malformed or
+# decorative tripwires are minor issues and never move any quality score.
+_TRIPWIRE_ID_RE = re.compile(r"^T-\d{3}$")
+_TRIPWIRE_DIRECTIONS = {"strengthens", "weakens", "invalidates"}
+_TRIPWIRE_MONITOR_KINDS = {"auto_recheckable", "manual_watch"}
+
 # Content verification statuses (schema v2).
 _DIRECT = "direct_support"
 _VERDICT_VALUES = {"entails", "partial", "does_not_entail", "uncertain"}
@@ -292,7 +298,16 @@ def _load(d: Path):
     rf = d / "report_data.json"
     if rf.exists():
         report = json.loads(rf.read_text(encoding="utf-8"))
-    return claims, evidence, verdicts, contradictions, sources, report
+    tripwires = []
+    twf = d / "decision_tripwires.json"
+    if twf.exists():
+        try:
+            parsed = json.loads(twf.read_text(encoding="utf-8")) or []
+        except ValueError:
+            parsed = []
+        if isinstance(parsed, list):
+            tripwires = parsed
+    return claims, evidence, verdicts, contradictions, sources, report, tripwires
 
 
 def _load_source_versions(d: Path) -> dict:
@@ -568,12 +583,73 @@ def _resolution_plan_minor_issues(contradictions, claim_ids: set, pivotal_ids: s
     return issues
 
 
+def _tripwire_minor_issues(tripwires, claim_ids: set, src_ids: set, report: dict) -> list:
+    """Validate decision_tripwires.json (08 / S12). The checks are structural
+    and honesty-focused only; they never score content plausibility or thresholds."""
+    issues: list = []
+    if not isinstance(tripwires, list):
+        return issues
+    options = report.get("options") if isinstance(report, dict) else []
+    if not isinstance(options, list):
+        options = []
+    option_names = {
+        o.get("name") for o in options
+        if isinstance(o, dict) and isinstance(o.get("name"), str)
+    }
+    for tw in tripwires:
+        if not isinstance(tw, dict):
+            issues.append("tripwire entry is not an object")
+            continue
+        tid = tw.get("id")
+        valid_id = isinstance(tid, str) and bool(_TRIPWIRE_ID_RE.fullmatch(tid))
+        label = tid if isinstance(tid, str) and tid else "tripwire"
+        if not valid_id:
+            issues.append("tripwire missing/malformed id (expected T-###)")
+
+        for field in ("condition", "threshold_or_event", "action"):
+            if not (isinstance(tw.get(field), str) and tw.get(field).strip()):
+                issues.append(f"{label} has missing/empty {field}")
+
+        direction = tw.get("direction")
+        if direction not in _TRIPWIRE_DIRECTIONS:
+            issues.append(f"{label} has invalid/missing direction")
+        reversal_cost = tw.get("reversal_cost")
+        if reversal_cost not in _EFFORT_VALUES:
+            issues.append(f"{label} has invalid/missing reversal_cost")
+        monitor_kind = tw.get("monitor_kind")
+        if monitor_kind not in _TRIPWIRE_MONITOR_KINDS:
+            issues.append(f"{label} has invalid/missing monitor_kind")
+
+        claims = tw.get("claim_ids")
+        if not isinstance(claims, list):
+            claims = []
+        for cid in claims:
+            if cid not in claim_ids:
+                issues.append(f"{label} references missing claim {cid}")
+
+        option = tw.get("option")
+        has_option = isinstance(option, str) and bool(option.strip())
+        if has_option and option not in option_names:
+            issues.append(f"{label} references missing option '{option}'")
+        if not claims and not has_option:
+            issues.append(
+                f"{label} is unbound (decorative) — bind it to a real claim or option")
+
+        source = tw.get("monitoring_source")
+        if monitor_kind == "auto_recheckable":
+            if not (source in src_ids or normalize_doi(source)):
+                issues.append(
+                    f"{label} claims auto_recheckable but monitoring_source '{source}' "
+                    "is not a resolvable source/DOI — not actually auto-recheckable")
+    return issues
+
+
 # --------------------------------------------------------------------------- #
 # Verification
 # --------------------------------------------------------------------------- #
 
 def verify(d: Path) -> dict:
-    claims, evidence, verdicts, contradictions, sources, report = _load(d)
+    claims, evidence, verdicts, contradictions, sources, report, tripwires = _load(d)
     claim_ids = {c.get("claim_id") for c in claims}
     src_ids = {s.get("source_id") for s in sources}
     sources_by_id = {s.get("source_id"): s for s in sources}
@@ -944,6 +1020,12 @@ def verify(d: Path) -> dict:
         contra_ids = {_contradiction_id(x) for x in contradictions}
         minor += _decision_criticality_minor_issues(dc_doc, claim_ids, contra_ids)
 
+    # --- decision tripwires (08) ------------------------------------------- #
+    # Advisory-only, gated on decision_tripwires.json existing via _load().
+    # All checks are structural/honesty checks; scores and blocking/major issues
+    # are never affected by this optional artifact.
+    minor += _tripwire_minor_issues(tripwires, claim_ids, src_ids, report)
+
     # --- contradiction-resolution planner (07d) ----------------------------- #
     # Advisory-only. Every check is minor and fires only when its own data is
     # present: resolution_plan on a record, decision_criticality.json for the
@@ -951,15 +1033,10 @@ def verify(d: Path) -> dict:
     # Absent siblings ⇒ those arms skip silently, never an error.
     pivotal_ids = _pivotal_ids_from_dc(dc_doc)
     twf = d / "decision_tripwires.json"
-    tripwire_ids = None
-    if twf.exists():
-        try:
-            tw_doc = json.loads(twf.read_text(encoding="utf-8"))
-        except ValueError:
-            tw_doc = None
-        tw_list = tw_doc.get("tripwires") if isinstance(tw_doc, dict) else tw_doc
-        tripwire_ids = {t.get("id") for t in tw_list
-                        if isinstance(t, dict) and t.get("id")} if isinstance(tw_list, list) else set()
+    tripwire_ids = {
+        t.get("id") for t in tripwires
+        if isinstance(t, dict) and t.get("id")
+    } if twf.exists() else None
     minor += _resolution_plan_minor_issues(
         contradictions, claim_ids, pivotal_ids, tripwire_ids, dc_doc is not None)
 
@@ -1381,7 +1458,7 @@ def recheck(d, *, as_of=None, fetcher=None, no_retrieve=False, cache_dir=None) -
     gate_after = verify(d)
 
     # 5. deterministic diff.
-    claims, _, _, contradictions, sources, _ = _load(d)
+    claims, _, _, contradictions, sources, _, _ = _load(d)
     source_changes = []
     change_by_source: dict = {}
     for s in sources:

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "T-001",
+    "condition": "Observable condition that would make the decision worth revisiting.",
+    "threshold_or_event": "Concrete event or author-stated threshold; do not invent computed probabilities, percentages, or placeholder numbers.",
+    "claim_ids": ["C-001"],
+    "option": null,
+    "direction": "weakens",
+    "monitoring_source": "manual literature scan",
+    "monitor_kind": "manual_watch",
+    "refresh_cadence": "quarterly",
+    "reversal_cost": "medium",
+    "action": "Concrete action to take if this tripwire fires."
+  },
+  {
+    "id": "T-002",
+    "condition": "A cited source is retracted or superseded by the publisher.",
+    "threshold_or_event": "The source DOI metadata shows a retraction notice or superseding version.",
+    "claim_ids": ["C-002"],
+    "option": "Exact option name from report_data.json",
+    "direction": "invalidates",
+    "monitoring_source": "S-001",
+    "monitor_kind": "auto_recheckable",
+    "refresh_cadence": "on every --recheck run",
+    "reversal_cost": "high",
+    "action": "Pause or reopen the affected recommendation until replacement evidence is reviewed."
+  }
+]

@@ -1,0 +1,41 @@
+[
+  {
+    "id": "T-001",
+    "condition": "A production replay or failure-injection benchmark shows an RL-primary traffic-engineering policy preserves SLA behavior under failures, demand shifts, and update races.",
+    "threshold_or_event": "A shadow-mode or replay study using production traffic and rollback criteria directly validates the behavior named in C-016.",
+    "claim_ids": ["C-016"],
+    "option": "B \u00b7 Hybrid RL augmentation",
+    "direction": "weakens",
+    "monitoring_source": "operator failure-injection benchmark review",
+    "monitor_kind": "manual_watch",
+    "refresh_cadence": "before any production traffic exposure",
+    "reversal_cost": "high",
+    "action": "Re-open C-016 and X-002; reassess whether Option B can move from bounded augmentation toward a stronger pilot."
+  },
+  {
+    "id": "T-002",
+    "condition": "The Teal paper's DOI metadata shows a retraction, correction, or superseding publication that changes its status as the strongest learning-accelerated TE evidence.",
+    "threshold_or_event": "S-001 DOI metadata reports retraction, correction, or supersession.",
+    "claim_ids": ["C-003", "C-028"],
+    "option": "B \u00b7 Hybrid RL augmentation",
+    "direction": "weakens",
+    "monitoring_source": "S-001",
+    "monitor_kind": "auto_recheckable",
+    "refresh_cadence": "on every --recheck run",
+    "reversal_cost": "medium",
+    "action": "Pause reliance on Teal-backed augmentation claims until the source status is reviewed and replacement evidence is mapped."
+  },
+  {
+    "id": "T-003",
+    "condition": "Local solver profiling shows deterministic LP/MIP/CP-SAT cannot meet the required control-loop deadline without unacceptable operator workload.",
+    "threshold_or_event": "The operator's own latency and on-call review identifies the incumbent solver path as the bottleneck for the intended control loop.",
+    "claim_ids": ["C-012"],
+    "option": "A \u00b7 Stay with LP/MIP/CP-SAT",
+    "direction": "weakens",
+    "monitoring_source": "local solver profiling and on-call review",
+    "monitor_kind": "manual_watch",
+    "refresh_cadence": "before funding an RL pilot",
+    "reversal_cost": "medium",
+    "action": "Reassess Option A against Option B and require an ablation plan before changing production authority."
+  }
+]

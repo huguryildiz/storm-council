@@ -1,0 +1,54 @@
+[
+  {
+    "id": "T-001",
+    "condition": "The IMF fiscal-policy source used for the targeted transition compact is retracted, corrected, or superseded in a way that changes its AI-tax guidance.",
+    "threshold_or_event": "S-006 DOI metadata reports retraction, correction, or supersession.",
+    "claim_ids": ["C-025"],
+    "option": "C - Targeted transition compact",
+    "direction": "weakens",
+    "monitoring_source": "S-006",
+    "monitor_kind": "auto_recheckable",
+    "refresh_cadence": "on every --recheck run",
+    "reversal_cost": "high",
+    "action": "Pause reliance on the targeted compact recommendation until replacement fiscal-policy evidence is reviewed."
+  },
+  {
+    "id": "T-002",
+    "condition": "The NBER working-paper source on tax-code automation bias is retracted, superseded, or materially corrected.",
+    "threshold_or_event": "S-007 DOI metadata reports retraction, correction, or supersession.",
+    "claim_ids": ["C-025"],
+    "option": "D - Narrow temporary tax in defined sectors",
+    "direction": "weakens",
+    "monitoring_source": "S-007",
+    "monitor_kind": "auto_recheckable",
+    "refresh_cadence": "on every --recheck run",
+    "reversal_cost": "medium",
+    "action": "Re-open the tax-neutrality branch before using Option D or the tax-code component of Option C."
+  },
+  {
+    "id": "T-003",
+    "condition": "Evaluated primary evidence appears that a broad AI automation tax protected employment without unacceptable productivity or targeting costs.",
+    "threshold_or_event": "A policy evaluation directly addresses the broad AI automation tax evidence gap named in C-026 and X-008.",
+    "claim_ids": ["C-026"],
+    "option": "A - Blanket AI automation tax or broad slowdown",
+    "direction": "strengthens",
+    "monitoring_source": "next policy-evidence review",
+    "monitor_kind": "manual_watch",
+    "refresh_cadence": "before advancing a national automation-tax proposal",
+    "reversal_cost": "high",
+    "action": "Reassess Option A against Option C and update the evidence gap if evaluated primary evidence resolves C-026."
+  },
+  {
+    "id": "T-004",
+    "condition": "Worker-level panel evidence shows low displacement and strong wage growth in highly exposed occupations through the next adoption wave.",
+    "threshold_or_event": "A credible labor-market panel resolves the exposure-versus-outcome uncertainty behind X-002.",
+    "claim_ids": ["C-003", "C-005"],
+    "option": "B - Let labor markets adjust with minimal intervention",
+    "direction": "strengthens",
+    "monitoring_source": "labor-market monitoring panel review",
+    "monitor_kind": "manual_watch",
+    "refresh_cadence": "during the next policy review cycle",
+    "reversal_cost": "medium",
+    "action": "Revisit whether minimal intervention remains too weak, while preserving caveats about distributional harm."
+  }
+]

@@ -205,6 +205,71 @@ def _refresh_diff_html(diff: dict) -> dict:
     return {"brief": brief, "report": report_bits, "appendix": appendix}
 
 
+def _tripwire_sort_key(tw: dict):
+    cost_order = {"high": 0, "medium": 1, "low": 2}
+    return (cost_order.get(str(tw.get("reversal_cost") or "").lower(), 3),
+            str(tw.get("id") or ""))
+
+
+def _tripwire_monitor_badge(kind) -> str:
+    if kind == "auto_recheckable":
+        return '<span class="tag kind">auto</span>'
+    if kind == "manual_watch":
+        return '<span class="tag part">manual</span>'
+    return f'<span class="tag kind">{e(kind or "unknown")}</span>'
+
+
+def _tripwire_cost_chip(cost) -> str:
+    tone = {"high": "open", "medium": "part", "low": "done"}.get(
+        str(cost or "").lower(), "kind")
+    return f'<span class="tag {tone}">{e(cost or "unknown")}</span>'
+
+
+def _tripwire_anchor(tid) -> str:
+    tid = str(tid or "")
+    if not tid:
+        return ""
+    return f'<a class="cid clink" href="#ref-{e(tid)}">{e(tid)}</a>'
+
+
+def _tripwires_html(tripwires) -> str:
+    if not isinstance(tripwires, list) or not tripwires:
+        return ""
+    rows = ""
+    for tw in sorted((t for t in tripwires if isinstance(t, dict)), key=_tripwire_sort_key):
+        tid = str(tw.get("id") or "")
+        claims = refs(tw.get("claim_ids")).strip()
+        option = tw.get("option")
+        watches = claims
+        if option:
+            option_html = f'<span class="tw-option">{e(option)}</span>'
+            watches = f"{watches} {option_html}".strip()
+        if not watches:
+            watches = '<span class="tag kind">unbound</span>'
+        monitor = _tripwire_monitor_badge(tw.get("monitor_kind"))
+        if tw.get("monitoring_source"):
+            monitor += f' <span class="tw-source">{text_refs(tw.get("monitoring_source"))}</span>'
+        cadence = text_refs(tw.get("refresh_cadence", ""))
+        cost = _tripwire_cost_chip(tw.get("reversal_cost"))
+        direction = f'<span class="tw-dir">{e(tw.get("direction", ""))}</span>' if tw.get("direction") else ""
+        threshold = ""
+        if tw.get("threshold_or_event"):
+            threshold = f'<div class="tw-threshold">{text_refs(tw.get("threshold_or_event"))}</div>'
+        rows += (
+            f'<tr id="ref-{e(tid)}"><td><span class="mono">{e(tid)}</span> '
+            f'{text_refs(tw.get("condition", ""))}{threshold}</td>'
+            f'<td>{watches}</td><td>{monitor}</td><td>{cadence}</td>'
+            f'<td>{cost} {direction}</td><td>{text_refs(tw.get("action", ""))}</td></tr>'
+        )
+    if not rows:
+        return ""
+    return (
+        '<table class="tripwire-table"><thead><tr><th>Condition</th><th>Watches</th>'
+        '<th>Monitor</th><th>Cadence</th><th>Reversal cost</th><th>Action</th></tr>'
+        f'</thead><tbody>{rows}</tbody></table>'
+    )
+
+
 def build(data: dict, layer: str = "all") -> str:
     if layer not in _LAYERS:
         layer = "all"
@@ -569,13 +634,31 @@ def build(data: dict, layer: str = "all") -> str:
     opts = data.get("options", [])
     if opts:
         body = ""
+        tripwires = data.get("decision_tripwires") if isinstance(data.get("decision_tripwires"), list) else []
         for o in opts:
             ccls, clbl = _STRENGTH.get(str(o.get("strength","")).lower(), ("s-none", o.get("strength","")))
             pts = "".join(f"<li>{text_refs(x)}</li>" for x in o.get("points", []))
             when = f'<p class="when">When appropriate: {text_refs(o["when"])}</p>' if o.get("when") else ""
-            body += ('<div class="opt"><span class="chip %s">%s</span><h4>%s</h4><ul>%s</ul>%s</div>' % (
-                ccls, e(clbl), e(o.get("name","")), pts, when))
+            linked_tw = [
+                tw for tw in tripwires
+                if isinstance(tw, dict) and tw.get("option") == o.get("name")
+            ]
+            revisit = ""
+            if linked_tw:
+                items = "".join(
+                    '<li>%s %s</li>' % (
+                        _tripwire_anchor(tw.get("id")),
+                        text_refs(tw.get("condition", "")))
+                    for tw in sorted(linked_tw, key=_tripwire_sort_key)
+                )
+                revisit = f'<div class="opt-trips"><b>Revisit if</b><ul>{items}</ul></div>'
+            body += ('<div class="opt"><span class="chip %s">%s</span><h4>%s</h4><ul>%s</ul>%s%s</div>' % (
+                ccls, e(clbl), e(o.get("name","")), pts, when, revisit))
         sec("Decision options & trade-offs", body, "brief")
+
+    tripwires_html = _tripwires_html(data.get("decision_tripwires"))
+    if tripwires_html:
+        sec("Revisit this decision if…", tripwires_html, "brief")
 
     acts = data.get("next_actions", [])
     if acts:
@@ -874,6 +957,16 @@ def _fold_in_artifacts(data: dict, base: Path, layer: str = "all") -> None:
                 manifest = None
             if isinstance(manifest, dict):
                 data["run_manifest"] = manifest
+
+    if not data.get("decision_tripwires"):
+        f = base / "decision_tripwires.json"
+        if f.exists():
+            try:
+                tripwires = json.loads(f.read_text(encoding="utf-8"))
+            except ValueError:
+                tripwires = None
+            if isinstance(tripwires, list):
+                data["decision_tripwires"] = tripwires
 
     if not data.get("provenance"):
         f = base / "provenance_manifest.json"

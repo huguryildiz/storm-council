@@ -103,6 +103,12 @@
   .chip.s-strong{ background:#e7f6ee; color:var(--green); } .chip.s-mod{ background:#fdf6e3; color:var(--amber); }
   .chip.s-weak{ background:#fdecea; color:var(--red); } .chip.s-none{ background:#eef0f3; color:var(--muted); }
   .opt .when{ font-size:13px; color:var(--faint); margin-top:8px; } .opt ul{ margin:8px 0 0; padding-left:18px; font-size:14px; }
+  .opt-trips{ margin-top:10px; padding-top:9px; border-top:1px solid var(--line); font-size:13px; color:var(--muted); }
+  .opt-trips b{ font-family:ui-monospace,Menlo,monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); }
+  .opt-trips ul{ margin:4px 0 0; padding-left:17px; }
+  .tripwire-table td{ font-size:13.5px; }
+  .tripwire-table .tw-threshold{ margin-top:5px; color:var(--muted); font-size:12.5px; line-height:1.45; }
+  .tripwire-table .tw-source,.tripwire-table .tw-option,.tripwire-table .tw-dir{ display:inline-block; margin-top:4px; color:var(--muted); font-size:12px; }
   .src{ list-style:none; padding:0; margin:0; }
   .src li{ padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
   .src .sid{ font-family:ui-monospace,Menlo,monospace; color:var(--brand); margin-right:8px; }
