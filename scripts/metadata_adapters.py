@@ -14,6 +14,7 @@ import csv
 import hashlib
 import io
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -25,6 +26,39 @@ from pathlib import Path
 
 _DOI_RE = re.compile(r"10\.\d{4,9}/\S+")
 _ARXIV_ID_RE = re.compile(r"(?i)(\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?/\d{7})(v\d+)?")
+_DEFAULT_ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
+
+
+def _load_env_file(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    values = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        text = line.strip()
+        if not text or text.startswith("#"):
+            continue
+        if text.startswith("export "):
+            text = text[len("export "):].strip()
+        if "=" not in text:
+            continue
+        key, value = text.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key:
+            continue
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        values[key] = value
+    return values
+
+
+def _semantic_scholar_headers() -> dict[str, str] | None:
+    api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
+    if not api_key:
+        api_key = _load_env_file(_DEFAULT_ENV_PATH).get("SEMANTIC_SCHOLAR_API_KEY")
+    if not api_key:
+        return None
+    return {"x-api-key": api_key}
 
 
 def normalize_doi(value) -> str | None:
@@ -187,7 +221,8 @@ def semantic_scholar_discovery(identifier: str, cache: MetadataCache, fetcher=No
     fields = "title,year,authors,citationCount,referenceCount,externalIds"
     encoded = urllib.parse.quote(identifier, safe=":")
     url = f"https://api.semanticscholar.org/graph/v1/paper/{encoded}?fields={fields}"
-    return cached_json(url, cache, fetcher, "semantic_scholar", no_retrieve=no_retrieve, log=log)
+    return cached_json(url, cache, fetcher, "semantic_scholar", headers=_semantic_scholar_headers(),
+                       no_retrieve=no_retrieve, log=log)
 
 
 def _normalize_arxiv_id(value) -> str | None:

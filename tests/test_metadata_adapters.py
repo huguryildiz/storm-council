@@ -2,8 +2,10 @@ import csv
 import importlib.util
 import io
 import json
+import os
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -33,7 +35,7 @@ class FakeFetcher:
         self.calls = []
 
     def __call__(self, url, headers=None, timeout=20):
-        self.calls.append(url)
+        self.calls.append({"url": url, "headers": headers or {}})
         for key, fixture in self.mapping.items():
             if key in url:
                 if fixture is None:
@@ -61,6 +63,36 @@ def _read_jsonl(path):
 
 
 class MetadataAdapterTest(unittest.TestCase):
+    def test_load_env_file_reads_semantic_scholar_key_without_dotenv_dependency(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text(
+                "# local secrets\n"
+                "SEMANTIC_SCHOLAR_API_KEY=s2k-test-key\n"
+                "IGNORED_LINE\n",
+                encoding="utf-8",
+            )
+
+            loaded = metadata_adapters._load_env_file(env_path)
+
+        self.assertEqual(loaded["SEMANTIC_SCHOLAR_API_KEY"], "s2k-test-key")
+
+    def test_semantic_scholar_discovery_uses_api_key_header_from_environment(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = metadata_adapters.MetadataCache(Path(tmp))
+            fetcher = FakeFetcher({
+                "semanticscholar.org/graph/v1/paper/DOI:10.5555%2Fexample.duplicate": "semantic_scholar_duplicate.json",
+            })
+
+            with mock.patch.dict(os.environ, {"SEMANTIC_SCHOLAR_API_KEY": "s2k-test-key"}):
+                metadata_adapters.semantic_scholar_discovery(
+                    "DOI:10.5555/example.duplicate",
+                    cache,
+                    fetcher=fetcher,
+                )
+
+        self.assertEqual(fetcher.calls[0]["headers"].get("x-api-key"), "s2k-test-key")
+
     def test_cache_returns_second_response_without_fetcher_call(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = metadata_adapters.MetadataCache(Path(tmp))

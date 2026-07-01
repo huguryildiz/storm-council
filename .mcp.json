@@ -2,9 +2,8 @@
   "mcpServers": {
     "semantic-scholar": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["semantic-scholar-fastmcp"],
-      "env": { "SEMANTIC_SCHOLAR_API_KEY": "${SEMANTIC_SCHOLAR_API_KEY}" }
+      "command": "zsh",
+      "args": ["-lc", "set -a; [ -f .env ] && source .env; set +a; exec uvx semantic-scholar-fastmcp"]
     },
     "paper-search": {
       "type": "stdio",
