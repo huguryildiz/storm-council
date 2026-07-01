@@ -25,14 +25,16 @@ Peer-reviewed surveys and studies, benchmark results, reproducibility analyses.
 
 ## How to retrieve evidence
 
-Two academic MCP servers are available (see SKILL.md §7.1). Use them in order.
+Academic MCP servers may be configured in `.mcp.json` (see SKILL.md §7.1), but
+availability is environment-dependent. Validate a tool before relying on it.
 Treat Semantic Scholar primarily as discovery / citation-graph support, not the
 sole source of bibliographic truth. For publication identity, prefer publisher
 landing page / DOI resolver, Crossref, OpenAlex, then Semantic Scholar, with
 domain-specific indexes (PubMed/PMC, arXiv, IEEE Xplore, ACM DL, SSRN/NBER/RePEc,
 standards bodies) where relevant.
 
-1. **`paper-search` → `search_papers`** — start here. Queries arXiv, OpenAlex,
+1. **`paper-search` → `search_papers`** — start here if the server launches.
+   Queries arXiv, OpenAlex,
    PubMed, Semantic Scholar, CrossRef, CORE, bioRxiv, SSRN, Zenodo and more in
    one call; results are deduplicated automatically.
 2. **`paper-search` → `download_with_fallback`** — fetch full text when abstract
@@ -45,8 +47,8 @@ standards bodies) where relevant.
    set `fields=title,abstract,year,authors,citationCount,externalIds`.
 
 Use `externalIds` (DOI, arXiv ID, PubMed ID) as identifiers to verify through
-the hierarchy above, not as proof of support. If both MCPs are absent, fall back
-to `WebSearch` / `WebFetch` and note the reduced retrieval quality in the source
+the hierarchy above, not as proof of support. If MCPs are absent or fail to
+launch, fall back to `WebSearch` / `WebFetch` and note the reduced retrieval quality in the source
 record. Record which metadata source(s) were checked in
 `publication_identity.metadata_sources_checked`; if no metadata adapter or
 retrieval tool ran, keep publication identity `UNRESOLVED`.

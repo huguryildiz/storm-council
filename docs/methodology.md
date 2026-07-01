@@ -82,13 +82,13 @@ hidden.
 
 ## 7. Adversarial review
 
-Stage 6 is an independent, rule-based reviewer. It audits citation integrity,
+Stage 6 is an independent, deterministic artifact reviewer. It audits citation integrity,
 overconfident wording, missing perspectives, source-concentration bias,
 dependence on low-quality sources, contradictions hidden by the synthesis,
 unjustified recommendations, missing time sensitivity, and smuggled value
 judgements. It issues `PASS`, `PASS_WITH_CAVEATS`, `REVISE`, or
 `BLOCKED_PENDING_EVIDENCE`, with explicit scores. Because the verdict is computed
-rather than generated, the reviewer cannot be talked into approving weak work.
+rather than generated, the model does not hand-set the final quality gate.
 
 The deterministic verifier is intentionally limited: it checks structural and
 machine-checkable preconditions (IDs, source links, DOI shape, duplicate DOI,
@@ -98,3 +98,15 @@ presence/shape/outcome of evidence verdict records). It does not pretend to
 solve semantic entailment by itself; passage-to-claim judgement and scope
 interpretation remain LLM-assisted/human-review tasks that must be documented in
 the artifacts.
+
+## 8. Provenance and recheck
+
+After verification, a bundle can be sealed with `verify.py --seal`. The seal is a
+local SHA-256 integrity manifest, not authenticity proof. A later
+`verify.py --check-seal` confirms whether the bundle is byte-identical to that
+manifest.
+
+Finished bundles can be manually rechecked with `verify.py --recheck`. Recheck
+re-runs publication-identity adapters and emits `refresh_diff.json` plus
+`refresh_report.md`. It does not schedule monitoring and does not rewrite claims
+or decisions automatically.

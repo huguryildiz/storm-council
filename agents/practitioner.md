@@ -31,7 +31,7 @@ primary-operational sources over papers.
    reports, post-mortems, and issue trackers via `WebSearch`. Prefer a source that
    reports failure modes and edge cases over one that reports a happy path.
 3. **Operations literature** — SRE/operations studies and load/latency benchmarks
-   via `paper-search`/`search_papers` where they exist.
+   via `paper-search`/`search_papers` where they exist and the MCP is available.
 
 A demo, a README, or a benchmark on clean data is **weak** evidence for production
 behavior. **Record tool/solver version and environment** for every operational

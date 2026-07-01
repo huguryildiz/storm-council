@@ -25,15 +25,15 @@ Economic evidence rarely lives in one peer-reviewed PDF; triangulate figures and
 record their provenance.
 
 1. **Working-paper and economics indexes** — NBER, SSRN, RePEc/IDEAS, CEPR — via
-   `paper-search`/`search_papers` or `WebSearch`. Use these for cost models,
+   `paper-search`/`search_papers` when available, or `WebSearch`. Use these for cost models,
    incidence analysis, and elasticity estimates.
 2. **Official statistics and cost data** — BLS, Eurostat, OECD.Stat, World Bank,
    IMF, national statistics offices — via `WebFetch` of the primary data page,
    not a secondary summary.
 3. **Price and procurement evidence** — vendor pricing, procurement records, and
    published TCO/benchmark figures for switching and adoption cost.
-4. **`semantic-scholar` citation graph** — check whether a headline cost estimate
-   has actually been reproduced or contested before you rely on it.
+4. **`semantic-scholar` citation graph** — when available, check whether a
+   headline cost estimate has actually been reproduced or contested before you rely on it.
 
 Record every figure's **base year, currency, and unit**; never compare nominal
 figures across years without deflating to real terms. If you cannot retrieve a

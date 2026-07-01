@@ -3,6 +3,11 @@ site_description: Contradiction-aware research workflow documentation.
 repo_url: https://github.com/huguryildiz/storm-council
 repo_name: huguryildiz/storm-council
 
+exclude_docs: |
+  misc/SKILL.md
+  publication-content-verification-audit.md
+  report-improvement-audit.md
+
 theme:
   name: material
   language: en
@@ -18,14 +23,21 @@ plugins:
 
 nav:
   - Home: index.md
+  - Quickstart: quickstart.md
+  - Architecture: architecture.md
+  - Output Bundle: output-bundle.md
+  - Verification and Provenance: verification-and-provenance.md
+  - Recheck and Refresh: recheck-and-refresh.md
+  - Role Model: role-model.md
   - Methodology: methodology.md
   - Examples: examples.md
   - Claim Traceability: claim-traceability.md
   - Benchmark: benchmark.md
+  - Limitations: limitations.md
+  - Compatibility: compatibility.md
+  - Claims vs Implementation: CLAIMS_VS_IMPLEMENTATION.md
+  - Documentation Alignment Report: DOCUMENTATION_ALIGNMENT_REPORT.md
   - Safety and Limitations: safety-and-limitations.md
-  - Audits:
-      - Report Improvement Audit: report-improvement-audit.md
-      - Publication Content Verification Audit: publication-content-verification-audit.md
 
 markdown_extensions:
   - admonition

@@ -1,5 +1,11 @@
 # Storm Council — Report & System Improvement Audit
 
+> Historical improvement snapshot, not the current product contract. Some line
+> counts, module boundaries, and gap descriptions may be stale after later
+> renderer, verifier, provenance, and documentation changes. Use
+> `docs/CLAIMS_VS_IMPLEMENTATION.md` and
+> `docs/DOCUMENTATION_ALIGNMENT_REPORT.md` for current release-audit wording.
+
 *Goal of this audit: move Storm Council from a "multi-agent debate tool" to an
 evidence-traceable, contradiction-aware, high-trust decision-support system.*
 

@@ -25,7 +25,7 @@ Precedent evidence is retrospective and longitudinal; the primary source is ofte
 a review or a case history, not a fresh experiment.
 
 1. **Retrospectives and review articles** — "history/evolution of X" surveys via
-   `paper-search`/`search_papers`. Then use `semantic-scholar`/`paper_references`
+   `paper-search`/`search_papers` when available. Then use `semantic-scholar`/`paper_references`
    to walk *backward* to the earliest wave of the idea, not just recent work.
 2. **Institutional case histories** — standards-body change logs, archived
    post-mortems, and organizational retrospectives from prior deployments via

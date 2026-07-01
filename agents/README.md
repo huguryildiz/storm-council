@@ -1,6 +1,9 @@
 # Storm Council — Research Lens Agents
 
-The five files in this directory define the **research lens subagents** used by the Storm Council workflow. Each lens is a focused research perspective that produces structured, source-traceable claims. They are deliberately diverse so their disagreements surface real contradictions rather than echo-chamber consensus.
+The five files in this directory define the **research lens subagents** used by
+the Storm Council workflow. Each lens is a focused functional perspective that
+returns structured claims to the orchestrator. The files are role contexts, not
+separate models or autonomous decision-makers.
 
 ## Lens summary
 
@@ -68,7 +71,10 @@ storm-council:practitioner
 storm-council:skeptic
 ```
 
-In Council Mode, dispatch each as its own subagent so they research in independent contexts before cross-examining. The main workflow orchestrator then assembles their outputs into the shared artifacts.
+In Council Mode, dispatch each as its own subagent when independent contexts are
+available. The main workflow orchestrator then assembles their outputs into the
+shared artifacts and records the actual dispatch mode in `run_manifest.json`
+when present.
 
 All agents have `disallowedTools: Write, Edit` — they return structured data to the orchestrator and never write files themselves.
 

@@ -19,6 +19,9 @@ that strengthen those properties are especially welcome.
 - [`examples/`](examples/) — a complete worked example's output artifacts.
 - `.claude-plugin/` — the plugin + marketplace manifests.
 - `scripts/verify.py` — pure-stdlib integrity check + quality-gate scorer (no LLM/API key).
+- `scripts/metadata_adapters.py` — pure-stdlib, cache-backed publication-identity
+  adapters. Network retrieval is opt-in by running the script; `--no-retrieve`
+  uses cache only.
 - `scripts/render_report.py` — pure-stdlib JSON → HTML report renderer (no LLM/API key).
 
 ## Principles to preserve
@@ -31,6 +34,8 @@ that strengthen those properties are especially welcome.
   items) and stops when no new high-impact contradiction appears.
 - **Never fake retrieval.** Only claim something was browsed or verified if a
   tool actually returned that evidence.
+- **Verification is not truth.** `verify.py` checks deterministic artifact
+  integrity and guardrails. Do not phrase a passing gate as factual proof.
 
 ## Adding a perspective
 
@@ -61,13 +66,21 @@ add a stage or substantially change a prompt, update the stage summary table in
 claude plugin validate .
 
 # Verify artifact integrity and quality-gate scores (no API key needed)
-python3 scripts/verify.py <output_dir>
+python3 scripts/verify.py <output_dir> --write
 
 # Render the shareable report
 python3 scripts/render_report.py <output_dir>/report_data.json -o <output_dir>/storm_council_report.html
+
+# Run the stdlib tests
+python3 -m unittest discover -s tests
+
+# Run pytest when pytest is installed in the selected interpreter
+python3 -m pytest tests/
 ```
 
-Both scripts are pure standard library — no network, no LLM, no API key required.
+`verify.py` and `render_report.py` are pure standard library and make no model
+calls. `metadata_adapters.py` is standard library but may hit the network unless
+`--no-retrieve` is used.
 
 ## Reporting issues
 

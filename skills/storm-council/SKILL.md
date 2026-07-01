@@ -51,7 +51,7 @@ potential conflicts with other lenses, and escalation triggers.
 The whole point is that these lenses **inspect one another** (Council Mode) — not
 that they answer in parallel.
 
-Each lens is also shipped as a **subagent** (`storm-council:practitioner`, `…:academic`, `…:skeptic`, `…:economist`, `…:historian`). In Council Mode you may dispatch each as its own subagent so they research and reason in independent contexts before cross-examining one another; then assemble their claims into the shared ledger.
+Each lens is also shipped as a **subagent** (`storm-council:practitioner`, `…:academic`, `…:skeptic`, `…:economist`, `…:historian`). In Council Mode you may dispatch each as its own subagent so they research and reason in independent contexts before cross-examining one another; then assemble their claims into the shared ledger. If you do not dispatch independent subagents, do not claim independent lens contexts; record the actual dispatch mode in `run_manifest.json` when present.
 
 ## The six stages — run in order
 
@@ -253,9 +253,11 @@ or URLs. Fabricated citations are a hard failure.
 
 ## 7.1 Use academic MCP servers for retrieval
 
-Two academic MCP servers ship with this project (`.mcp.json`). Prefer them over
-general web search whenever peer-reviewed evidence is needed. Both require no
-API key.
+Academic MCP servers are configured in this project (`.mcp.json`) for optional
+retrieval. Prefer them over general web search whenever peer-reviewed evidence is
+needed and the server actually launches in the current environment. They are not
+guaranteed infrastructure; if a configured MCP is absent or fails to launch, mark
+retrieval quality accordingly and do not invent sources.
 
 ### Tool selection guide
 
@@ -268,14 +270,16 @@ API key.
 | Author profile + paper list | `semantic-scholar` | `author_search` → `author_papers` |
 | Exact paper metadata by ID | `semantic-scholar` | `paper_details` |
 
-**`paper-search`** (`uvx paper-search-mcp`) — unified interface over 20+ sources
+**`paper-search`** (`uvx paper-search-mcp`) — configured as the preferred unified interface over 20+ sources
 (arXiv, OpenAlex, PubMed, Semantic Scholar, CrossRef, bioRxiv, CORE, SSRN,
-Zenodo, DOAJ, Europe PMC, and more). Use `search_papers` as the default first
-call; it deduplicates results across sources automatically.
+Zenodo, DOAJ, Europe PMC, and more) when it is available in the current
+environment. Use `search_papers` as the default first call only after validating
+the server exposes that tool.
 
-**`semantic-scholar`** (`uvx semantic-scholar-fastmcp`) — 200M+ papers with
+**`semantic-scholar`** (`uvx semantic-scholar-fastmcp`) — paper metadata and
 richer graph tools: citation chains, author graphs, recommendations. Use when
-you need to trace evidence depth beyond a keyword hit.
+you need to trace evidence depth beyond a keyword hit and the server is
+available.
 
 Usage notes:
 - For `semantic-scholar`, pass `fields=title,abstract,year,authors,citationCount,externalIds`.
@@ -283,7 +287,7 @@ Usage notes:
   `doi_normalized` to DOI resolver, Crossref, and OpenAlex; `arxiv_id` to
   arXiv; `pmid` to PubMed; and `pmcid` to PMC / PubMed E-utilities. Do not
   treat Semantic Scholar alone as publication truth.
-- If both MCPs are absent, fall back to `WebSearch` / `WebFetch` and mark
+- If MCPs are absent or fail to launch, fall back to `WebSearch` / `WebFetch` and mark
   retrieval quality accordingly in the status banner (`ILLUSTRATIVE`).
 
 ## 8. Require source identifiers for external facts

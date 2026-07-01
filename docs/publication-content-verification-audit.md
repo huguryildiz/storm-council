@@ -1,5 +1,10 @@
 # Storm Council — Publication & Content Verification Audit
 
+> Historical snapshot, not the current product contract. This audit was written
+> before later verification, metadata adapter, benchmark, provenance, and recheck
+> work landed. Use `docs/CLAIMS_VS_IMPLEMENTATION.md` and
+> `docs/DOCUMENTATION_ALIGNMENT_REPORT.md` for current release-audit wording.
+
 > Repo-specific audit produced by applying
 > `.superpowers/prompts/storm-council-publication-content-verification-audit-prompt.md`
 > to the current repository. No source files were changed to produce this audit.

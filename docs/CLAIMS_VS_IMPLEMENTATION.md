@@ -1,0 +1,24 @@
+# Claims vs Implementation
+
+| Public/documentation claim | Supporting implementation | Evidence | Status | Required wording |
+| --- | --- | --- | --- | --- |
+| Storm Council structures disagreement rather than merging it away | Six-stage skill and `04_contradictions.json` artifacts | `skills/storm-council/SKILL.md`, `agents/README.md`, examples | PASS | "Preserves structured disagreement and unresolved contradictions." |
+| Evidence collection is automatic and complete | Stage prompts and optional MCP/tool use, but retrieval depends on available tools and model actions | `.mcp.json`, `setup.sh`, agent docs | PARTIAL | "Guides evidence collection; runs must record actual tools used and unavailable evidence." |
+| Evidence quality is verified | `verify.py` checks source linkage, locators, metadata flags, verdict shape/outcome, and heuristics | `scripts/verify.py`, tests | PARTIAL | "Checks deterministic evidence guardrails; does not prove semantic truth." |
+| Claim traceability is machine-checkable | IDs and verifier link checks | `03_claims.jsonl`, `03_source_registry.csv`, `03_evidence.jsonl`, `scripts/verify.py` | PASS | "Claim/source/evidence/contradiction IDs are integrity-checked." |
+| Contradiction handling is implemented | Structured contradiction records and scoring | `04_contradictions.json`, `scripts/verify.py` | PASS | "Contradictions are recorded and scored; unresolved conflicts remain visible." |
+| Council Mode changes claims after challenge | Deliberation logs are rendered; claims are not automatically rewritten | `04_council_deliberation.*`, renderer | PARTIAL | "Council Mode logs bounded cross-examination; synthesis must carry effects forward." |
+| Verifier behavior produces quality gate | Deterministic CLI computes status and four scores | `scripts/verify.py --help`, tests | PASS | "`verify.py` computes artifact quality-gate status and scores." |
+| Provenance sealing prevents tampering | Hash manifest detects byte changes since last seal, but unsigned manifest can be regenerated | `verify.py --seal`, `--check-seal`, template notes | PARTIAL | "Seal checks local artifact integrity, not authenticity." |
+| Tamper detection is available | `--check-seal` reports PASS/ALTERED against manifest | `scripts/verify.py` | PASS | "Detects changes relative to the current unsigned manifest." |
+| Recheck is implemented | `verify.py --recheck` writes refresh diff/report and re-runs gate | CLI help and temp-run verification | PASS | "Manual point-in-time recheck; not monitoring." |
+| Refresh diff updates stale decisions automatically | Recheck surfaces source/gate changes but does not edit claims or decisions | `scripts/verify.py`, `refresh_diff_record.json` | PARTIAL | "Refresh diff informs human review; it does not auto-rewrite decisions." |
+| Tripwires are implemented | Optional `decision_tripwires.json` shape and verifier checks | templates, `scripts/verify.py` | PASS | "Optional decision tripwires can be recorded and evaluated during recheck." |
+| Backwards compatibility exists for older artifacts | Renderer folds nearby artifacts when present; verifier tolerates missing optional files | `scripts/report/layers/document.py`, tests | PARTIAL | "Optional artifacts are backward-compatible where tests cover them." |
+| Storm Council is single-LLM architecture | Plugin runs in Claude Code; no multi-model orchestration code exists | skill, manifests, repo scripts | PASS | "Single Claude Code session/plugin workflow; subagents are role contexts." |
+| Current role model is Four Horsemen | No Four Horsemen runtime files are present; five lens agents exist | `agents/*.md`, `skills/storm-council/SKILL.md` | FAIL | "Current implementation uses five functional lenses." |
+| Installation is simple | Marketplace/local plugin commands exist; `setup.sh` checks dependencies | README commands, `setup.sh` | PARTIAL | "Install is simple when Claude Code and optional MCP dependencies work." |
+| Supported providers/tools include paper-search MCP | `.mcp.json` configures it, but `uvx paper-search-mcp --help` failed in audit | setup validation output | PARTIAL | "Configured optional MCP; validate in your environment before relying on it." |
+| No API key is required | Core scripts need no API key; optional Semantic Scholar key can improve rate limits | scripts and docs | PASS | "Core local scripts require no API key; optional retrieval tools may accept keys." |
+| Report rendering is deterministic | Renderer reads `report_data.json` and nearby artifacts, writes HTML | `scripts/render_report.py --help`, tests | PASS | "HTML rendering is deterministic for a given bundle." |
+| Verification status means true | No implementation can prove objective truth | verifier docs and limitations | FAIL | "Verification means artifact integrity and guardrails checked, not truth." |

@@ -3,6 +3,8 @@
 Storm Council is decision-*support*. It is designed to make uncertainty and
 disagreement visible — not to remove the human from the decision.
 
+For the concise current limitation contract, see [`limitations.md`](limitations.md).
+
 ## Model hallucination risk
 
 A real LLM adapter can fabricate claims or sources. Storm Council mitigates this
@@ -15,6 +17,8 @@ but it cannot guarantee a model did not invent a plausible-looking source.
 If a retrieval adapter returns weak, outdated, or biased material, the
 downstream claims inherit those flaws. The reviewer flags low-credibility
 sources and source concentration, but garbage in still degrades the output.
+Configured MCP servers are optional runtime dependencies; a run should record
+which retrieval tools actually returned evidence.
 
 ## Source bias
 
@@ -62,8 +66,8 @@ controls, and never as legal proof of non-tampering.
 ## Sensitive / high-stakes uses
 
 Storm Council is **not** professional, legal, medical, financial, or policy
-advice. Topics in those areas auto-escalate to Council Mode and should carry
-explicit caveats; they still require qualified human judgement.
+advice. Topics in those areas should use Council Mode and carry explicit
+caveats; they still require qualified human judgement.
 
 ## Personal data
 

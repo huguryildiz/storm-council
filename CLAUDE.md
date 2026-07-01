@@ -2,9 +2,9 @@
 
 ## What this project is
 
-A **Claude Code plugin** that runs a six-stage, contradiction-aware research workflow.  
-One question → five research lenses → explicit contradiction ledger → decision-ready brief + HTML report.  
-No API key, no external billing — it runs entirely inside the user's Claude Code session.
+A **Claude Code plugin** that runs a six-stage, contradiction-aware research workflow.
+One question -> five functional research lenses -> explicit contradiction ledger -> decision-ready brief + HTML report.
+The core local scripts require no API key. Optional retrieval tools may use MCP servers and optional API keys for rate limits.
 
 ## Repository layout
 
@@ -12,7 +12,8 @@ No API key, no external billing — it runs entirely inside the user's Claude Co
 skills/storm-council/SKILL.md          # the skill definition (source of truth for the workflow)
 skills/storm-council/prompts/          # stage1–stage6 prompt templates
 agents/                                # five lens subagents: academic, economist, historian, practitioner, skeptic
-scripts/verify.py                      # deterministic quality-gate scorer (pure stdlib, no network)
+scripts/verify.py                      # deterministic quality-gate scorer, seal, recheck (pure stdlib)
+scripts/metadata_adapters.py           # opt-in publication-identity adapters (stdlib, cache-backed network)
 scripts/render_report.py               # HTML report renderer (pure stdlib, no network)
 examples/                              # full example runs (network_flow_rl, ai_jobs_policy)
 docs/                                  # methodology, safety-and-limitations, claim-traceability
@@ -64,7 +65,8 @@ python3 scripts/verify.py <output_dir> --recheck --offline   # cache-only, hones
 python3 scripts/render_report.py <output_dir>/report_data.json -o <output_dir>/storm_council_report.html
 ```
 
-Both scripts are pure Python stdlib — no pip installs, no network, no LLM.
+`verify.py` and `render_report.py` are pure Python stdlib. `metadata_adapters.py`
+is also stdlib but may use the network unless `--no-retrieve` is passed.
 
 **Sealing is integrity, not authenticity.** `--seal` hashes the artifacts and copies
 the verdict `verify.py --write` already computed; it never re-scores. `--check-seal`
@@ -95,7 +97,9 @@ Prefer `/opt/homebrew/bin/python3.12`. Never use `/opt/anaconda3/bin/python3` (R
 
 ## Git workflow
 
-Push directly to `main`. No feature branches, no pull requests, unless explicitly asked.
+Do not commit or push unless the user explicitly asks. If the user asks to publish,
+inspect status/diff first, then push directly to `main` unless they request a
+different branch or PR flow.
 
 ## What's gitignored
 
@@ -150,7 +154,10 @@ via `currentColor`.
 ## Tests
 
 ```bash
+python3 -m unittest discover -s tests
 python3 -m pytest tests/
 ```
 
-`tests/test_render_report.py` covers the renderer. Add tests alongside any change to `scripts/`.
+`unittest` is the stdlib baseline. `pytest` requires pytest to be installed in
+the selected interpreter. On Apple Silicon, prefer `/opt/homebrew/bin/python3.12`
+for script verification; the default `python3` may be Anaconda `x86_64`.

@@ -130,3 +130,14 @@ Recommendations are first-class claim types and decision options. The reviewer's
 evidence-strength label and whether recommended actions reference specific
 findings (claim/conflict IDs). Recommendations that float free of evidence are
 flagged.
+
+## Integrity and freshness artifacts
+
+`provenance_manifest.json` is written by `verify.py --seal`. It contains content
+hashes and the verdict at seal time. It proves local byte identity against the
+current unsigned manifest, not authorship or legal non-tampering.
+
+`refresh_diff.json` and `refresh_report.md` are written by
+`verify.py --recheck --write`. They show source identity changes and any gate
+movement. A `not_rechecked` source is an explicit uncertainty state, never an
+unchanged source.
