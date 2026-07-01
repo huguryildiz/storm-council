@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "options_considered": [
+    {"name": "A · Stay with LP/MIP/CP-SAT", "strength": "strong"},
+    {"name": "B · Hybrid RL augmentation", "strength": "moderate"},
+    {"name": "C · RL-primary with LP fallback circuit", "strength": "weak"}
+  ],
+  "recommendation_rule": "highest-strength option wins; ties broken by option order in options[]; strength order strong > conditional > moderate > weak > unsupported",
+  "rankings": [
+    {
+      "claim_id": "C-012",
+      "criticality": "contributing",
+      "affects_options": [
+        "A · Stay with LP/MIP/CP-SAT"
+      ],
+      "flips_recommendation": false,
+      "rule_trace": "C-012 ('no retrieved RL-primary production evidence') is the only claim the argument map links to the recommended option (05_argument_map.mmd path C012 --> X008 --> A; A maps to options[] 'A · Stay with LP/MIP/CP-SAT', strength strong). Flipping C-012 supported->unsupported drops A one tier from strong to moderate, tying option B (moderate); options[] order then keeps A the winner. The recommended option's strength tier changes but its identity does not, so this is contributing, not pivotal."
+    },
+    {
+      "claim_id": "C-003",
+      "criticality": "peripheral",
+      "affects_options": [],
+      "flips_recommendation": false,
+      "rule_trace": "C-003 links to option B, which the argument map supports with five claims (C-003, C-005, C-008, C-010, C-014). Flipping C-003 leaves B with four supporting claims (still >=1), so B stays moderate; option A remains the winner with an unchanged strength tier."
+    },
+    {
+      "claim_id": "C-014",
+      "criticality": "peripheral",
+      "affects_options": [],
+      "flips_recommendation": false,
+      "rule_trace": "C-014 is one of option B's five supporting claims. Flipping it leaves B with >=1 supporting claim, so B's tier is unchanged and the recommended option (A) and its tier are unaffected."
+    }
+  ]
+}

@@ -110,6 +110,22 @@ def _am_node_type(nid: str) -> str:
     return "other"
 
 
+def _pivotal_refs(data) -> set:
+    """The set of C-###/X-### refs that 07c ranked `pivotal`, read from
+    data["decision_criticality"]["rankings"]. Empty when the artifact is absent —
+    so an un-adopting bundle gets an identical argument map (no am-pivotal class)."""
+    dc = (data or {}).get("decision_criticality")
+    if not isinstance(dc, dict):
+        return set()
+    out = set()
+    for r in dc.get("rankings") or []:
+        if isinstance(r, dict) and str(r.get("criticality") or "").lower() == "pivotal":
+            rid = r.get("claim_id") or r.get("contradiction_id")
+            if rid:
+                out.add(rid)
+    return out
+
+
 def _cyto_node_note(ntype: str, ref: str, desc: str,
                     sources_by_id: dict, contra_by_id: dict) -> str:
     """Tooltip text for a node, enriched from report_data.json where available.
@@ -149,12 +165,18 @@ def _argument_map_cyto(mmd, data) -> dict:
         return {"nodes": [], "edges": []}
     sources_by_id = {s.get("id"): s for s in (data or {}).get("sources", []) if isinstance(s, dict)}
     contra_by_id = {x.get("id"): x for x in (data or {}).get("contradictions", []) if isinstance(x, dict)}
+    pivotal = _pivotal_refs(data)
 
     cyto_nodes = []
     for nid, label in nodes.items():
         desc, node_refs = _node_parts(label)
         ref = node_refs[0] if node_refs else ""
         ntype = _am_node_type(nid)
+        # 07c: a pivotal node gets an orthogonal visual channel (thicker, distinctly
+        # coloured border in the stylesheet) — space-joined onto its type class.
+        classes = _AM_TYPE_CLASS.get(ntype, "am-other")
+        if any(r in pivotal for r in node_refs):
+            classes += " am-pivotal"
         cyto_nodes.append({
             "data": {
                 "id": nid,
@@ -163,7 +185,7 @@ def _argument_map_cyto(mmd, data) -> dict:
                 "ntype": ntype,
                 "note": _cyto_node_note(ntype, ref, desc, sources_by_id, contra_by_id),
             },
-            "classes": _AM_TYPE_CLASS.get(ntype, "am-other"),
+            "classes": classes,
         })
 
     cyto_edges = []
@@ -198,11 +220,16 @@ def _am_edge_path(pos, src, dst, layer, w, h, vgap, dotted) -> str:
     return f'<path class="{cls}" d="{d}" marker-end="url(#am-arrow)" />'
 
 
-def _argument_map_svg(mmd) -> str:
+def _argument_map_svg(mmd, pivotal_refs=None) -> str:
     """Parse the minimal Mermaid argument map and render it as an inline,
-    self-contained SVG (no mermaid.js, no network). Degrades to '' on no nodes."""
+    self-contained SVG (no mermaid.js, no network). Degrades to '' on no nodes.
+
+    ``pivotal_refs`` (07c) is the set of C-###/X-### refs to mark with an extra
+    ``am-pivotal`` class in the print/no-JS fallback; empty/None ⇒ no marking, so
+    a bundle without decision_criticality.json renders an identical SVG."""
     if not mmd or not str(mmd).strip():
         return ""
+    pivotal_refs = pivotal_refs or set()
     nodes, solid, dotted = _parse_mmd(mmd)
     if not nodes:
         return ""
@@ -275,7 +302,10 @@ def _argument_map_svg(mmd) -> str:
             rx += (len(r) + 1) * 7.0
             if rx > x + w - 20:
                 break
-        node_svg += (f'<g><rect class="am-node {_am_node_class(nid)}" x="{x:.1f}" y="{y:.1f}" '
+        node_cls = _am_node_class(nid)
+        if any(r in pivotal_refs for r in parts[nid][1]):
+            node_cls = (node_cls + " am-pivotal").strip()
+        node_svg += (f'<g><rect class="am-node {node_cls}" x="{x:.1f}" y="{y:.1f}" '
                      f'width="{w:.1f}" height="{h:.1f}" rx="9" ry="9" />'
                      f'<g clip-path="url(#amc-{safe})">'
                      f'<text class="am-desc">{tspans}</text>{ref_svg}</g></g>')
@@ -347,7 +377,8 @@ _AM_CY_INIT_JS = """
           'target-arrow-shape': 'triangle', 'arrow-scale': 0.9, 'curve-style': 'bezier' } },
       { selector: 'edge.dotted', style: { 'line-style': 'dashed', 'line-color': '#cdb47a', 'target-arrow-color': '#cdb47a' } },
       { selector: '.am-dim', style: { 'opacity': 0.12 } },
-      { selector: 'node.am-focus', style: { 'border-width': 3, 'border-color': '#5b46c8' } }
+      { selector: 'node.am-focus', style: { 'border-width': 3, 'border-color': '#5b46c8' } },
+      { selector: 'node.am-pivotal', style: { 'border-width': 3, 'border-color': '#c0392b' } }
     ],
     layout: layouts.flow
   });
@@ -409,7 +440,7 @@ def _argument_map_interactive_html(mmd, data, cytoscape_js=None) -> str:
     the render_report facade inject its own (test-monkeypatchable) library getter;
     it defaults to the vendored reader.
     """
-    static_svg = _argument_map_svg(mmd)
+    static_svg = _argument_map_svg(mmd, _pivotal_refs(data))
     if not static_svg:
         return ""
     lib = (cytoscape_js or _cytoscape_js)()

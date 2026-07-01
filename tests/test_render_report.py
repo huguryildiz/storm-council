@@ -1200,5 +1200,56 @@ class RefreshDiffPanelTest(unittest.TestCase):
         self.assertNotIn("currently monitoring", html.lower())
 
 
+class DecisionCriticalityRenderTest(unittest.TestCase):
+    """07c: brief 'if this is wrong' section, ledger badge, and pivotal argument-map
+    node class — each additive-optional (absent ⇒ nothing new renders)."""
+
+    def test_brief_shows_if_one_assumption_is_wrong_section(self):
+        html = render_report.build({
+            "title": "A decision",
+            "options": [{"name": "C - Targeted transition compact", "strength": "strong"}],
+            "claims": [{"claim_id": "C-001", "claim_text": "Pivotal claim text.",
+                        "evidence_status": "supported"}],
+            "decision_criticality": {
+                "most_load_bearing": "C-001",
+                "rankings": [{"claim_id": "C-001", "criticality": "pivotal",
+                              "flips_recommendation": True, "affects_options": [],
+                              "rule_trace": "flips the winner."}],
+            },
+        }, "brief")
+        self.assertIn("If one assumption is wrong", html)
+        self.assertIn("C-001", html)
+
+    def test_pivotal_badge_renders_in_claims_ledger(self):
+        html = render_report.build({
+            "title": "A decision",
+            "claims": [{"claim_id": "C-001", "claim_text": "x", "evidence_status": "supported",
+                        "decision_criticality": {"criticality": "pivotal",
+                                                 "flips_recommendation": True}}],
+        })
+        self.assertIn("claim-crit-pivotal", html)
+        self.assertIn("pivotal", html.lower())
+
+    def test_no_decision_criticality_renders_nothing_new(self):
+        # The CSS/JS selectors are always embedded (like every other feature's
+        # styles); the invariant is that no APPLIED markup appears — no brief
+        # sentence, no chip on a claim row, no pivotal node class on a rendered node.
+        html = render_report.build({"title": "A decision", "bottom_line": "Use care."})
+        self.assertNotIn("If one assumption is wrong", html)
+        self.assertNotIn("load-bearing", html.lower())
+        self.assertNotIn('claim-chip claim-crit-', html)
+
+    def test_argument_map_pivotal_node_gets_distinct_class(self):
+        mmd = "graph TD\n  Q[Q]\n  Q --> A[Claim A C-001]\n"
+        html = render_report.build({
+            "title": "A decision", "argument_map": mmd,
+            "decision_criticality": {"rankings": [
+                {"claim_id": "C-001", "criticality": "pivotal",
+                 "flips_recommendation": True, "affects_options": []}
+            ]},
+        })
+        self.assertIn("am-pivotal", html)
+
+
 if __name__ == "__main__":
     unittest.main()

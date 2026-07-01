@@ -207,6 +207,7 @@ export S2_API_KEY=<your-key>   # add to ~/.zshrc or ~/.zprofile
 | `05_synthesis.md` | 5 | 10-section source-mapped synthesis |
 | `05_argument_map.mmd` | 5 | Mermaid argument map |
 | `05_decision_brief.md` | 5 | One-page brief for a technical leader |
+| `decision_criticality.json` | 5 (optional) | Ordinal `pivotal/contributing/peripheral` ranking of which claim/contradiction is most load-bearing, derived structurally from `options[]` + `05_argument_map.mmd` (no numeric score; never reads confidence). Absent ⇒ no badges/brief sentence |
 | `06_adversarial_review.md` | 6 | Reviewer checks, issues, and scores |
 | `06_quality_gate.json` | 6 | Machine-readable verdict + scores |
 | `storm_council_report.html` | final | **Shareable self-contained decision-brief report** |

@@ -78,6 +78,10 @@ _DOWNGRADED_STATUS = {"superseded", "corrected", "duplicate_version"}
 # `run_log` — provenance for what was queried, never external support for a claim.
 _SOURCE_CLASSES = {"peer_reviewed", "preprint", "official", "gray", "run_log"}
 
+# Decision-criticality ordinal enum (schema §7.9 / S10). Ordinal-only — there is
+# no numeric importance/weight/probability anywhere in this feature, by design.
+_CRITICALITY_VALUES = {"pivotal", "contributing", "peripheral"}
+
 # Content verification statuses (schema v2).
 _DIRECT = "direct_support"
 _VERDICT_VALUES = {"entails", "partial", "does_not_entail", "uncertain"}
@@ -335,6 +339,94 @@ def _resolution_is_credited(x: dict) -> bool:
     if basis in ("", "none"):
         return False
     return bool((res.get("evidence_ids") or []) or (res.get("move_ids") or []))
+
+
+def _decision_criticality_minor_issues(dc, claim_ids: set, contra_ids: set) -> list:
+    """Structural + internal-consistency checks for decision_criticality.json (07c,
+    schema §7.9). ALL issues are MINOR advisories — never blocking/major, and the
+    whole block is skipped when the file is absent.
+
+    verify.py does NOT re-derive the ranking (that needs the argument-map graph the
+    renderer parses); it validates shape, ID resolution, the ordinal-only rule, and
+    the pivotal<->flips_recommendation pairing that makes a wrong `pivotal` catchable.
+    A wrong `pivotal` is the single most dangerous failure this feature can produce,
+    so that pairing (check 4) and `most_load_bearing` (check 3) get dedicated checks."""
+    issues: list = []
+    if not isinstance(dc, dict):
+        return issues
+    rankings = dc.get("rankings")
+    if not isinstance(rankings, list):
+        rankings = []
+    ranked_crit: dict = {}
+    for r in rankings:
+        if not isinstance(r, dict):
+            issues.append("decision_criticality ranking entry is not an object")
+            continue
+        cid, xid = r.get("claim_id"), r.get("contradiction_id")
+        rid = cid or xid or "?"
+        # exactly one of claim_id / contradiction_id
+        if bool(cid) == bool(xid):
+            issues.append(
+                f"decision_criticality ranking {rid} must name exactly one of "
+                "claim_id / contradiction_id")
+        crit = str(r.get("criticality") or "").lower()
+        # check 1: enum membership
+        if crit not in _CRITICALITY_VALUES:
+            issues.append(
+                f"decision_criticality ranking {rid} has unknown criticality "
+                f"'{r.get('criticality')}' (expected pivotal|contributing|peripheral)")
+        # check 2: ID resolution (stale ranking is advisory, never retroactive penalty)
+        if cid and cid not in claim_ids:
+            issues.append(
+                f"decision_criticality ranking references unknown claim {cid} "
+                "(stale ranking — claims ledger edited after it was authored?)")
+        if xid and xid not in contra_ids:
+            issues.append(
+                f"decision_criticality ranking references unknown contradiction {xid} "
+                "(stale ranking — contradiction ledger edited after it was authored?)")
+        # check 4: pivotal <-> flips_recommendation:true pairing
+        flips = r.get("flips_recommendation")
+        if crit == "pivotal":
+            if flips is not True:
+                issues.append(
+                    f"decision_criticality {rid} is pivotal but flips_recommendation is not "
+                    "true (self-contradictory: a pivotal entry changes the recommendation)")
+            if not (isinstance(r.get("rule_trace"), str) and r.get("rule_trace").strip()):
+                issues.append(
+                    f"decision_criticality pivotal ranking {rid} cites no rule_trace — "
+                    "cannot be audited")
+        elif crit in {"contributing", "peripheral"} and flips is True:
+            issues.append(
+                f"decision_criticality {rid} is {crit} but flips_recommendation is true "
+                "(only a pivotal entry may flip the recommendation)")
+        # check 5: no numeric score fields — this feature is ordinal-only
+        for k, v in r.items():
+            if isinstance(v, bool):
+                continue
+            if isinstance(v, (int, float)):
+                issues.append(
+                    f"decision_criticality ranking {rid} carries a numeric field "
+                    f"'{k}' — this feature is ordinal-only, remove '{k}'")
+        if rid != "?":
+            ranked_crit[rid] = crit
+    # check 3: most_load_bearing must point at a pivotal entry
+    mlb = dc.get("most_load_bearing")
+    if mlb and ranked_crit.get(mlb) != "pivotal":
+        issues.append(
+            "decision_criticality most_load_bearing references a non-pivotal or unranked "
+            "entry — this actively misleads the brief reader")
+    # check 6: options snapshot + rule required to audit a non-empty ranking
+    if rankings:
+        if not dc.get("options_considered"):
+            issues.append(
+                "decision_criticality has rankings but no options_considered snapshot — "
+                "the ranking cannot be audited against the recommendation state")
+        if not (isinstance(dc.get("recommendation_rule"), str)
+                and dc.get("recommendation_rule").strip()):
+            issues.append(
+                "decision_criticality has rankings but no recommendation_rule — "
+                "the ranking cannot be audited")
+    return issues
 
 
 # --------------------------------------------------------------------------- #
@@ -699,6 +791,18 @@ def verify(d: Path) -> dict:
         minor.append(
             "Verification did not push back: on a contested topic no evidence "
             "verdict is does_not_entail and no claim is unsupported.")
+
+    # --- decision-criticality (07c) ----------------------------------------- #
+    # Advisory-only, gated entirely on decision_criticality.json existing: an old
+    # bundle (or any run that never adopts 07c) sees zero change to its verdict.
+    dcf = d / "decision_criticality.json"
+    if dcf.exists():
+        try:
+            dc_doc = json.loads(dcf.read_text(encoding="utf-8"))
+        except ValueError:
+            dc_doc = None
+        contra_ids = {_contradiction_id(x) for x in contradictions}
+        minor += _decision_criticality_minor_issues(dc_doc, claim_ids, contra_ids)
 
     # --- verdict ------------------------------------------------------------ #
     if evidence_absent:
@@ -1065,7 +1169,14 @@ def _recheck_pivotal(d: Path, touched_claim_ids: list):
     except ValueError:
         return None
     crit = {}
-    if isinstance(data, dict) and isinstance(data.get("claims"), list):
+    if isinstance(data, dict) and isinstance(data.get("rankings"), list):
+        # 07c canonical shape: rankings[] of {claim_id|contradiction_id, criticality}.
+        for r in data["rankings"]:
+            if isinstance(r, dict):
+                rid = r.get("claim_id") or r.get("contradiction_id")
+                if rid:
+                    crit[rid] = str(r.get("criticality") or "").lower()
+    elif isinstance(data, dict) and isinstance(data.get("claims"), list):
         for c in data["claims"]:
             if isinstance(c, dict) and c.get("claim_id"):
                 crit[c["claim_id"]] = str(c.get("criticality") or "").lower()

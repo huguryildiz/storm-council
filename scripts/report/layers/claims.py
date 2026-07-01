@@ -42,6 +42,14 @@ def _claims_table_html(claims, effects_by_claim=None) -> str:
                     '<span class="claim-chip claim-basis-missing" title="No confidence '
                     'basis recorded (evidence tier × verdict × full-text status).">'
                     'basis not recorded</span>')
+        # 07c: decision-criticality chip (pivotal / contributing / peripheral),
+        # copied from the claim's own mirror field — ordinal-only, never a number.
+        dc = c.get("decision_criticality")
+        if isinstance(dc, dict):
+            crit = str(dc.get("criticality") or "").lower()
+            if crit in ("pivotal", "contributing", "peripheral"):
+                meta_chips.append(
+                    f'<span class="claim-chip claim-crit-{crit}">{e(crit)}</span>')
         eff = effects_by_claim.get(cid)
         if isinstance(eff, dict) and eff.get("before") not in (None, ""):
             rnd = eff.get("round")

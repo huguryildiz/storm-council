@@ -339,6 +339,36 @@ def build(data: dict, layer: str = "all") -> str:
     if data.get("bottom_line"):
         sec("Bottom line", '<div class="bottom-line-card"><p>%s</p></div>' % text_refs(data["bottom_line"]), "brief")
 
+    # 07c: the single load-bearing claim — rendered only when decision_criticality.json
+    # named a `most_load_bearing` that resolves to a `pivotal` ranking. Absent ⇒ nothing.
+    dc = data.get("decision_criticality")
+    if isinstance(dc, dict) and dc.get("most_load_bearing"):
+        mlb = dc.get("most_load_bearing")
+        entry = next(
+            (r for r in (dc.get("rankings") or [])
+             if isinstance(r, dict)
+             and (r.get("claim_id") == mlb or r.get("contradiction_id") == mlb)
+             and str(r.get("criticality") or "").lower() == "pivotal"),
+            None)
+        if entry:
+            rid = entry.get("claim_id") or entry.get("contradiction_id")
+            claim_txt = ""
+            for c in data.get("claims") or []:
+                if (c.get("claim_id") or c.get("id")) == rid:
+                    claim_txt = c.get("claim_text") or c.get("text") or ""
+                    break
+            trace = str(entry.get("rule_trace") or "").strip()
+            body = ('<div class="bottom-line-card pivotal-card"><p>'
+                    'If one assumption is wrong, this is the one most likely to change '
+                    'the recommendation: ' + text_refs(rid))
+            if claim_txt:
+                body += ' — ' + text_refs(claim_txt)
+            body += '.</p>'
+            if trace:
+                body += f'<p class="pivotal-trace">{e(trace)}</p>'
+            body += '</div>'
+            sec("If this is wrong, the recommendation changes", body, "brief")
+
     # 07b: "What changed since" panel — rendered only when refresh_diff.json was
     # folded in. Absent ⇒ nothing (no panel, no placeholder, no "never rechecked"
     # banner: that would over-claim knowledge about a bundle this phase never touched).
@@ -464,9 +494,16 @@ def build(data: dict, layer: str = "all") -> str:
             det = cdetail.get(c.get("id"))
             if layer != "brief" and isinstance(det, dict):
                 stake += _cx_detail_html(det, claim_by_id)
+            # 07c: mirror the contradiction's criticality chip into the Status cell.
+            crit_chip = ""
+            xdc = det.get("decision_criticality") if isinstance(det, dict) else None
+            if isinstance(xdc, dict):
+                xcrit = str(xdc.get("criticality") or "").lower()
+                if xcrit in ("pivotal", "contributing", "peripheral"):
+                    crit_chip = f' <span class="claim-chip claim-crit-{xcrit}">{e(xcrit)}</span>'
             rows += ('<tr id="ref-%s"><td class="mono">%s</td><td><span class="tag kind">%s</span></td>'
-                     '<td>%s</td><td><span class="tag %s">%s</span></td></tr>' % (
-                         e(c.get("id","")), e(c.get("id","")), e(c.get("kind","")), stake, tcls, e(tlbl)))
+                     '<td>%s</td><td><span class="tag %s">%s</span>%s</td></tr>' % (
+                         e(c.get("id","")), e(c.get("id","")), e(c.get("kind","")), stake, tcls, e(tlbl), crit_chip))
         body = (lens_snapshot + '<table><thead><tr><th>Conflict</th><th>Kind</th><th>What is at stake</th>'
                 '<th>Status</th></tr></thead><tbody>' + rows + "</tbody></table>")
         sec("Where the lenses disagree", body, "brief")
@@ -810,6 +847,19 @@ def _fold_in_artifacts(data: dict, base: Path, layer: str = "all") -> None:
                 diff = None
             if isinstance(diff, dict):
                 data["refresh_diff"] = diff
+
+    # 07c: fold the decision-criticality ranking when present (additive-optional —
+    # a bundle without decision_criticality.json renders exactly as before). Not
+    # appendix-gated: the pivotal brief sentence lives in the brief tier.
+    if not data.get("decision_criticality"):
+        f = base / "decision_criticality.json"
+        if f.exists():
+            try:
+                dcx = json.loads(f.read_text(encoding="utf-8"))
+            except ValueError:
+                dcx = None
+            if isinstance(dcx, dict):
+                data["decision_criticality"] = dcx
 
     if want_appendix and not data.get("evidence_plan"):
         f = base / "03_evidence_plan.md"

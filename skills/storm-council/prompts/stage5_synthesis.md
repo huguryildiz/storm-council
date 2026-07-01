@@ -64,6 +64,41 @@ move it to `Evidence gaps`.
 matter, the live disagreements, the recommended option with its evidence
 strength, and what would change the recommendation.
 
+`decision_criticality.json` (optional, additive) — **only** when both `options[]`
+and a parseable `05_argument_map.mmd` exist. It is a *derived, ordinal,
+structurally-computed* ranking, **not** a fresh judgment call and **never** a
+numeric score. Apply this fixed rule and record it verbatim:
+
+- **Inputs (exactly these):** the `options[]` `{name, strength}` values, the
+  `05_argument_map.mmd` solid edges (a claim/contradiction is *linked to an
+  option* iff a path of solid edges connects the option node to it), and each
+  linked claim's `evidence_status` / contradiction's `resolution_status`.
+  Never read `confidence`/`confidence_band` — confidence is not criticality.
+- **Winner:** highest-strength option; ties broken by `options[]` order; ladder
+  `strong > conditional > moderate > weak > unsupported`. Record this string as
+  `recommendation_rule`, and snapshot the ranked options as `options_considered`.
+- **Classify each linked claim/contradiction by *flipping* it** (supported↔unsupported /
+  resolved↔unresolved). Losing an option's only supporting-claim link is one tier
+  down; gaining a first link is one tier up. Then:
+  - `pivotal` — the flip changes *which* option wins (`flips_recommendation: true`,
+    always with a non-empty `rule_trace`).
+  - `contributing` — the flip changes the winning option's *tier* but the same
+    option still wins (`flips_recommendation: false`).
+  - `peripheral` — no path to any option, or the flip changes neither
+    (`flips_recommendation: false`). Unranked claims are simply omitted.
+- `most_load_bearing` = the `pivotal` entry closest to the root question `Q`
+  (fewest edge-hops; ties by `claims.jsonl`/`contradictions.json` order). It MUST
+  name a `pivotal` entry, or be omitted when none is pivotal.
+- **Forbidden:** any numeric importance/weight/probability; a `pivotal` label
+  without `flips_recommendation: true` and a `rule_trace`; inventing a ranking
+  when `options[]` or the argument map is missing (skip the file entirely).
+
+Copy each ranking's `{criticality, flips_recommendation, affects_options}`
+verbatim onto the matching `03_claims.jsonl` / `04_contradictions.json` record as
+its optional `decision_criticality` mirror block. The brief gains one sentence
+when a `pivotal` entry exists: *"If one assumption is wrong, this is the one most
+likely to change the recommendation."*
+
 **Do not** upgrade an `unsupported`/`contested` claim into a confident
 conclusion. Every external fact in the brief must trace to a source ID, and
 every direct factual support claim should trace through an `evidence_id` with an

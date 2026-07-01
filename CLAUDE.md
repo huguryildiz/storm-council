@@ -27,7 +27,7 @@ docs/                                  # methodology, safety-and-limitations, cl
 | 2 Perspective Scan | `02_perspective_scan.md`, `02_perspective_scan.json` |
 | 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv` |
 | 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.*` in Council Mode) |
-| 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` |
+| 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` (+ optional `decision_criticality.json`: ordinal `pivotal/contributing/peripheral` load-bearing ranking from `options[]` + `05_argument_map.mmd`; no numeric score, never reads confidence) |
 | 6 Adversarial Review | `06_adversarial_review.md`, `06_quality_gate.json` |
 | Final | `report_data.json` → `storm_council_report.html` |
 | Seal (optional) | `provenance_manifest.json` (`verify.py --seal`; integrity, not authenticity) |

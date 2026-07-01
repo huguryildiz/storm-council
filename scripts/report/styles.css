@@ -163,6 +163,12 @@
   .claim-chip{ display:inline-flex; align-items:center; gap:4px; font:11px ui-monospace,Menlo,monospace; padding:2px 8px; border-radius:999px; background:#eef0f3; color:var(--muted); margin-right:4px; }
   .claim-chip.claim-basis{ background:#eef2fb; color:#3a5bb8; text-transform:capitalize; }
   .claim-chip.claim-basis-missing{ background:#fef3e2; color:#9a6a1e; }
+  .claim-chip.claim-crit-pivotal{ background:#fdecea; color:var(--red); font-weight:800; text-transform:uppercase; letter-spacing:.02em; }
+  .claim-chip.claim-crit-contributing{ background:#fef3e2; color:#9a6a1e; font-weight:700; }
+  .claim-chip.claim-crit-peripheral{ background:#eef0f3; color:var(--muted); }
+  .bottom-line-card.pivotal-card{ background:#fdecea; box-shadow:inset 4px 0 0 var(--red); }
+  .pivotal-card .pivotal-trace{ font-size:14px; line-height:1.6; font-weight:400; color:var(--muted); margin:10px 0 0; }
+  .am-node.am-pivotal{ stroke:#c0392b; stroke-width:3; }
   .evidence-table .excerpt{ color:var(--muted); font-size:12.5px; line-height:1.45; }
   .verdict-list{ display:flex; flex-direction:column; gap:4px; min-width:130px; }
   .verdict-row{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; }

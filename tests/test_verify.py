@@ -920,5 +920,159 @@ class RecheckTest(unittest.TestCase):
         self.assertNotIn("live", text)
 
 
+_DC_RULE = ("highest-strength option wins; ties broken by option order in options[]; "
+            "strength order strong > conditional > moderate > weak > unsupported")
+
+
+class DecisionCriticalityTest(unittest.TestCase):
+    """07c: verify.py validates the *shape* and internal consistency of
+    decision_criticality.json (all issues minor-only); it never re-derives the
+    ranking. FLIP fixtures anchor the pivotal-vs-peripheral semantics."""
+
+    def _base(self, tmp):
+        base = Path(tmp)
+        _write_run(
+            base,
+            claims=[
+                {"claim_id": "C-001", "perspective": "economist",
+                 "claim_text": "The targeted compact is the best-supported option.",
+                 "claim_type": "recommendation", "evidence_status": "supported",
+                 "source_ids": ["S-001"]},
+                {"claim_id": "C-002", "perspective": "skeptic",
+                 "claim_text": "A sector tax addresses a narrow distortion.",
+                 "claim_type": "recommendation", "evidence_status": "supported",
+                 "source_ids": ["S-002"]},
+            ],
+            sources=[
+                {"source_id": "S-001", "title": "Transition compact study",
+                 "url": "https://openalex.org/W1", "source_type": "peer_reviewed",
+                 "source_class": "peer_reviewed", "full_text_status": "full_text"},
+                {"source_id": "S-002", "title": "Sector tax study",
+                 "url": "https://openalex.org/W2", "source_type": "peer_reviewed",
+                 "source_class": "peer_reviewed", "full_text_status": "full_text"},
+            ],
+            contradictions=[],
+            report={"options": [
+                {"name": "C - Targeted transition compact", "strength": "strong"},
+                {"name": "D - Narrow temporary tax", "strength": "moderate"},
+            ]},
+        )
+        (base / "05_argument_map.mmd").write_text(
+            "graph TD\n  Q[Question]\n"
+            "  Q --> OPTC[C - Targeted transition compact]\n"
+            "  Q --> OPTD[D - Narrow temporary tax]\n"
+            "  OPTC --> CC001[C-001]\n"
+            "  OPTD --> CC002[C-002]\n",
+            encoding="utf-8")
+        return base
+
+    def _write_dc(self, base, doc):
+        (base / "decision_criticality.json").write_text(
+            json.dumps(doc), encoding="utf-8")
+
+    def _crit_minors(self, gate):
+        return [m for m in gate["minor_issues"] if "decision_criticality" in m]
+
+    def test_pivotal_claim_flip_changes_option_ranking(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._base(tmp)
+            self._write_dc(base, {
+                "schema_version": 1,
+                "options_considered": [
+                    {"name": "C - Targeted transition compact", "strength": "strong"},
+                    {"name": "D - Narrow temporary tax", "strength": "moderate"},
+                ],
+                "recommendation_rule": _DC_RULE,
+                "rankings": [
+                    {"claim_id": "C-001", "criticality": "pivotal",
+                     "affects_options": ["C - Targeted transition compact"],
+                     "flips_recommendation": True,
+                     "rule_trace": "C-001 is option C's sole support; flipping it drops C "
+                                   "below D, changing the winner."},
+                    {"claim_id": "C-002", "criticality": "peripheral",
+                     "affects_options": [], "flips_recommendation": False,
+                     "rule_trace": "C-002 flip does not change the winner."},
+                ],
+                "most_load_bearing": "C-001",
+            })
+            gate = verify_mod.verify(base)
+            self.assertEqual(self._crit_minors(gate), [])
+            self.assertNotEqual(gate["status"], "BLOCKED_PENDING_EVIDENCE")
+
+    def test_peripheral_claim_is_not_tagged_pivotal(self):
+        # A negative-control ranking (peripheral, no flip) is well-formed.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._base(tmp)
+            self._write_dc(base, {
+                "schema_version": 1,
+                "options_considered": [{"name": "C - Targeted transition compact", "strength": "strong"}],
+                "recommendation_rule": _DC_RULE,
+                "rankings": [
+                    {"claim_id": "C-002", "criticality": "peripheral",
+                     "affects_options": [], "flips_recommendation": False,
+                     "rule_trace": "no path to any option node."},
+                ],
+            })
+            gate = verify_mod.verify(base)
+            self.assertEqual(self._crit_minors(gate), [])
+
+    def test_most_load_bearing_must_be_pivotal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._base(tmp)
+            self._write_dc(base, {
+                "schema_version": 1,
+                "options_considered": [{"name": "C - Targeted transition compact", "strength": "strong"}],
+                "recommendation_rule": _DC_RULE,
+                "rankings": [
+                    {"claim_id": "C-001", "criticality": "contributing",
+                     "affects_options": ["C - Targeted transition compact"],
+                     "flips_recommendation": False, "rule_trace": "changes tier only."},
+                ],
+                "most_load_bearing": "C-001",
+            })
+            gate = verify_mod.verify(base)
+            self.assertTrue(any("most_load_bearing" in m for m in gate["minor_issues"]))
+
+    def test_pivotal_without_flips_recommendation_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._base(tmp)
+            self._write_dc(base, {
+                "schema_version": 1,
+                "options_considered": [{"name": "C - Targeted transition compact", "strength": "strong"}],
+                "recommendation_rule": _DC_RULE,
+                "rankings": [
+                    {"claim_id": "C-001", "criticality": "pivotal",
+                     "affects_options": ["C - Targeted transition compact"],
+                     "flips_recommendation": False, "rule_trace": "mislabeled."},
+                ],
+                "most_load_bearing": "C-001",
+            })
+            gate = verify_mod.verify(base)
+            self.assertTrue(any("flips_recommendation" in m for m in gate["minor_issues"]))
+
+    def test_numeric_importance_field_is_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._base(tmp)
+            self._write_dc(base, {
+                "schema_version": 1,
+                "options_considered": [{"name": "C - Targeted transition compact", "strength": "strong"}],
+                "recommendation_rule": _DC_RULE,
+                "rankings": [
+                    {"claim_id": "C-001", "criticality": "peripheral",
+                     "affects_options": [], "flips_recommendation": False,
+                     "importance": 0.9, "rule_trace": "x"},
+                ],
+            })
+            gate = verify_mod.verify(base)
+            self.assertTrue(any("importance" in m and "ordinal-only" in m
+                                for m in gate["minor_issues"]))
+
+    def test_absent_file_produces_no_new_issues(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._base(tmp)  # no decision_criticality.json written
+            gate = verify_mod.verify(base)
+            self.assertNotIn("decision_criticality", " ".join(gate["minor_issues"]))
+
+
 if __name__ == "__main__":
     unittest.main()

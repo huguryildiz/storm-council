@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "options_considered": [
+    {"name": "A - Blanket AI automation tax or broad slowdown", "strength": "weak"},
+    {"name": "B - Let labor markets adjust with minimal intervention", "strength": "weak"},
+    {"name": "C - Targeted transition compact", "strength": "strong"},
+    {"name": "D - Narrow temporary tax in defined sectors", "strength": "conditional"}
+  ],
+  "recommendation_rule": "highest-strength option wins; ties broken by option order in options[]; strength order strong > conditional > moderate > weak > unsupported",
+  "rankings": [
+    {
+      "claim_id": "C-025",
+      "criticality": "pivotal",
+      "affects_options": [
+        "C - Targeted transition compact",
+        "D - Narrow temporary tax in defined sectors"
+      ],
+      "flips_recommendation": true,
+      "rule_trace": "C-025 is the sole claim the argument map links to the recommended option's node (05_argument_map.mmd: Q --> D[Targeted compact C-025]; that node maps to options[] 'C - Targeted transition compact', strength strong). Flipping C-025 supported->unsupported removes that node's only supporting claim, dropping the recommended option one tier from strong to moderate. Under recommendation_rule (strong > conditional > moderate > weak) 'D - Narrow temporary tax' (conditional) then outranks it, so the winning option changes from C to D."
+    },
+    {
+      "claim_id": "C-001",
+      "criticality": "peripheral",
+      "affects_options": [],
+      "flips_recommendation": false,
+      "rule_trace": "C-001 sits under the 'automation can harm exposed workers' branch (05_argument_map.mmd node A, which also carries C-020). Flipping C-001 leaves that branch still supported by C-020, and node A is not the recommended option, so neither the winner (C) nor its strength tier changes."
+    },
+    {
+      "claim_id": "C-006",
+      "criticality": "peripheral",
+      "affects_options": [],
+      "flips_recommendation": false,
+      "rule_trace": "C-006 sits under the 'special AI tax weakly supported' branch (05_argument_map.mmd node C, which also carries C-026). Flipping it leaves C-026 still supporting that branch, and the branch is not the recommended option, so the winner (C) and its tier are unchanged."
+    },
+    {
+      "contradiction_id": "X-001",
+      "criticality": "peripheral",
+      "affects_options": [],
+      "flips_recommendation": false,
+      "rule_trace": "X-001 (Broad AI tax versus targeted tax reform) attaches to the weakly-supported tax branch (05_argument_map.mmd node C), not to the recommended option's node. Reversing its resolution_status changes neither which option wins nor the recommended option's strength tier."
+    }
+  ],
+  "most_load_bearing": "C-025"
+}

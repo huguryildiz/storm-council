@@ -18,5 +18,11 @@
   "next_question": "The question that would move this forward.",
   "decisive_missing_evidence": "Primary source, full-text passage, benchmark, or head-to-head comparison needed.",
   "human_review_required": true,
+  "decision_criticality": {
+    "criticality": "pivotal|contributing|peripheral",
+    "flips_recommendation": false,
+    "affects_options": ["C - Targeted transition compact"],
+    "_note": "OPTIONAL, additive. Set ONLY when decision_criticality.json ranked this contradiction; copied verbatim from that ranking. Ordinal-only (no numeric score). pivotal REQUIRES flips_recommendation:true. Omit when unranked."
+  },
   "_schema_notes": "`id` is canonical; `conflict_id`/`contradiction_id` are deprecated aliases kept for one release. `resolution` is optional; when absent the contradiction is treated as basis:none (uncredited)."
 }

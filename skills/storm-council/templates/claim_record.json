@@ -44,5 +44,11 @@
   },
   "scope_risk_flags": [],
   "counterevidence_ids": ["C-011"],
+  "decision_criticality": {
+    "criticality": "pivotal|contributing|peripheral",
+    "flips_recommendation": false,
+    "affects_options": ["C - Targeted transition compact"],
+    "_note": "OPTIONAL, additive. Set ONLY when decision_criticality.json ranked this claim; copied verbatim from that ranking (never hand-authored free-form, never derived from confidence). Ordinal-only — no numeric importance/weight/probability. pivotal REQUIRES flips_recommendation:true. Omit the whole block when the claim is unranked."
+  },
   "created_at": "2026-01-01T00:00:00+00:00"
 }
