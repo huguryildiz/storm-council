@@ -3,12 +3,14 @@
   "blocking_issues": [],
   "major_issues": [],
   "minor_issues": [
+    "Verdicts not individually reasoned: 43 evidence verdicts share one identical rationale (verification may be rubber-stamping).",
     "Open contradictions remain for human review: X-002, X-005, X-007, X-008",
-    "Contradictions marked resolved without an evidence/move basis (not counted as handled): X-006"
+    "Contradictions marked resolved without an evidence/move basis (not counted as handled): X-006",
+    "Verification did not push back: on a contested topic no evidence verdict is does_not_entail and no claim is unsupported."
   ],
   "coverage_score": 100,
   "traceability_score": 100,
   "contradiction_handling_score": 38,
   "recommendation_support_score": 100,
-  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 0 major, 2 minor (computed by verify.py over 26 claims, 12 sources, 26 evidence records, 43 evidence verdicts, 8 contradictions)."
+  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 0 major, 4 minor (computed by verify.py over 26 claims, 12 sources, 26 evidence records, 43 evidence verdicts, 8 contradictions)."
 }

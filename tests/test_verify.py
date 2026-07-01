@@ -414,5 +414,81 @@ class ContradictionResolutionGateTest(unittest.TestCase):
                                  for b in gate["blocking_issues"]))
 
 
+class AntiRubberStampTest(unittest.TestCase):
+    """Phase 2: surface a verifier that never pushes back (minor-only advisories)."""
+
+    _CLAIMS = [
+        {"claim_id": "C-001", "perspective": "academic", "claim_text": "A.",
+         "claim_type": "fact", "evidence_status": "supported", "source_ids": ["S-001"],
+         "evidence_ids": ["E-001"]},
+        {"claim_id": "C-002", "perspective": "skeptic", "claim_text": "B.",
+         "claim_type": "inference", "evidence_status": "supported", "source_ids": ["S-001"],
+         "evidence_ids": ["E-002"]},
+        {"claim_id": "C-003", "perspective": "economist", "claim_text": "C.",
+         "claim_type": "fact", "evidence_status": "supported", "source_ids": ["S-001"],
+         "evidence_ids": ["E-003"]},
+    ]
+    _SOURCES = [{"source_id": "S-001", "title": "Real",
+                 "url": "https://arxiv.org/abs/2004.11986",
+                 "source_type": "peer_reviewed", "credibility_notes": "ok"}]
+    _EVIDENCE = [{"evidence_id": f"E-00{i}", "source_id": "S-001"} for i in (1, 2, 3)]
+    _CONTRADICTIONS = [{"id": "X-001", "claim_ids": ["C-001", "C-002"],
+                        "resolution_status": "unresolved"}]
+
+    def _verdict(self, cid, eid, rationale, verdict="entails"):
+        return {"claim_id": cid, "evidence_id": eid, "verdict": verdict,
+                "scope_preserved": "yes", "rationale": rationale,
+                "human_review_required": False}
+
+    def test_identical_rationale_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(base, claims=self._CLAIMS, sources=self._SOURCES,
+                       evidence=self._EVIDENCE, contradictions=self._CONTRADICTIONS)
+            (base / "03_evidence_verdicts.jsonl").write_text(
+                "\n".join(json.dumps(v) for v in [
+                    self._verdict("C-001", "E-001", "Same rationale."),
+                    self._verdict("C-002", "E-002", "Same rationale."),
+                    self._verdict("C-003", "E-003", "Same rationale."),
+                ]) + "\n", encoding="utf-8")
+            gate = verify_mod.verify(base)
+            self.assertTrue(any("not individually reasoned" in m.lower()
+                                for m in gate["minor_issues"]))
+            self.assertEqual(gate["blocking_issues"], [])
+
+    def test_zero_rejection_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(base, claims=self._CLAIMS, sources=self._SOURCES,
+                       evidence=self._EVIDENCE, contradictions=self._CONTRADICTIONS)
+            (base / "03_evidence_verdicts.jsonl").write_text(
+                "\n".join(json.dumps(v) for v in [
+                    self._verdict("C-001", "E-001", "Distinct reasoning one."),
+                    self._verdict("C-002", "E-002", "Distinct reasoning two."),
+                ]) + "\n", encoding="utf-8")
+            gate = verify_mod.verify(base)
+            self.assertTrue(any("did not push back" in m.lower()
+                                for m in gate["minor_issues"]))
+            self.assertEqual(gate["blocking_issues"], [])
+
+    def test_diverse_rationales_not_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            claims = [dict(c) for c in self._CLAIMS]
+            claims[2]["evidence_status"] = "unsupported"  # a rejection: no zero-rejection flag
+            _write_run(base, claims=claims, sources=self._SOURCES,
+                       evidence=self._EVIDENCE, contradictions=self._CONTRADICTIONS)
+            (base / "03_evidence_verdicts.jsonl").write_text(
+                "\n".join(json.dumps(v) for v in [
+                    self._verdict("C-001", "E-001", "First distinct rationale."),
+                    self._verdict("C-002", "E-002", "Second distinct rationale."),
+                ]) + "\n", encoding="utf-8")
+            gate = verify_mod.verify(base)
+            self.assertFalse(any("not individually reasoned" in m.lower()
+                                 for m in gate["minor_issues"]))
+            self.assertFalse(any("did not push back" in m.lower()
+                                 for m in gate["minor_issues"]))
+
+
 if __name__ == "__main__":
     unittest.main()

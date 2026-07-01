@@ -372,6 +372,23 @@ def verify(d: Path) -> dict:
         if not isinstance(v.get("human_review_required"), bool):
             blocking.append(f"Evidence verdict {vid} has non-boolean human_review_required")
 
+    # --- anti-rubber-stamp: identical rationales --------------------------- #
+    # A verifier that reuses one rationale string across many verdicts is not
+    # reasoning each verdict individually. Threshold ≥3 identical non-empty
+    # strings avoids false positives on legitimately similar short wording.
+    # Minor only, never blocking — missing rationales are handled above.
+    rationale_counts: dict = {}
+    for v in verdicts:
+        r = v.get("rationale")
+        if isinstance(r, str) and r.strip():
+            key = r.strip()
+            rationale_counts[key] = rationale_counts.get(key, 0) + 1
+    max_repeat = max(rationale_counts.values(), default=0)
+    if max_repeat >= 3:
+        minor.append(
+            f"Verdicts not individually reasoned: {max_repeat} evidence verdicts share "
+            "one identical rationale (verification may be rubber-stamping).")
+
     # --- source credibility / identity ------------------------------------- #
     def _is_low(s):
         note = (_source_field(s, "credibility_notes")).lower()
@@ -533,6 +550,17 @@ def verify(d: Path) -> dict:
         and not _resolution_is_credited(x)
     ]
 
+    # --- anti-rubber-stamp: zero rejection on a contested run --------------- #
+    # On a contested topic (contradictions present) a verification pass that
+    # rejected nothing — no `does_not_entail` verdict and no `unsupported`
+    # claim — likely never pushed back. Minor only, never blocking.
+    zero_rejection = False
+    if contradictions:
+        any_rejection = any((v.get("verdict") or "").lower() == "does_not_entail"
+                            for v in verdicts)
+        any_unsupported = any(c.get("evidence_status") == "unsupported" for c in claims)
+        zero_rejection = not any_rejection and not any_unsupported
+
     options = report.get("options", [])
     actions = report.get("next_actions", [])
     if options or actions:
@@ -594,6 +622,10 @@ def verify(d: Path) -> dict:
         minor.append(
             "Contradictions marked resolved without an evidence/move basis "
             "(not counted as handled): " + ", ".join(baseless_resolved))
+    if zero_rejection:
+        minor.append(
+            "Verification did not push back: on a contested topic no evidence "
+            "verdict is does_not_entail and no claim is unsupported.")
 
     # --- verdict ------------------------------------------------------------ #
     if evidence_absent:

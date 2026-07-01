@@ -416,8 +416,10 @@
     "blocking": [],
     "major": [],
     "minor": [
+      "Verdicts not individually reasoned: 43 evidence verdicts share one identical rationale (verification may be rubber-stamping).",
       "Open contradictions remain for human review: X-002, X-005, X-007, X-008",
-      "Contradictions marked resolved without an evidence/move basis (not counted as handled): X-006"
+      "Contradictions marked resolved without an evidence/move basis (not counted as handled): X-006",
+      "Verification did not push back: on a contested topic no evidence verdict is does_not_entail and no claim is unsupported."
     ]
   }
 }
