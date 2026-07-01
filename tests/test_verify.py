@@ -1074,5 +1074,155 @@ class DecisionCriticalityTest(unittest.TestCase):
             self.assertNotIn("decision_criticality", " ".join(gate["minor_issues"]))
 
 
+class ResolutionPlanTest(unittest.TestCase):
+    """07d: verify.py validates the *shape* and internal consistency of a
+    contradiction's resolution_plan (all issues minor-only). It never gates the
+    score, never derives resolution_status from status, and never computes VOI."""
+
+    def _run(self, tmp, contradictions, *, dc=None, tripwires=None):
+        base = Path(tmp)
+        _write_run(
+            base,
+            claims=[{"claim_id": cid, "perspective": "academic", "claim_text": "c",
+                     "claim_type": "inference", "evidence_status": "supported",
+                     "source_ids": ["S-001"]}
+                    for cid in ("C-001", "C-002", "C-003", "C-016")],
+            sources=[{"source_id": "S-001", "title": "t", "url": "https://openalex.org/W1",
+                      "source_type": "peer_reviewed", "source_class": "peer_reviewed",
+                      "full_text_status": "full_text"}],
+            contradictions=contradictions,
+            report={"options": [{"name": "A", "strength": "strong"}]},
+        )
+        if dc is not None:
+            (base / "decision_criticality.json").write_text(json.dumps(dc), encoding="utf-8")
+        if tripwires is not None:
+            (base / "decision_tripwires.json").write_text(json.dumps(tripwires), encoding="utf-8")
+        return verify_mod.verify(base)
+
+    def _plan(self, **over):
+        p = dict(evidence_type_needed="head_to_head_benchmark",
+                 proposed_experiment_or_source="Run the benchmark.",
+                 approx_effort="medium", decision_impact="might_flip",
+                 linked_claims=["C-001"], status="proposed")
+        p.update(over)
+        return p
+
+    def _cx(self, **over):
+        x = dict(id="X-001", claim_ids=["C-001", "C-016"], resolution_status="unresolved")
+        x.update(over)
+        return x
+
+    def _plan_minors(self, gate):
+        return [m for m in gate["minor_issues"] if "resolution_plan" in m]
+
+    def test_resolution_plan_absent_is_silent(self):
+        # A record without a resolution_plan that is NOT open produces none of the
+        # new minors — additive/optional: absence ⇒ current behavior.
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx(
+                resolution_status="partially_resolved",
+                resolution={"basis": "evidence", "evidence_ids": ["E-001"],
+                            "rationale": "narrowed by benchmark"})])
+            self.assertEqual(self._plan_minors(gate), [])
+
+    def test_resolution_plan_invalid_enum_is_minor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx(resolution_plan=self._plan(
+                approx_effort="huge", decision_impact="definitely"))])
+            minors = gate["minor_issues"]
+            self.assertTrue(any("approx_effort" in m for m in minors))
+            self.assertTrue(any("decision_impact" in m for m in minors))
+            self.assertEqual(gate["blocking_issues"], [])
+            self.assertFalse(any("resolution_plan" in m for m in gate["major_issues"]))
+
+    def test_resolution_plan_missing_evidence_type_is_minor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx(resolution_plan=self._plan(evidence_type_needed=""))])
+            self.assertTrue(any("missing evidence_type_needed" in m for m in gate["minor_issues"]))
+
+    def test_resolution_plan_no_experiment_or_source_is_minor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx(resolution_plan=self._plan(
+                proposed_experiment_or_source="", data_source=""))])
+            self.assertTrue(any("names no proposed experiment or data source" in m
+                                for m in gate["minor_issues"]))
+
+    def test_resolution_plan_linked_claims_must_resolve(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx(resolution_plan=self._plan(linked_claims=["C-999"]))])
+            self.assertTrue(any("linked_claims references missing claim C-999" in m
+                                for m in gate["minor_issues"]))
+
+    def test_resolution_plan_linked_tripwires_skipped_without_08_artifact(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx(resolution_plan=self._plan(linked_tripwires=["T-001"]))])
+            self.assertFalse(any("linked_tripwires" in m for m in gate["minor_issues"]))
+
+    def test_resolution_plan_linked_tripwires_must_resolve_when_08_present(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(
+                tmp,
+                [self._cx(resolution_plan=self._plan(linked_tripwires=["T-001"]))],
+                tripwires={"tripwires": [{"id": "T-002", "monitoring_source": "S-001"}]})
+            self.assertTrue(any("linked_tripwires references missing tripwire T-001" in m
+                                for m in gate["minor_issues"]))
+
+    def test_resolution_plan_would_flip_consistent_with_pivotal_07c(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(
+                tmp,
+                [self._cx(resolution_plan=self._plan(
+                    linked_claims=["C-016"], decision_impact="would_flip"))],
+                dc={"rankings": [{"claim_id": "C-016", "criticality": "pivotal",
+                                  "flips_recommendation": True, "rule_trace": "x"}]})
+            self.assertFalse(any("would_flip but none of its linked claims are ranked pivotal" in m
+                                 for m in gate["minor_issues"]))
+
+    def test_resolution_plan_would_flip_inconsistent_with_07c_is_minor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(
+                tmp,
+                [self._cx(resolution_plan=self._plan(
+                    linked_claims=["C-001"], decision_impact="would_flip"))],
+                dc={"rankings": [{"claim_id": "C-016", "criticality": "pivotal",
+                                  "flips_recommendation": True, "rule_trace": "x"},
+                                 {"claim_id": "C-001", "criticality": "peripheral",
+                                  "flips_recommendation": False}]})
+            self.assertTrue(any("would_flip but none of its linked claims are ranked pivotal" in m
+                                for m in gate["minor_issues"]))
+
+    def test_resolution_plan_missing_on_would_flip_unresolved_is_minor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx()])  # unresolved, no resolution_plan
+            self.assertTrue(any("is unresolved but has no resolution_plan" in m
+                                for m in gate["minor_issues"]))
+
+    def test_resolution_plan_rejects_evsi_numeric_field(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx(resolution_plan=self._plan(evsi=0.42))])
+            self.assertTrue(any("VOI field (evsi)" in m for m in gate["minor_issues"]))
+        # A numeric decision_impact trips BOTH the VOI rejection and the enum check.
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = self._run(tmp, [self._cx(resolution_plan=self._plan(decision_impact=0.8))])
+            minors = gate["minor_issues"]
+            self.assertTrue(any("VOI field (decision_impact)" in m for m in minors))
+            self.assertTrue(any("decision_impact is missing or invalid" in m for m in minors))
+
+    def test_resolution_plan_never_moves_verdict_or_scores(self):
+        broken = self._plan(approx_effort="huge", decision_impact="definitely",
+                            evidence_type_needed="", proposed_experiment_or_source="",
+                            data_source="", linked_claims=["C-999"], evsi=0.42,
+                            probability=0.3)
+        clean = self._plan()
+        keys = ("status", "blocking_issues", "coverage_score", "traceability_score",
+                "contradiction_handling_score", "recommendation_support_score")
+        with tempfile.TemporaryDirectory() as tmp_b, tempfile.TemporaryDirectory() as tmp_c:
+            gb = self._run(tmp_b, [self._cx(resolution_plan=broken)])
+            gc = self._run(tmp_c, [self._cx(resolution_plan=clean)])
+            self.assertEqual(gb["blocking_issues"], [])
+            for k in keys:
+                self.assertEqual(gb[k], gc[k], f"{k} moved between broken and clean plan")
+
+
 if __name__ == "__main__":
     unittest.main()

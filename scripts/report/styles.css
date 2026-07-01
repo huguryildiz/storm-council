@@ -168,6 +168,25 @@
   .claim-chip.claim-crit-peripheral{ background:#eef0f3; color:var(--muted); }
   .bottom-line-card.pivotal-card{ background:#fdecea; box-shadow:inset 4px 0 0 var(--red); }
   .pivotal-card .pivotal-trace{ font-size:14px; line-height:1.6; font-weight:400; color:var(--muted); margin:10px 0 0; }
+  /* 07d contradiction-resolution planner */
+  .rp-brief{ font-size:13px; color:var(--muted); margin:10px 0 0; }
+  .rp-intro{ font-size:14px; color:var(--muted); line-height:1.6; margin:0 0 14px; }
+  .rp-list{ display:flex; flex-direction:column; gap:12px; }
+  .rp-card{ border:1px solid var(--line,#e5e7eb); border-radius:8px; padding:12px 14px; box-shadow:inset 4px 0 0 var(--amber); }
+  .rp-card.rp-card-muted{ box-shadow:inset 4px 0 0 #d7dbe0; opacity:.72; }
+  .rp-head{ display:flex; align-items:baseline; gap:8px; margin-bottom:6px; }
+  .rp-topic{ font-weight:700; }
+  .cx-plan{ margin-top:8px; }
+  .rp-line{ font-size:14px; line-height:1.55; margin:4px 0; }
+  .rp-k{ font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--faint); text-transform:uppercase; letter-spacing:.03em; margin-right:6px; }
+  .rp-chips{ margin:8px 0 4px; display:flex; flex-wrap:wrap; gap:6px; }
+  .rp-chip{ display:inline-block; font:11px ui-monospace,Menlo,monospace; padding:2px 8px; border-radius:999px; background:#eef0f3; color:var(--muted); }
+  .rp-effort{ background:#eef2fb; color:#3a5bb8; }
+  .rp-impact.rp-impact-would_flip{ background:#fdecea; color:var(--red); font-weight:800; text-transform:uppercase; letter-spacing:.02em; }
+  .rp-impact.rp-impact-might_flip{ background:#fef3e2; color:#9a6a1e; font-weight:700; }
+  .rp-impact.rp-impact-unlikely_to_change{ background:#eef0f3; color:var(--muted); }
+  .rp-links{ font-size:12px; color:var(--muted); margin:6px 0 0; }
+  .rp-status{ font-size:11px; font-family:ui-monospace,Menlo,monospace; color:var(--faint); margin:4px 0 0; }
   .am-node.am-pivotal{ stroke:#c0392b; stroke-width:3; }
   .evidence-table .excerpt{ color:var(--muted); font-size:12.5px; line-height:1.45; }
   .verdict-list{ display:flex; flex-direction:column; gap:4px; min-width:130px; }

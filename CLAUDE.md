@@ -26,7 +26,7 @@ docs/                                  # methodology, safety-and-limitations, cl
 | 1 Decision Frame | `01_decision_frame.md` |
 | 2 Perspective Scan | `02_perspective_scan.md`, `02_perspective_scan.json` |
 | 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv` |
-| 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.*` in Council Mode) |
+| 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.*` in Council Mode) (+ optional `resolution_plan` on any non-`resolved` record: ordinal evidence-acquisition plan — `evidence_type_needed`, experiment/`data_source`, `approx_effort` low/medium/high, `decision_impact` would_flip/might_flip/unlikely_to_change; no numeric VOI, `would_flip` only when a linked claim is 07c-pivotal) |
 | 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` (+ optional `decision_criticality.json`: ordinal `pivotal/contributing/peripheral` load-bearing ranking from `options[]` + `05_argument_map.mmd`; no numeric score, never reads confidence) |
 | 6 Adversarial Review | `06_adversarial_review.md`, `06_quality_gate.json` |
 | Final | `report_data.json` → `storm_council_report.html` |

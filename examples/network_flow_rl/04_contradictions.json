@@ -15,6 +15,21 @@
     "resolution_status": "partially_resolved",
     "next_question": "Can a pilot reproduce Teal-like gains under live rollback and SLA gates?",
     "decisive_missing_evidence": "Head-to-head production shadow-mode trial against the current LP/MIP engine.",
+    "resolution_plan": {
+      "evidence_type_needed": "production_shadow_trial",
+      "proposed_experiment_or_source": "Run the RL/Teal policy in shadow mode against the live LP/MIP engine on production traffic, gating on SLA and rollback triggers, and compare realized latency, throughput, and constraint violations.",
+      "data_source": "The operator's own production traffic and incumbent LP/MIP solver logs over a bounded pilot window.",
+      "approx_effort": "high",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-002"
+      ],
+      "linked_options": [
+        "B \u00b7 Hybrid RL augmentation",
+        "C \u00b7 RL-primary with LP fallback circuit"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true,
     "resolution": {
       "basis": "deliberation",
@@ -41,6 +56,21 @@
     "resolution_status": "unresolved",
     "next_question": "Does the learned policy preserve behavior under failures, demand shifts, and update races?",
     "decisive_missing_evidence": "Failure-injection benchmark with production traffic replay and live rollback criteria.",
+    "resolution_plan": {
+      "evidence_type_needed": "failure_injection_benchmark",
+      "proposed_experiment_or_source": "Replay production traffic with injected link/node failures, demand shifts, and concurrent config updates; measure whether the learned policy holds behavior and yields cleanly to rollback.",
+      "data_source": "A traffic-replay harness seeded from the operator's telemetry archive.",
+      "approx_effort": "high",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-016"
+      ],
+      "linked_options": [
+        "A \u00b7 Stay with LP/MIP/CP-SAT",
+        "B \u00b7 Hybrid RL augmentation"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -59,6 +89,20 @@
     "resolution_status": "partially_resolved",
     "next_question": "What measurable value does RL add when solvers still enforce constraints?",
     "decisive_missing_evidence": "Ablation comparing pure solver, RL proposal plus solver, and RL-primary with fallback.",
+    "resolution_plan": {
+      "evidence_type_needed": "ablation_study",
+      "proposed_experiment_or_source": "Ablate pure-solver vs RL-proposal-plus-solver vs RL-primary-with-fallback on identical topologies, isolating the marginal value RL adds when solvers still enforce constraints.",
+      "data_source": "A held-out topology suite from the operator's planning tooling.",
+      "approx_effort": "medium",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-020"
+      ],
+      "linked_options": [
+        "B \u00b7 Hybrid RL augmentation"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -77,6 +121,19 @@
     "resolution_status": "unresolved",
     "next_question": "What are the local costs of solve latency, ML infra, retraining, and incident response?",
     "decisive_missing_evidence": "Operator-specific cost model with incident and solve-latency data.",
+    "resolution_plan": {
+      "evidence_type_needed": "cost_data",
+      "data_source": "An operator-specific cost model built from solve-latency, ML-infra, retraining, and incident-response records.",
+      "approx_effort": "medium",
+      "decision_impact": "unlikely_to_change",
+      "linked_claims": [
+        "C-019"
+      ],
+      "linked_options": [
+        "A \u00b7 Stay with LP/MIP/CP-SAT"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -95,6 +152,20 @@
     "resolution_status": "partially_resolved",
     "next_question": "Can all learning be offline or shielded before live deployment?",
     "decisive_missing_evidence": "Safe-RL TE design with formal shields and no online unsafe exploration.",
+    "resolution_plan": {
+      "evidence_type_needed": "safe_rl_design",
+      "proposed_experiment_or_source": "Design and evaluate a shielded/offline Safe-RL training regime that proves no online unsafe exploration before any live deployment.",
+      "data_source": "Offline traffic logs plus a formal shield specification derived from the operator's SLA constraints.",
+      "approx_effort": "high",
+      "decision_impact": "unlikely_to_change",
+      "linked_claims": [
+        "C-013"
+      ],
+      "linked_options": [
+        "C \u00b7 RL-primary with LP fallback circuit"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -113,6 +184,21 @@
     "resolution_status": "unresolved",
     "next_question": "Can the policy emit auditable constraint proofs or only opaque action scores?",
     "decisive_missing_evidence": "Incident-review exercise comparing solver certificate, RL proposal, and hybrid guardrail logs.",
+    "resolution_plan": {
+      "evidence_type_needed": "incident_review_exercise",
+      "proposed_experiment_or_source": "Run a tabletop incident review comparing solver certificates, RL action scores, and hybrid guardrail logs for the same simulated outage, judging auditability.",
+      "data_source": "Recorded incident timelines from the operator's on-call history.",
+      "approx_effort": "low",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-017"
+      ],
+      "linked_options": [
+        "A \u00b7 Stay with LP/MIP/CP-SAT",
+        "B \u00b7 Hybrid RL augmentation"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -131,6 +217,20 @@
     "resolution_status": "partially_resolved",
     "next_question": "Which TE subproblem is too slow for the existing deterministic stack?",
     "decisive_missing_evidence": "Local solver profiling by topology size and control-loop deadline.",
+    "resolution_plan": {
+      "evidence_type_needed": "solver_profiling",
+      "proposed_experiment_or_source": "Profile the existing deterministic TE stack by topology size and control-loop deadline to identify which subproblem, if any, is actually too slow.",
+      "data_source": "The operator's current solver instrumentation.",
+      "approx_effort": "low",
+      "decision_impact": "unlikely_to_change",
+      "linked_claims": [
+        "C-023"
+      ],
+      "linked_options": [
+        "A \u00b7 Stay with LP/MIP/CP-SAT"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true,
     "resolution": {
       "basis": "deliberation",
@@ -157,6 +257,20 @@
     "resolution_status": "unresolved",
     "next_question": "Is there a verifiable RL-primary TE deployment with outage, rollback, and SLA evidence?",
     "decisive_missing_evidence": "Production case study or postmortem from ISP/cloud provider using RL as primary TE authority.",
+    "resolution_plan": {
+      "evidence_type_needed": "primary_source_full_text",
+      "proposed_experiment_or_source": "Systematic literature and industry-report search for any verifiable RL-primary TE deployment.",
+      "data_source": "A production case study or postmortem from an ISP/cloud provider running RL as primary TE authority, with outage, rollback, and SLA evidence.",
+      "approx_effort": "medium",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-012"
+      ],
+      "linked_options": [
+        "C \u00b7 RL-primary with LP fallback circuit"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   }
 ]

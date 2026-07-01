@@ -165,6 +165,61 @@ def _deliberation_html(moves) -> str:
     return out
 
 
+_RP_IMPACT_LABEL = {
+    "would_flip": "Would flip the decision",
+    "might_flip": "Might flip the decision",
+    "unlikely_to_change": "Unlikely to change the decision",
+}
+
+
+def _resolution_plan_inner(plan) -> str:
+    """Render a contradiction's resolution_plan body (07d): evidence type, the
+    proposed experiment/source, ordinal effort + decision-impact chips, and linked
+    claims/options/tripwires. Shared by the appendix detail view and the report
+    "How to resolve the disagreements that matter" section. Returns "" when the plan
+    is not a usable dict — so a record without a plan renders nothing new."""
+    if not isinstance(plan, dict):
+        return ""
+    rows = ""
+    ev = plan.get("evidence_type_needed")
+    if isinstance(ev, str) and ev.strip():
+        rows += f'<p class="rp-line"><span class="rp-k">Evidence needed</span> {text_refs(ev)}</p>'
+    exp = plan.get("proposed_experiment_or_source")
+    if isinstance(exp, str) and exp.strip():
+        rows += f'<p class="rp-line"><span class="rp-k">Proposed</span> {text_refs(exp)}</p>'
+    src = plan.get("data_source")
+    if isinstance(src, str) and src.strip():
+        rows += f'<p class="rp-line"><span class="rp-k">Data source</span> {text_refs(src)}</p>'
+    chips = ""
+    effort = plan.get("approx_effort")
+    if isinstance(effort, str) and effort.strip():
+        chips += f'<span class="rp-chip rp-effort rp-effort-{e(effort)}">Effort: {e(effort)}</span>'
+    impact = plan.get("decision_impact")
+    if isinstance(impact, str) and impact.strip():
+        label = _RP_IMPACT_LABEL.get(impact, impact.replace("_", " "))
+        chips += f'<span class="rp-chip rp-impact rp-impact-{e(impact)}">{e(label)}</span>'
+    if chips:
+        rows += f'<p class="rp-chips">{chips}</p>'
+    links = []
+    lc = [c for c in (plan.get("linked_claims") or []) if c]
+    if lc:
+        links.append("Claims:" + refs(lc))
+    lt = [t for t in (plan.get("linked_tripwires") or []) if t]
+    if lt:
+        # T-### is not yet in the linkifier's id pattern (Phase 8 extends it); until
+        # then refs() degrades it to a plain monospace chip — graceful, not broken.
+        links.append("Tripwires:" + refs(lt))
+    lo = [o for o in (plan.get("linked_options") or []) if isinstance(o, str) and o.strip()]
+    if lo:
+        links.append("Options: " + ", ".join(e(o) for o in lo))
+    if links:
+        rows += '<p class="rp-links">' + " · ".join(links) + "</p>"
+    status = plan.get("status")
+    if isinstance(status, str) and status.strip():
+        rows += f'<p class="rp-status">Plan status: {e(status)}</p>'
+    return rows
+
+
 def _cx_detail_html(detail: dict, claim_by_id: dict) -> str:
     def pos(cid):
         cl = claim_by_id.get(cid)
@@ -224,6 +279,10 @@ def _cx_detail_html(detail: dict, claim_by_id: dict) -> str:
         if resolution.get("rationale"):
             inner += f'<p class="cx-why">{text_refs(resolution["rationale"])}</p>'
         inner += "</div>"
+    plan_html = _resolution_plan_inner(detail.get("resolution_plan"))
+    if plan_html:
+        inner += ('<div class="cx-plan"><p class="cx-meta">How to resolve this</p>'
+                  + plan_html + "</div>")
     if not inner:
         return ""
     return f'<details class="cx-detail"><summary>Positions &amp; detail</summary>{inner}</details>'

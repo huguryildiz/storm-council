@@ -82,6 +82,16 @@ _SOURCE_CLASSES = {"peer_reviewed", "preprint", "official", "gray", "run_log"}
 # no numeric importance/weight/probability anywhere in this feature, by design.
 _CRITICALITY_VALUES = {"pivotal", "contributing", "peripheral"}
 
+# Contradiction-resolution planner ordinal enums (07d, schema §7.10 / S11). Both
+# ordinal-only — no hours/currency/probability, and no value-of-information numbers.
+_EFFORT_VALUES = {"low", "medium", "high"}
+_DECISION_IMPACT_VALUES = {"would_flip", "might_flip", "unlikely_to_change"}
+_OPEN_STATUSES = {"unresolved", "open", "leaning"}
+# 07d rejects "VOI theater": any key matching these (case-insensitive, at any nesting
+# depth inside resolution_plan) is a fabricated expected-value-of-information field.
+_VOI_BANNED_KEYS = {"evsi", "evpi", "evppi", "enbs", "expected_value",
+                    "probability", "prior", "utility", "payoff"}
+
 # Content verification statuses (schema v2).
 _DIRECT = "direct_support"
 _VERDICT_VALUES = {"entails", "partial", "does_not_entail", "uncertain"}
@@ -426,6 +436,135 @@ def _decision_criticality_minor_issues(dc, claim_ids: set, contra_ids: set) -> l
             issues.append(
                 "decision_criticality has rankings but no recommendation_rule — "
                 "the ranking cannot be audited")
+    return issues
+
+
+def _pivotal_ids_from_dc(dc) -> set:
+    """Set of claim/contradiction ids that decision_criticality.json ranks pivotal.
+    Empty when the doc is missing/malformed — never raises."""
+    out: set = set()
+    if not isinstance(dc, dict):
+        return out
+    rankings = dc.get("rankings")
+    if isinstance(rankings, list):
+        for r in rankings:
+            if isinstance(r, dict) and str(r.get("criticality") or "").lower() == "pivotal":
+                rid = r.get("claim_id") or r.get("contradiction_id")
+                if rid:
+                    out.add(rid)
+    return out
+
+
+def _voi_offenders(plan) -> list:
+    """Every VOI-theater key found (case-insensitive) at any nesting depth inside a
+    resolution_plan — the fabricated expected-value-of-information vocabulary 07d bans."""
+    hits = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if isinstance(k, str) and k.lower() in _VOI_BANNED_KEYS:
+                    hits.append(k)
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(plan)
+    return hits
+
+
+def _resolution_plan_minor_issues(contradictions, claim_ids: set, pivotal_ids: set,
+                                  tripwire_ids, dc_present: bool) -> list:
+    """07d contradiction-resolution planner validation (schema §7.10 / S11). ALL
+    issues are MINOR advisories — this feature never gates the score and never
+    touches blocking/major. Each rule fires only when its data is present:
+
+    1. enum membership (approx_effort, decision_impact, evidence_type_needed,
+       at-least-one-experiment-or-source);
+    2. reference integrity (linked_claims -> real C-###; linked_tripwires -> a real
+       tripwire ONLY when decision_tripwires.json exists; linked_options shape only);
+    3. 07c consistency (would_flip => at least one linked/own claim is pivotal), one-
+       directional and only when decision_criticality.json exists;
+    4. gap advisory (an unresolved/open/leaning contradiction with no plan at all);
+    5. VOI-theater rejection (fabricated EVSI/EVPI/probability/… fields, or a numeric
+       decision_impact/approx_effort).
+
+    ``tripwire_ids`` is None when decision_tripwires.json is absent (skip check 2's
+    tripwire arm entirely); ``dc_present`` gates check 3."""
+    issues: list = []
+    for x in contradictions:
+        xid = _contradiction_id(x)
+        plan = x.get("resolution_plan")
+        status = str(x.get("resolution_status") or "").lower()
+
+        if not isinstance(plan, dict):
+            # Rule 4: an open contradiction that gives no guidance at all.
+            if status in _OPEN_STATUSES:
+                issues.append(
+                    f"{xid} is unresolved but has no resolution_plan "
+                    "(how to resolve it is not specified)")
+            continue
+
+        # Rule 1: enum membership + required content.
+        effort = plan.get("approx_effort")
+        if not (isinstance(effort, str) and effort in _EFFORT_VALUES):
+            issues.append(
+                f"{xid} resolution_plan.approx_effort is missing or invalid "
+                "(expected low|medium|high)")
+        impact = plan.get("decision_impact")
+        if not (isinstance(impact, str) and impact in _DECISION_IMPACT_VALUES):
+            issues.append(
+                f"{xid} resolution_plan.decision_impact is missing or invalid "
+                "(expected would_flip|might_flip|unlikely_to_change)")
+        ev_type = plan.get("evidence_type_needed")
+        if not (isinstance(ev_type, str) and ev_type.strip()):
+            issues.append(f"{xid} resolution_plan is missing evidence_type_needed")
+        exp = plan.get("proposed_experiment_or_source")
+        src = plan.get("data_source")
+        has_exp = isinstance(exp, str) and exp.strip()
+        has_src = isinstance(src, str) and src.strip()
+        if not (has_exp or has_src):
+            issues.append(
+                f"{xid} resolution_plan names no proposed experiment or data source")
+
+        # Rule 2: reference integrity.
+        for cid in plan.get("linked_claims") or []:
+            if cid not in claim_ids:
+                issues.append(
+                    f"{xid} resolution_plan.linked_claims references missing claim {cid}")
+        if tripwire_ids is not None:
+            for tid in plan.get("linked_tripwires") or []:
+                if tid not in tripwire_ids:
+                    issues.append(
+                        f"{xid} resolution_plan.linked_tripwires references missing "
+                        f"tripwire {tid}")
+        for opt in plan.get("linked_options") or []:
+            if not (isinstance(opt, str) and opt.strip()):
+                issues.append(
+                    f"{xid} resolution_plan.linked_options contains a blank/non-text entry")
+
+        # Rule 3: 07c consistency — one-directional, would_flip only.
+        if dc_present and impact == "would_flip":
+            candidates = plan.get("linked_claims") or _contradiction_claim_ids(x)
+            if not any(c in pivotal_ids for c in candidates):
+                issues.append(
+                    f"{xid} resolution_plan.decision_impact is would_flip but none of its "
+                    "linked claims are ranked pivotal in decision_criticality.json")
+
+        # Rule 5: VOI-theater rejection.
+        for key in _voi_offenders(plan):
+            issues.append(
+                f"{xid} resolution_plan contains a numeric/probabilistic VOI field "
+                f"({key}); Storm Council does not compute expected-value-of-information — "
+                "use the ordinal enums only")
+        for fld in ("decision_impact", "approx_effort"):
+            v = plan.get(fld)
+            if v is not None and not isinstance(v, str):
+                issues.append(
+                    f"{xid} resolution_plan contains a numeric/probabilistic VOI field "
+                    f"({fld}); Storm Council does not compute expected-value-of-information — "
+                    "use the ordinal enums only")
     return issues
 
 
@@ -796,6 +935,7 @@ def verify(d: Path) -> dict:
     # Advisory-only, gated entirely on decision_criticality.json existing: an old
     # bundle (or any run that never adopts 07c) sees zero change to its verdict.
     dcf = d / "decision_criticality.json"
+    dc_doc = None
     if dcf.exists():
         try:
             dc_doc = json.loads(dcf.read_text(encoding="utf-8"))
@@ -803,6 +943,25 @@ def verify(d: Path) -> dict:
             dc_doc = None
         contra_ids = {_contradiction_id(x) for x in contradictions}
         minor += _decision_criticality_minor_issues(dc_doc, claim_ids, contra_ids)
+
+    # --- contradiction-resolution planner (07d) ----------------------------- #
+    # Advisory-only. Every check is minor and fires only when its own data is
+    # present: resolution_plan on a record, decision_criticality.json for the
+    # would_flip<->pivotal cross-check, decision_tripwires.json for linked_tripwires.
+    # Absent siblings ⇒ those arms skip silently, never an error.
+    pivotal_ids = _pivotal_ids_from_dc(dc_doc)
+    twf = d / "decision_tripwires.json"
+    tripwire_ids = None
+    if twf.exists():
+        try:
+            tw_doc = json.loads(twf.read_text(encoding="utf-8"))
+        except ValueError:
+            tw_doc = None
+        tw_list = tw_doc.get("tripwires") if isinstance(tw_doc, dict) else tw_doc
+        tripwire_ids = {t.get("id") for t in tw_list
+                        if isinstance(t, dict) and t.get("id")} if isinstance(tw_list, list) else set()
+    minor += _resolution_plan_minor_issues(
+        contradictions, claim_ids, pivotal_ids, tripwire_ids, dc_doc is not None)
 
     # --- verdict ------------------------------------------------------------ #
     if evidence_absent:

@@ -1251,5 +1251,89 @@ class DecisionCriticalityRenderTest(unittest.TestCase):
         self.assertIn("am-pivotal", html)
 
 
+class ResolutionPlanRenderTest(unittest.TestCase):
+    """07d: the report renders resolution_plan fields inside the contradiction
+    detail and as an ordered 'How to resolve the disagreements that matter'
+    section. Absence renders nothing new (additive-optional)."""
+
+    _SEC = "How to resolve the disagreements that matter"
+
+    def _plan(self, **over):
+        p = dict(evidence_type_needed="head_to_head_benchmark",
+                 proposed_experiment_or_source="Run the benchmark on held-out topologies.",
+                 approx_effort="medium", decision_impact="might_flip",
+                 linked_claims=["C-001"], linked_options=["Option B"], status="proposed")
+        p.update(over)
+        return p
+
+    def _data(self, details):
+        cons = [{"id": xid, "kind": "tension", "stake": "s", "status": "unresolved"}
+                for xid in details]
+        return {"title": "A decision", "contradictions": cons,
+                "contradiction_detail": details}
+
+    def test_resolution_plan_renders_in_contradiction_detail(self):
+        html = render_report.build(self._data({
+            "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved",
+                      "resolution_plan": self._plan()}}))
+        self.assertIn("How to resolve this", html)
+        self.assertIn("head_to_head_benchmark", html)
+        self.assertIn("Effort: medium", html)
+        self.assertIn("Might flip the decision", html)
+
+    def test_resolution_plan_absent_renders_nothing_new(self):
+        html = render_report.build(self._data({
+            "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved",
+                      "next_question": "Q?"}}))
+        # (bare class names appear in the always-inlined CSS; assert the rendered
+        # HTML attribute form instead, which only appears when a plan renders)
+        self.assertNotIn("How to resolve this", html)
+        self.assertNotIn(self._SEC, html)
+        self.assertNotIn('class="rp-card', html)
+        self.assertNotIn('class="rp-chip', html)
+
+    def test_resolve_disagreements_section_present_when_plans_exist(self):
+        html = render_report.build(self._data({
+            "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved",
+                      "resolution_plan": self._plan()}}))
+        self.assertIn(self._SEC, html)
+
+    def test_resolve_disagreements_section_absent_when_no_plans(self):
+        html = render_report.build(self._data({
+            "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved"}}))
+        self.assertNotIn(self._SEC, html)
+
+    def test_resolve_disagreements_ordered_by_decision_impact(self):
+        # Input order scrambled: unlikely, would_flip, might_flip.
+        html = render_report.build(self._data({
+            "X-003": {"conflict_id": "X-003", "topic": "ZZUNLIKELY", "resolution_status": "unresolved",
+                      "resolution_plan": self._plan(decision_impact="unlikely_to_change")},
+            "X-001": {"conflict_id": "X-001", "topic": "ZZWOULDFLIP", "resolution_status": "unresolved",
+                      "resolution_plan": self._plan(decision_impact="would_flip")},
+            "X-002": {"conflict_id": "X-002", "topic": "ZZMIGHTFLIP", "resolution_status": "unresolved",
+                      "resolution_plan": self._plan(decision_impact="might_flip")},
+        }))
+        sec = html[html.index(self._SEC):]
+        self.assertLess(sec.index("ZZWOULDFLIP"), sec.index("ZZMIGHTFLIP"))
+        self.assertLess(sec.index("ZZMIGHTFLIP"), sec.index("ZZUNLIKELY"))
+
+    def test_unlikely_to_change_item_is_deprioritized(self):
+        html = render_report.build(self._data({
+            "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved",
+                      "resolution_plan": self._plan(decision_impact="unlikely_to_change")}}))
+        self.assertIn("rp-card-muted", html)  # de-emphasized, not hidden
+        self.assertIn("Unlikely to change the decision", html)
+
+    def test_brief_tier_shows_one_summary_line(self):
+        data = self._data({
+            "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved",
+                      "resolution_plan": self._plan(decision_impact="would_flip")}})
+        html = render_report.build(data, layer="brief")
+        self.assertIn("could change the decision", html)
+        # Full per-contradiction plan detail stays out of the brief tier.
+        self.assertNotIn(self._SEC, html)
+        self.assertNotIn('class="rp-card', html)
+
+
 if __name__ == "__main__":
     unittest.main()

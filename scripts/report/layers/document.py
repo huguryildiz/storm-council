@@ -13,7 +13,7 @@ from report.components.bib import _format_apa_html, _parse_bibtex
 from report.components.icons import _logo_svg
 from report.layers.argument_map import _argument_map_interactive_html
 from report.layers.claims import _claims_table_html
-from report.layers.deliberation import _claim_effects_from_deliberation, _cx_detail_html, _deliberation_html, _run_manifest_html
+from report.layers.deliberation import _claim_effects_from_deliberation, _cx_detail_html, _deliberation_html, _resolution_plan_inner, _run_manifest_html
 from report.layers.evidence import _evidence_table_html
 from report.layers.lenses import _evidence_plan_html, _lens_charters_html, _lens_snapshot_html
 
@@ -506,9 +506,58 @@ def build(data: dict, layer: str = "all") -> str:
                          e(c.get("id","")), e(c.get("id","")), e(c.get("kind","")), stake, tcls, e(tlbl), crit_chip))
         body = (lens_snapshot + '<table><thead><tr><th>Conflict</th><th>Kind</th><th>What is at stake</th>'
                 '<th>Status</th></tr></thead><tbody>' + rows + "</tbody></table>")
+        # 07d brief line: how many still-open disagreements could flip the decision.
+        would_flip_n = 0
+        for c in cons:
+            det = cdetail.get(c.get("id"))
+            if not isinstance(det, dict):
+                continue
+            plan = det.get("resolution_plan")
+            if (isinstance(plan, dict)
+                    and str(plan.get("decision_impact") or "").lower() == "would_flip"
+                    and str(det.get("resolution_status") or "").lower() != "resolved"):
+                would_flip_n += 1
+        if would_flip_n:
+            if would_flip_n == 1:
+                body += ('<p class="rp-brief">1 open disagreement could change the decision; '
+                         'there is a plan for how to settle it.</p>')
+            else:
+                body += ('<p class="rp-brief">%d open disagreements could change the decision; '
+                         'there are plans for how to settle them.</p>' % would_flip_n)
         sec("Where the lenses disagree", body, "brief")
     elif lens_snapshot:
         sec("Lens posture snapshot", lens_snapshot, "report")
+
+    # 07d: "How to resolve the disagreements that matter" — additive-optional,
+    # report tier. Only contradictions carrying a resolution_plan appear, ordered
+    # would_flip → might_flip → unlikely_to_change (stable within a tier). A bundle
+    # with no resolution_plan anywhere registers no section at all.
+    _RP_ORDER = {"would_flip": 0, "might_flip": 1, "unlikely_to_change": 2}
+    planned = []
+    for i, c in enumerate(cons):
+        det = cdetail.get(c.get("id"))
+        if isinstance(det, dict) and isinstance(det.get("resolution_plan"), dict):
+            planned.append((i, c, det))
+    if planned:
+        planned.sort(key=lambda t: (
+            _RP_ORDER.get(str(t[2]["resolution_plan"].get("decision_impact") or "").lower(), 3),
+            t[0]))
+        cards = ""
+        for _i, c, det in planned:
+            xid = c.get("id") or det.get("id") or ""
+            plan = det["resolution_plan"]
+            impact = str(plan.get("decision_impact") or "").lower()
+            muted = " rp-card-muted" if impact == "unlikely_to_change" else ""
+            topic = det.get("topic") or c.get("stake") or ""
+            head = (f'<div class="rp-head">{refs([xid]).strip()} '
+                    f'<span class="rp-topic">{text_refs(topic)}</span></div>')
+            cards += f'<div class="rp-card{muted}">{head}{_resolution_plan_inner(plan)}</div>'
+        body = ('<p class="rp-intro">These disagreements are still open. Each row is a concrete '
+                'way to settle one — the evidence it needs, roughly how much effort, and whether '
+                'resolving it could change the recommendation. Ordered by decision impact; the '
+                'effort and impact ratings are ordinal judgments, not calculated values.</p>'
+                '<div class="rp-list">' + cards + "</div>")
+        sec("How to resolve the disagreements that matter", body, "report")
 
     if data.get("contradiction_ledger"):
         sec("Contradiction ledger notes", f'<div class="artifact">{_md_block(data["contradiction_ledger"])}</div>', "appendix")

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "generator_version": "storm-council/verify.py",
-  "sealed_at": "2026-07-01T16:26:36+00:00",
+  "sealed_at": "2026-07-01T17:58:32+00:00",
   "tool": {
     "name": "verify.py",
     "invocation": "seal"
@@ -32,8 +32,8 @@
     },
     {
       "path": "03_claims.jsonl",
-      "sha256": "1da50a1944bf8f92d980ab13f3e9ddd157d8729353f9a7ad03b7a84209f159b4",
-      "bytes": 44024
+      "sha256": "8756b7596765084edfb8e4d5b99427af8f306be0c47bdebea0d1cd0e762b657f",
+      "bytes": 44165
     },
     {
       "path": "03_evidence.jsonl",
@@ -67,8 +67,8 @@
     },
     {
       "path": "04_contradictions.json",
-      "sha256": "33c181a74401697f28506c2bc2601ca46d27ae7a8387ae277a8937214f5f5f7f",
-      "bytes": 6235
+      "sha256": "1ca51dda4e4c3750ca66f49416d61abf7aa2582465d471b2f6eb76651636b3fe",
+      "bytes": 11187
     },
     {
       "path": "04_council_deliberation.jsonl",
@@ -106,6 +106,11 @@
       "bytes": 958
     },
     {
+      "path": "decision_criticality.json",
+      "sha256": "fd60738edda3155b876943e432639cbf5b1c6447274f20779fa96dc802ad5e1d",
+      "bytes": 1936
+    },
+    {
       "path": "report_data.json",
       "sha256": "b5f7ed6b90d3034590a3c9dcd797501bad0e487141acc5a673b55af6161e246d",
       "bytes": 11827
@@ -117,8 +122,8 @@
     },
     {
       "path": "storm_council_report.html",
-      "sha256": "330c7a1c9447b3d37f6540650adefcfeae9dc7872000c63943dc08f584978895",
-      "bytes": 597753
+      "sha256": "e968c31828ef5aedcd89d51b9c7d1b908e96a2a9321324ebd639e8f1f9d8d18e",
+      "bytes": 603400
     }
   ],
   "signature": null,

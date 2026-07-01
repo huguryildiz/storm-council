@@ -202,7 +202,7 @@ export S2_API_KEY=<your-key>   # add to ~/.zshrc or ~/.zprofile
 | `03_sources.bib` | 3 | BibTeX of all sources |
 | `03_source_registry.csv` | 3 | Tabular source registry |
 | `04_contradiction_ledger.md` | 4 | Consensus, disagreements, gaps, unknowns |
-| `04_contradictions.json` | 4 | Structured contradiction records |
+| `04_contradictions.json` | 4 | Structured contradiction records (+ optional `resolution_plan` on any non-`resolved` record: an ordinal evidence-acquisition plan — evidence type, experiment/data source, `approx_effort`, and `decision_impact` would_flip/might_flip/unlikely_to_change; no numeric value-of-information, rendered as the "How to resolve the disagreements that matter" section) |
 | `04_council_deliberation.md` / `.jsonl` | 4 | Council Mode only: cross-examination log |
 | `05_synthesis.md` | 5 | 10-section source-mapped synthesis |
 | `05_argument_map.mmd` | 5 | Mermaid argument map |

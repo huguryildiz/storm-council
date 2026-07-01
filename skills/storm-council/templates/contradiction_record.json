@@ -17,6 +17,18 @@
   },
   "next_question": "The question that would move this forward.",
   "decisive_missing_evidence": "Primary source, full-text passage, benchmark, or head-to-head comparison needed.",
+  "resolution_plan": {
+    "evidence_type_needed": "head_to_head_benchmark",
+    "proposed_experiment_or_source": "What would be done — the experiment/comparison that would settle it.",
+    "data_source": "Where the evidence would come from — a named suite, dataset, filing, or expert pool.",
+    "approx_effort": "low|medium|high",
+    "decision_impact": "would_flip|might_flip|unlikely_to_change",
+    "linked_claims": ["C-016"],
+    "linked_options": ["Option label (free text; matched by name)"],
+    "linked_tripwires": ["T-003"],
+    "status": "proposed|in_progress|done|abandoned",
+    "_note": "OPTIONAL, additive. Attach to any contradiction NOT `resolved` — a structured evidence-acquisition plan, sibling of `resolution` (never nested inside it). `evidence_type_needed` is free text (non-empty). At least one of `proposed_experiment_or_source`/`data_source` must be present. `approx_effort`/`decision_impact` are ORDINAL enums — no hours, currency, probabilities, or expected-value (EVSI/EVPI) numbers anywhere. `decision_impact: would_flip` requires a linked claim ranked `pivotal` in decision_criticality.json (07c). `linked_claims` ⊆ this record's `claim_ids`. `linked_tripwires` point at Phase 8's decision_tripwires.json when it exists. `status` is bookkeeping only — `done` NEVER implies the contradiction became `resolved`."
+  },
   "human_review_required": true,
   "decision_criticality": {
     "criticality": "pivotal|contributing|peripheral",

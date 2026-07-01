@@ -45,6 +45,35 @@ For every genuine conflict, write a record:
   reduce this conflict.
 - `decisive_missing_evidence` — the primary source, passage, or head-to-head
   comparison needed to resolve or narrow it.
+- `resolution_plan` — **optional, additive.** For any contradiction *not*
+  `resolved` (i.e. `unresolved`/`open`/`leaning`/`partially_resolved`), upgrade the
+  `next_question`/`decisive_missing_evidence` seed into a structured, prioritized
+  evidence-acquisition plan (sibling of `resolution`, never nested inside it):
+  - `evidence_type_needed` — free-text category label (e.g. `head_to_head_benchmark`,
+    `primary_source_full_text`, `field_data`, `expert_elicitation`, `replication`,
+    `cost_data`, `regulatory_filing`). Not a fixed enum, but must be non-empty.
+  - `proposed_experiment_or_source` and/or `data_source` — at least one must be
+    present. The first names *what would be done*; the second names *where the
+    evidence comes from*.
+  - `approx_effort` — ordinal `low` | `medium` | `high`. **Never** hours, days,
+    person-weeks, or currency — Storm Council has no resourcing model.
+  - `decision_impact` — ordinal `would_flip` | `might_flip` | `unlikely_to_change`.
+    Choose `would_flip` **only** when a linked claim is (or is expected to be)
+    load-bearing to the recommendation — i.e. ranked `pivotal` in
+    `decision_criticality.json` (Stage 5's 07c artifact). If 07c has not run yet,
+    reserve `would_flip` for a claim you genuinely expect to be pivotal.
+  - `linked_claims` — subset of this record's `claim_ids` the plan would settle.
+  - `linked_options` — free-text option label(s) the resolution would help decide.
+  - `linked_tripwires` — `T-###` from Phase 8's `decision_tripwires.json` when it
+    exists; omit otherwise.
+  - `status` — optional bookkeeping (`proposed` | `in_progress` | `done` |
+    `abandoned`). It tracks the *plan*, never the contradiction: `done` does **not**
+    mean the contradiction became `resolved`.
+  - **Never invent value-of-information numbers.** Do not add `evsi`, `evpi`,
+    `expected_value`, `probability`, `prior`, `utility`, `payoff`, or any numeric
+    decision-value field — Storm Council has no decision model, utility function, or
+    probability elicitation, so such a number would be a fabricated statistic. Use
+    the ordinal enums only.
 - `human_review_required` — true/false flag for conflicts a person must adjudicate.
 
 For `evidence_gap`, populate `decisive_missing_evidence` with the specific

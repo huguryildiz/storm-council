@@ -17,6 +17,21 @@
     "resolution_status": "partially_resolved",
     "next_question": "Can a country define a narrow automation-bias correction without taxing augmenting AI uses?",
     "decisive_missing_evidence": "Country-specific tax-base design with incidence analysis and evidence on affected worker outcomes.",
+    "resolution_plan": {
+      "evidence_type_needed": "tax_incidence_design",
+      "proposed_experiment_or_source": "Draft a country-specific automation-bias tax base and run an incidence analysis distinguishing substituting from augmenting AI uses, testing whether a narrow base is even definable.",
+      "data_source": "National tax-authority microdata and affected-worker outcome data.",
+      "approx_effort": "high",
+      "decision_impact": "would_flip",
+      "linked_claims": [
+        "C-025"
+      ],
+      "linked_options": [
+        "A - Blanket AI automation tax or broad slowdown",
+        "D - Narrow temporary tax in defined sectors"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true,
     "resolution": {
       "basis": "deliberation",
@@ -47,6 +62,20 @@
     "resolution_status": "unresolved",
     "next_question": "Which occupations show both high AI exposure and measured displacement after adoption?",
     "decisive_missing_evidence": "Longitudinal occupation-level adoption, employment, wage, and task-use data through the next adoption wave.",
+    "resolution_plan": {
+      "evidence_type_needed": "longitudinal_panel",
+      "proposed_experiment_or_source": "Track occupation-level AI adoption against employment, wages, and task use through the next adoption wave to find occupations with both high exposure and measured displacement.",
+      "data_source": "Linked labor-force and firm-adoption surveys at occupation level.",
+      "approx_effort": "high",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-003"
+      ],
+      "linked_options": [
+        "B - Let labor markets adjust with minimal intervention"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -67,6 +96,20 @@
     "resolution_status": "partially_resolved",
     "next_question": "Which workers and places face persistent losses from AI adoption rather than temporary transition costs?",
     "decisive_missing_evidence": "Worker-level panel evidence linking AI adoption to earnings, displacement, retraining, and regional outcomes.",
+    "resolution_plan": {
+      "evidence_type_needed": "worker_panel_evidence",
+      "proposed_experiment_or_source": "Assemble a worker-level panel linking AI adoption to earnings, displacement, retraining, and regional outcomes to separate persistent losses from temporary transition costs.",
+      "data_source": "Administrative earnings records linked to employer-adoption data.",
+      "approx_effort": "high",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-016"
+      ],
+      "linked_options": [
+        "C - Targeted transition compact"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true,
     "resolution": {
       "basis": "deliberation",
@@ -95,6 +138,21 @@
     "resolution_status": "partially_resolved",
     "next_question": "Which policy package preserves useful AI adoption while compensating displaced workers?",
     "decisive_missing_evidence": "Microsimulation comparing a broad automation tax, tax-neutrality reform, wage insurance, and training under plausible AI adoption scenarios.",
+    "resolution_plan": {
+      "evidence_type_needed": "microsimulation",
+      "proposed_experiment_or_source": "Microsimulate a broad automation tax, tax-neutrality reform, wage insurance, and training under plausible AI-adoption scenarios, comparing preserved adoption against worker compensation.",
+      "data_source": "A calibrated tax-benefit microsimulation model.",
+      "approx_effort": "medium",
+      "decision_impact": "would_flip",
+      "linked_claims": [
+        "C-025"
+      ],
+      "linked_options": [
+        "A - Blanket AI automation tax or broad slowdown",
+        "C - Targeted transition compact"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true,
     "resolution": {
       "basis": "deliberation",
@@ -123,6 +181,20 @@
     "resolution_status": "unresolved",
     "next_question": "Has any jurisdiction implemented an evaluated automation-tax base that distinguishes substitution from augmentation?",
     "decisive_missing_evidence": "Primary legislation, administrative guidance, and evaluation data for an implemented AI automation tax.",
+    "resolution_plan": {
+      "evidence_type_needed": "regulatory_filing",
+      "proposed_experiment_or_source": "Comparative legal-and-administrative review of any implemented automation-tax base.",
+      "data_source": "Primary legislation, administrative guidance, and evaluation data from any jurisdiction that implemented an automation-tax base distinguishing substitution from augmentation.",
+      "approx_effort": "medium",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-011"
+      ],
+      "linked_options": [
+        "D - Narrow temporary tax in defined sectors"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -142,6 +214,20 @@
     "resolution_status": "partially_resolved",
     "next_question": "Can the robot-tax model be mapped to generative AI tasks without losing its assumptions?",
     "decisive_missing_evidence": "A generative-AI-specific model with task complementarity, fiscal incidence, and adoption response calibrated to current data.",
+    "resolution_plan": {
+      "evidence_type_needed": "model_calibration",
+      "proposed_experiment_or_source": "Extend the robot-tax model to generative-AI tasks with task complementarity and fiscal incidence, calibrated to current adoption data, and test whether its assumptions survive the mapping.",
+      "data_source": "Published robot-tax models plus current AI task-exposure datasets.",
+      "approx_effort": "medium",
+      "decision_impact": "unlikely_to_change",
+      "linked_claims": [
+        "C-023"
+      ],
+      "linked_options": [
+        "A - Blanket AI automation tax or broad slowdown"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -162,6 +248,20 @@
     "resolution_status": "unresolved",
     "next_question": "Does generative AI create different adjustment lags or worker bargaining effects than earlier automation waves?",
     "decisive_missing_evidence": "Comparative evidence on AI adoption, task change, wages, and bargaining power across exposed occupations.",
+    "resolution_plan": {
+      "evidence_type_needed": "comparative_historical",
+      "proposed_experiment_or_source": "Compare AI adoption, task change, wages, and bargaining power across exposed occupations against earlier automation waves to test whether generative AI's adjustment lags genuinely differ.",
+      "data_source": "Historical occupational time-series plus current AI-exposure indices.",
+      "approx_effort": "medium",
+      "decision_impact": "might_flip",
+      "linked_claims": [
+        "C-016"
+      ],
+      "linked_options": [
+        "B - Let labor markets adjust with minimal intervention"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   },
   {
@@ -181,6 +281,20 @@
     "resolution_status": "unresolved",
     "next_question": "Where is the evaluated primary evidence for a broad AI automation tax protecting jobs?",
     "decisive_missing_evidence": "A government evaluation or credible quasi-experimental study of a broad AI automation tax or slowdown rule.",
+    "resolution_plan": {
+      "evidence_type_needed": "quasi_experimental_evaluation",
+      "proposed_experiment_or_source": "Locate or commission a government evaluation or quasi-experimental study of a broad AI automation tax or slowdown rule and its measured effect on jobs.",
+      "data_source": "Government program evaluations and credible quasi-experimental studies.",
+      "approx_effort": "high",
+      "decision_impact": "would_flip",
+      "linked_claims": [
+        "C-025"
+      ],
+      "linked_options": [
+        "A - Blanket AI automation tax or broad slowdown"
+      ],
+      "status": "proposed"
+    },
     "human_review_required": true
   }
 ]
