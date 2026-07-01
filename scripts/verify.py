@@ -33,6 +33,13 @@ Usage:
   python3 verify.py <output_dir>            # print the report, exit 0
   python3 verify.py <output_dir> --write    # write 06_quality_gate.json + patch report_data.json
   python3 verify.py <output_dir> --strict   # exit 2 on REVISE / BLOCKED
+  python3 verify.py <output_dir> --seal     # hash artifacts -> provenance_manifest.json
+  python3 verify.py <output_dir> --check-seal  # re-hash and report PASS / ALTERED
+
+Sealing is INTEGRITY, not AUTHENTICITY: content hashes prove a bundle is unchanged
+since it was sealed; an unsigned manifest cannot prove *who* sealed it, and anyone
+with write access can alter a file and regenerate the manifest to match. See §10 of
+the 07a plan and the manifest's own _schema_notes.
 """
 
 from __future__ import annotations
@@ -40,11 +47,13 @@ from __future__ import annotations
 import argparse
 import csv
 import difflib
+import hashlib
 import io
 import json
 import re
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Loaded standalone (spec_from_file_location) or run as a script: make the sibling
@@ -719,16 +728,210 @@ def verify(d: Path) -> dict:
     }
 
 
+# --------------------------------------------------------------------------- #
+# Tamper-evident provenance seal (07a)
+#
+# INTEGRITY, not AUTHENTICITY. `compute_seal` hashes the artifacts already on
+# disk and copies the verdict `verify.py --write` already wrote; it never grades
+# or invents a score. An unsigned manifest proves "unchanged since sealing", not
+# "sealed by a trusted party" — anyone with write access can re-seal a tampered
+# bundle. The CLI help, the manifest `_schema_notes`, and the rendered appendix
+# all say so; this is the honest ceiling of content hashing.
+# --------------------------------------------------------------------------- #
+
+_SEAL_MANIFEST_NAME = "provenance_manifest.json"
+_SEAL_EXCLUDE = {_SEAL_MANIFEST_NAME}
+_SEAL_HASH_ALGO = "sha256"
+_SEAL_SCHEMA_VERSION = "1.0"
+_SEAL_GENERATOR = "storm-council/verify.py"
+# Copied verbatim from 06_quality_gate.json — never recomputed here.
+_SEAL_VERDICT_FIELDS = ("status", "coverage_score", "traceability_score",
+                        "contradiction_handling_score", "recommendation_support_score")
+_SEAL_SCHEMA_NOTES = (
+    "Content hashes prove the bundle is BYTE-IDENTICAL to what verify.py graded at "
+    "sealed_at - they prove INTEGRITY, not AUTHENTICITY. Anyone with write access to "
+    "this directory can alter a file and regenerate this manifest to match; an unsigned "
+    "manifest cannot prove who sealed it or that it wasn't re-sealed after tampering. "
+    "Use --check-seal only to confirm 'this bundle is unchanged since the last time "
+    "someone (possibly untrusted) ran --seal' - not as legal proof of non-tampering. "
+    "verdict_at_seal_time is copied verbatim from 06_quality_gate.json, never recomputed. "
+    "artifacts[] is sorted by path; the manifest excludes itself and dotfiles; file "
+    "mtimes are never read (content hash only). 'signature' is a reserved slot for a "
+    "future pluggable signing interface (unimplemented in this schema version - always null)."
+)
+
+
+def _sha256_file(path: Path) -> str:
+    """SHA-256 over the raw bytes on disk. No line-ending or whitespace
+    normalization — 'byte-identical' is the entire claim being sealed."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _seal_artifact_names(d: Path) -> list:
+    """Filenames to hash: every regular file directly in ``d`` (non-recursive;
+    bundles are flat), excluding the manifest itself and dotfiles. Returned
+    sorted by path string — never filesystem iteration order, so two seals of
+    an identical directory produce identical ordering (07b re-seal stability)."""
+    names = []
+    for entry in d.iterdir():
+        if not entry.is_file():
+            continue
+        name = entry.name
+        if name in _SEAL_EXCLUDE or name.startswith("."):
+            continue
+        names.append(name)
+    return sorted(names)
+
+
+def _seal_now() -> str:
+    """Local, unwitnessed ISO-8601-with-offset timestamp, matching
+    run_manifest.json's generated_at format (no microseconds)."""
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def compute_seal(d: Path, sealed_at: str | None = None) -> dict:
+    """Build a provenance manifest for ``d``: SHA-256 + byte count for every
+    artifact, plus the verdict copied verbatim from 06_quality_gate.json.
+
+    Does NOT call verify() and does NOT recompute any score — it reads the
+    already-written quality gate and copies its fields, honoring the repo rule
+    "never hand-set quality-gate scores". Raises FileNotFoundError if the gate
+    is absent (the caller refuses to seal an ungraded bundle)."""
+    gate_path = d / "06_quality_gate.json"
+    if not gate_path.exists():
+        raise FileNotFoundError("06_quality_gate.json")
+    gate = json.loads(gate_path.read_text(encoding="utf-8"))
+    verdict = {k: gate.get(k) for k in _SEAL_VERDICT_FIELDS}
+    artifacts = []
+    for name in _seal_artifact_names(d):
+        p = d / name
+        artifacts.append({"path": name, "sha256": _sha256_file(p),
+                          "bytes": p.stat().st_size})
+    return {
+        "schema_version": _SEAL_SCHEMA_VERSION,
+        "generator_version": _SEAL_GENERATOR,
+        "sealed_at": sealed_at or _seal_now(),
+        "tool": {"name": "verify.py", "invocation": "seal"},
+        "verdict_at_seal_time": verdict,
+        "hash_algorithm": _SEAL_HASH_ALGO,
+        "artifacts": artifacts,
+        "signature": None,
+        "_schema_notes": _SEAL_SCHEMA_NOTES,
+    }
+
+
+def check_seal(d: Path) -> dict:
+    """Re-hash the files named in provenance_manifest.json and compare to the
+    recorded digests. Returns {ok, sealed_at, altered[], missing[], added[],
+    checked}. Cannot detect a rewritten manifest (the manifest is excluded from
+    its own hashed list) — that gap needs a signature, out of scope for the MVP.
+
+    Raises FileNotFoundError if no manifest exists, ValueError if the manifest
+    names a hash algorithm this verify.py cannot compute."""
+    manifest_path = d / _SEAL_MANIFEST_NAME
+    if not manifest_path.exists():
+        raise FileNotFoundError(_SEAL_MANIFEST_NAME)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    algo = str(manifest.get("hash_algorithm") or "").lower()
+    if algo != _SEAL_HASH_ALGO:
+        raise ValueError(f"unsupported hash_algorithm {algo!r}")
+    recorded = manifest.get("artifacts") or []
+    sealed_names = set()
+    altered, missing = [], []
+    for entry in recorded:
+        name = entry.get("path")
+        if not name:
+            continue
+        sealed_names.add(name)
+        p = d / name
+        if not p.exists():
+            missing.append(name)
+            continue
+        if _sha256_file(p) != entry.get("sha256"):
+            size_mismatch = None
+            if p.stat().st_size != entry.get("bytes"):
+                size_mismatch = (entry.get("bytes"), p.stat().st_size)
+            altered.append({"path": name, "size_mismatch": size_mismatch})
+    added = [name for name in _seal_artifact_names(d) if name not in sealed_names]
+    return {
+        "ok": not altered and not missing,
+        "sealed_at": manifest.get("sealed_at"),
+        "altered": altered,
+        "missing": missing,
+        "added": added,
+        "checked": len(sealed_names),
+    }
+
+
+def _run_seal(d: Path) -> int:
+    if not (d / "06_quality_gate.json").exists():
+        print("error: 06_quality_gate.json missing - run verify.py --write first "
+              "(refusing to seal an ungraded bundle)", file=sys.stderr)
+        return 3
+    manifest = compute_seal(d)
+    (d / _SEAL_MANIFEST_NAME).write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"sealed: {_SEAL_MANIFEST_NAME} ({len(manifest['artifacts'])} artifacts, "
+          f"verdict {manifest['verdict_at_seal_time'].get('status')})")
+    print("  note: this is INTEGRITY, not AUTHENTICITY - hashes prove the bundle is "
+          "unchanged since sealing, not who sealed it; an unsigned manifest can be "
+          "regenerated by anyone with write access.")
+    return 0
+
+
+def _run_check_seal(d: Path) -> int:
+    if not (d / _SEAL_MANIFEST_NAME).exists():
+        print(f"error: no {_SEAL_MANIFEST_NAME} found - run --seal first", file=sys.stderr)
+        return 3
+    try:
+        rep = check_seal(d)
+    except ValueError as ex:
+        print(f"error: {ex} - upgrade verify.py", file=sys.stderr)
+        return 3
+    for entry in rep["altered"]:
+        sm = entry.get("size_mismatch")
+        extra = f" (bytes {sm[0]} -> {sm[1]})" if sm else ""
+        print(f"  altered: {entry['path']}{extra}")
+    for name in rep["missing"]:
+        print(f"  missing: {name}")
+    for name in rep["added"]:
+        print(f"  added since seal: {name}")
+    if rep["ok"]:
+        print(f"check-seal: PASS (bundle unchanged since {rep['sealed_at']})")
+        print("  note: PASS means consistent with the last seal, not verified by a "
+              "trusted third party - an unsigned manifest cannot prove non-tampering.")
+        return 0
+    n = len(rep["altered"]) + len(rep["missing"])
+    print(f"check-seal: ALTERED ({n} file(s) changed)")
+    return 4
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Verify a Storm Council output dir and compute the quality gate.")
     ap.add_argument("output_dir")
     ap.add_argument("--write", action="store_true", help="write 06_quality_gate.json and patch report_data.json")
     ap.add_argument("--strict", action="store_true", help="exit 2 on REVISE / BLOCKED_PENDING_EVIDENCE")
+    seal_group = ap.add_mutually_exclusive_group()
+    seal_group.add_argument(
+        "--seal", action="store_true",
+        help="hash every artifact + copy the verify.py verdict into "
+             "provenance_manifest.json (INTEGRITY, not authenticity: an unsigned "
+             "manifest can be regenerated by anyone with write access). Requires "
+             "06_quality_gate.json (run --write first); composes with --write.")
+    seal_group.add_argument(
+        "--check-seal", action="store_true",
+        help="re-hash the directory against provenance_manifest.json and report "
+             "PASS / ALTERED. PASS means unchanged since the last seal, NOT verified "
+             "by a trusted third party; a rewritten manifest is not detected.")
     args = ap.parse_args(argv)
     d = Path(args.output_dir)
     if not d.is_dir():
         print(f"error: {d} is not a directory", file=sys.stderr)
         return 1
+
+    if args.check_seal:
+        return _run_check_seal(d)
+
     gate = verify(d)
 
     print(f"verdict: {gate['status']}")
@@ -752,6 +955,11 @@ def main(argv=None) -> int:
                                 "blocking": gate["blocking_issues"], "major": gate["major_issues"], "minor": gate["minor_issues"]}
             rf.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print("wrote 06_quality_gate.json and patched report_data.json")
+
+    if args.seal:
+        rc = _run_seal(d)
+        if rc != 0:
+            return rc
 
     if args.strict and gate["status"] in {"REVISE", "BLOCKED_PENDING_EVIDENCE"}:
         return 2

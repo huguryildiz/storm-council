@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "generator_version": "storm-council/verify.py",
+  "sealed_at": "2026-07-01T14:32:07+00:00",
+  "tool": { "name": "verify.py", "invocation": "seal" },
+  "verdict_at_seal_time": {
+    "status": "PASS_WITH_CAVEATS",
+    "coverage_score": 100,
+    "traceability_score": 92,
+    "contradiction_handling_score": 60,
+    "recommendation_support_score": 88
+  },
+  "hash_algorithm": "sha256",
+  "artifacts": [
+    { "path": "01_decision_frame.md", "sha256": "3f9a1c...", "bytes": 4821 },
+    { "path": "03_claims.jsonl", "sha256": "8b21e0...", "bytes": 19204 },
+    { "path": "06_quality_gate.json", "sha256": "c74d02...", "bytes": 612 },
+    { "path": "report_data.json", "sha256": "1ee730...", "bytes": 88431 },
+    { "path": "storm_council_report.html", "sha256": "9a02fb...", "bytes": 412009 }
+  ],
+  "signature": null,
+  "_schema_notes": "Content hashes prove the bundle is BYTE-IDENTICAL to what verify.py graded at sealed_at - they prove INTEGRITY, not AUTHENTICITY. Anyone with write access to this directory can alter a file and regenerate this manifest to match; an unsigned manifest cannot prove who sealed it or that it wasn't re-sealed after tampering. Use --check-seal only to confirm 'this bundle is unchanged since the last time someone (possibly untrusted) ran --seal' - not as legal proof of non-tampering. verdict_at_seal_time is copied verbatim from 06_quality_gate.json, never recomputed here. artifacts[] is sorted by path; the manifest excludes itself and dotfiles; file mtimes are never read (content hash only). 'signature' is a reserved slot for a future pluggable signing interface (unimplemented in this schema version - always null)."
+}

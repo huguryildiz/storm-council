@@ -1,7 +1,9 @@
+import contextlib
 import csv
 import importlib.util
 import io
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -608,6 +610,139 @@ class LensIndependenceTest(unittest.TestCase):
             gate = verify_mod.verify(ROOT / "examples" / name)
             self.assertFalse(any("lens outputs converged" in m.lower()
                                  for m in gate["minor_issues"]), name)
+
+
+class SealTest(unittest.TestCase):
+    """07a tamper-evident provenance bundle (verify.py --seal / --check-seal)."""
+
+    _VERDICT_FIELDS = ("status", "coverage_score", "traceability_score",
+                       "contradiction_handling_score", "recommendation_support_score")
+
+    def _make_bundle(self, base: Path):
+        """A minimal, gradeable bundle plus one text artifact to tamper with."""
+        _write_run(
+            base,
+            claims=[{"claim_id": "C-001", "perspective": "academic",
+                     "claim_text": "The solver converges.", "claim_type": "fact",
+                     "evidence_status": "supported", "source_ids": ["S-001"]}],
+            sources=[{"source_id": "S-001", "title": "A paper",
+                      "url": "https://arxiv.org/abs/2004.11986",
+                      "source_type": "preprint", "source_class": "preprint"}],
+            contradictions=[],
+        )
+        (base / "05_decision_brief.md").write_text("original brief\n", encoding="utf-8")
+
+    def _run(self, argv):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = verify_mod.main(argv)
+        return rc, buf.getvalue()
+
+    def test_seal_refuses_without_quality_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)  # no --write, so no 06_quality_gate.json
+            rc = verify_mod.main([str(base), "--seal"])
+            self.assertEqual(rc, 3)
+            self.assertFalse((base / "provenance_manifest.json").exists())
+
+    def test_seal_writes_manifest_with_verdict_copied_from_quality_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)
+            self.assertEqual(verify_mod.main([str(base), "--write"]), 0)
+            gate = json.loads((base / "06_quality_gate.json").read_text(encoding="utf-8"))
+            self.assertEqual(verify_mod.main([str(base), "--seal"]), 0)
+            manifest = json.loads((base / "provenance_manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["verdict_at_seal_time"],
+                             {k: gate[k] for k in self._VERDICT_FIELDS})
+            self.assertEqual(manifest["hash_algorithm"], "sha256")
+
+    def test_check_seal_passes_on_unmodified_bundle(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)
+            verify_mod.main([str(base), "--write"])
+            verify_mod.main([str(base), "--seal"])
+            rc, out = self._run([str(base), "--check-seal"])
+            self.assertEqual(rc, 0)
+            self.assertIn("PASS", out)
+
+    def test_check_seal_detects_single_byte_tamper(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)
+            verify_mod.main([str(base), "--write"])
+            verify_mod.main([str(base), "--seal"])
+            (base / "05_decision_brief.md").write_text("Original brief\n", encoding="utf-8")
+            rc, out = self._run([str(base), "--check-seal"])
+            self.assertEqual(rc, 4)
+            self.assertIn("altered: 05_decision_brief.md", out)
+            self.assertNotIn("altered: 03_claims.jsonl", out)
+
+    def test_check_seal_detects_deleted_artifact(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)
+            verify_mod.main([str(base), "--write"])
+            verify_mod.main([str(base), "--seal"])
+            os.remove(base / "03_source_registry.csv")
+            rc, out = self._run([str(base), "--check-seal"])
+            self.assertEqual(rc, 4)
+            self.assertIn("missing: 03_source_registry.csv", out)
+
+    def test_check_seal_ignores_added_file_since_seal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)
+            verify_mod.main([str(base), "--write"])
+            verify_mod.main([str(base), "--seal"])
+            (base / "07_addendum.md").write_text("added later\n", encoding="utf-8")
+            rc, out = self._run([str(base), "--check-seal"])
+            self.assertEqual(rc, 0)
+            self.assertIn("PASS", out)
+            self.assertIn("added since seal: 07_addendum.md", out)
+
+    def test_reseal_of_unchanged_bundle_reproduces_identical_hashes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)
+            verify_mod.main([str(base), "--write"])
+            m1 = verify_mod.compute_seal(base, sealed_at="2026-07-01T00:00:00+00:00")
+            m2 = verify_mod.compute_seal(base, sealed_at="2026-07-02T00:00:00+00:00")
+            self.assertEqual(m1["artifacts"], m2["artifacts"])
+            self.assertNotEqual(m1["sealed_at"], m2["sealed_at"])
+
+    def test_artifacts_sorted_by_path_not_filesystem_order(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            # Deliberately create files out of alphabetical order.
+            (base / "zz_last.md").write_text("z\n", encoding="utf-8")
+            (base / "aa_first.md").write_text("a\n", encoding="utf-8")
+            self._make_bundle(base)
+            verify_mod.main([str(base), "--write"])
+            manifest = verify_mod.compute_seal(base)
+            paths = [a["path"] for a in manifest["artifacts"]]
+            self.assertEqual(paths, sorted(paths))
+            self.assertLess(paths.index("aa_first.md"), paths.index("zz_last.md"))
+
+    def test_manifest_excludes_itself_from_hashed_artifacts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)
+            verify_mod.main([str(base), "--write"])
+            verify_mod.main([str(base), "--seal"])
+            manifest = json.loads((base / "provenance_manifest.json").read_text(encoding="utf-8"))
+            self.assertFalse(any(a["path"] == "provenance_manifest.json"
+                                 for a in manifest["artifacts"]))
+
+    def test_signature_field_is_null_in_mvp(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._make_bundle(base)
+            verify_mod.main([str(base), "--write"])
+            manifest = verify_mod.compute_seal(base)
+            self.assertIsNone(manifest["signature"])
 
 
 if __name__ == "__main__":

@@ -49,6 +49,16 @@ Do not wire the quality gate to an automated action without human review.
 For anything consequential, a domain expert must review the claims, sources, and
 contradictions. The brief is a starting point for that review, not a substitute.
 
+## Provenance sealing is integrity, not authenticity
+
+`verify.py --seal` hashes every artifact into `provenance_manifest.json`, and
+`--check-seal` re-hashes to report PASS / ALTERED. This proves a bundle is
+**byte-identical to what was sealed** — it does **not** prove *who* sealed it. The
+manifest is unsigned, so anyone with write access can alter a file and regenerate the
+manifest to match; a rewritten manifest is not detected. Treat a PASS as a convenience
+integrity check that supports — never replaces — organizational chain-of-custody
+controls, and never as legal proof of non-tampering.
+
 ## Sensitive / high-stakes uses
 
 Storm Council is **not** professional, legal, medical, financial, or policy

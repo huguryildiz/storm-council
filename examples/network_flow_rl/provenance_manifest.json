@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0",
+  "generator_version": "storm-council/verify.py",
+  "sealed_at": "2026-07-01T16:26:36+00:00",
+  "tool": {
+    "name": "verify.py",
+    "invocation": "seal"
+  },
+  "verdict_at_seal_time": {
+    "status": "PASS_WITH_CAVEATS",
+    "coverage_score": 100,
+    "traceability_score": 100,
+    "contradiction_handling_score": 25,
+    "recommendation_support_score": 100
+  },
+  "hash_algorithm": "sha256",
+  "artifacts": [
+    {
+      "path": "01_decision_frame.md",
+      "sha256": "5ec40eb966b3a5e7a55fba7aab1d94dac50e9df760c7b88cdc35969295ebafaa",
+      "bytes": 2884
+    },
+    {
+      "path": "02_perspective_scan.json",
+      "sha256": "a1ba58146dbd3d55dcefcc94c48a1986e1f9e8951df4e90f456558caaf2e487b",
+      "bytes": 4513
+    },
+    {
+      "path": "02_perspective_scan.md",
+      "sha256": "9e2d97f2a739be8325906aef8a49825a21e4f972fa8faa355b880ff03684daa2",
+      "bytes": 5484
+    },
+    {
+      "path": "03_claims.jsonl",
+      "sha256": "1da50a1944bf8f92d980ab13f3e9ddd157d8729353f9a7ad03b7a84209f159b4",
+      "bytes": 44024
+    },
+    {
+      "path": "03_evidence.jsonl",
+      "sha256": "54321218632741416a81c1f97584228e58084c0b0e4299120edf51aa7aa17649",
+      "bytes": 10348
+    },
+    {
+      "path": "03_evidence_plan.md",
+      "sha256": "1866ae4fc8c04caad98c7d8baf5f35c18f09de64fd3511c8e42897a2e753d43c",
+      "bytes": 3732
+    },
+    {
+      "path": "03_evidence_verdicts.jsonl",
+      "sha256": "cf228c6aea47842ae898da538a1de1707cb16bb1e3ffe352b84dc027d1227bce",
+      "bytes": 17812
+    },
+    {
+      "path": "03_source_registry.csv",
+      "sha256": "048f09836b8455c2653ca7eea49b997c235491566aaa8fc4077cb55798f04097",
+      "bytes": 3890
+    },
+    {
+      "path": "03_sources.bib",
+      "sha256": "ed6f083c23f5d9c32ecf57d8f561b3953a06293ca2c15e6cfcc691cc3cc760e8",
+      "bytes": 1251
+    },
+    {
+      "path": "04_contradiction_ledger.md",
+      "sha256": "54abc69e803295a18c06ebc32216ccd947f580901598035ec66a08a135d446e5",
+      "bytes": 3402
+    },
+    {
+      "path": "04_contradictions.json",
+      "sha256": "33c181a74401697f28506c2bc2601ca46d27ae7a8387ae277a8937214f5f5f7f",
+      "bytes": 6235
+    },
+    {
+      "path": "04_council_deliberation.jsonl",
+      "sha256": "3cca7136fb7299720ef2c5556835cb06c0cb3aa8c1796977e8f59654c07e6620",
+      "bytes": 2927
+    },
+    {
+      "path": "04_council_deliberation.md",
+      "sha256": "7a8576007ed417a02281f507c8f3de1e31eab4f576bd0832cc71b8f6b21535ec",
+      "bytes": 1498
+    },
+    {
+      "path": "05_argument_map.mmd",
+      "sha256": "6adaabce58b5c107b9a95445550a2f991bcd7dc1ed60e2d26f01a7afc9db9a72",
+      "bytes": 1071
+    },
+    {
+      "path": "05_decision_brief.md",
+      "sha256": "8b01777dbdc730b5d82b53b31d97165ec65ea55ba49f2974b0babe5771882155",
+      "bytes": 2638
+    },
+    {
+      "path": "05_synthesis.md",
+      "sha256": "469cc301c2f3c34f4cb00a2f45a5f8bf4b9bc5d36d1191160db860d195d52183",
+      "bytes": 4887
+    },
+    {
+      "path": "06_adversarial_review.md",
+      "sha256": "35da9fed29c3a5a3ea8d4cd05e229c40b7eed928976936eff034a019dee6ff45",
+      "bytes": 2414
+    },
+    {
+      "path": "06_quality_gate.json",
+      "sha256": "682f56315a61868ed0673496be48d0fe540f49e691b0502f20dd8a2af070e17c",
+      "bytes": 958
+    },
+    {
+      "path": "report_data.json",
+      "sha256": "b5f7ed6b90d3034590a3c9dcd797501bad0e487141acc5a673b55af6161e246d",
+      "bytes": 11827
+    },
+    {
+      "path": "run_manifest.json",
+      "sha256": "1bd1193ce75ea9c7b0eacd1f828bb1612c239722e489f0de04963d77988e053e",
+      "bytes": 519
+    },
+    {
+      "path": "storm_council_report.html",
+      "sha256": "330c7a1c9447b3d37f6540650adefcfeae9dc7872000c63943dc08f584978895",
+      "bytes": 597753
+    }
+  ],
+  "signature": null,
+  "_schema_notes": "Content hashes prove the bundle is BYTE-IDENTICAL to what verify.py graded at sealed_at - they prove INTEGRITY, not AUTHENTICITY. Anyone with write access to this directory can alter a file and regenerate this manifest to match; an unsigned manifest cannot prove who sealed it or that it wasn't re-sealed after tampering. Use --check-seal only to confirm 'this bundle is unchanged since the last time someone (possibly untrusted) ran --seal' - not as legal proof of non-tampering. verdict_at_seal_time is copied verbatim from 06_quality_gate.json, never recomputed. artifacts[] is sorted by path; the manifest excludes itself and dotfiles; file mtimes are never read (content hash only). 'signature' is a reserved slot for a future pluggable signing interface (unimplemented in this schema version - always null)."
+}

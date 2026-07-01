@@ -1098,6 +1098,37 @@ class LayerRenderingTest(unittest.TestCase):
         self.assertIn("not a calibrated probability", html)
         self.assertIn("basis", html)
 
+    # --- 07a provenance seal ------------------------------------------------- #
+    _PROVENANCE = {
+        "sealed_at": "2026-07-01T14:32:07+00:00",
+        "verdict_at_seal_time": {"status": "PASS_WITH_CAVEATS"},
+        "hash_algorithm": "sha256",
+        "schema_version": "1.0",
+        "generator_version": "storm-council/verify.py",
+        "artifacts": [{"path": "03_claims.jsonl", "sha256": "abc123def456", "bytes": 42}],
+    }
+
+    def test_provenance_section_renders_in_appendix(self):
+        html = render_report.build(
+            {"title": "A decision",
+             "status": {"level": "unverified", "pill": "UNVERIFIED", "headline": "H"},
+             "provenance": self._PROVENANCE}, "appendix")
+        self.assertIn("Provenance", html)
+        self.assertIn("2026-07-01T14:32:07+00:00", html)
+        # Integrity-not-authenticity caveat must appear in the rendered copy.
+        self.assertIn("integrity, not authenticity", html)
+        # Status panel gains a neutral "sealed provenance" integrity chip.
+        self.assertIn("sealed", html)
+
+    def test_provenance_absent_renders_nothing(self):
+        html = render_report.build({"title": "A decision"})
+        self.assertNotIn("Provenance &amp; integrity", html)
+
+    def test_provenance_omitted_from_brief_layer(self):
+        html = render_report.build(
+            {"title": "A decision", "provenance": self._PROVENANCE}, "brief")
+        self.assertNotIn("Provenance &amp; integrity", html)
+
 
 if __name__ == "__main__":
     unittest.main()
