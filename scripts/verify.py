@@ -906,11 +906,443 @@ def _run_check_seal(d: Path) -> int:
     return 4
 
 
+# --------------------------------------------------------------------------- #
+# Living, re-verifiable brief (07b)
+#
+# `--recheck` re-resolves each source's publication identity through the SAME
+# deterministic adapters shipped in metadata_adapters.py, re-runs the SAME
+# verify() used at authoring time, and emits a deterministic before/after diff
+# (refresh_diff.json). It is a manual, point-in-time re-check — not a monitor and
+# not a scheduler; nothing runs unless invoked. The honesty-critical property is
+# that "we checked and it's unchanged", "we checked and it changed", and "we could
+# NOT check" are three distinct, never-conflated states (§7 of the 07b plan). Rule
+# ordering (§7.1) decides not_rechecked BEFORE any flag comparison, so a source
+# that could not be reached can never fall through to "unchanged".
+#
+# recheck() invents nothing: it never hand-sets a score (verify() does the
+# scoring, run twice), never rewrites a claim's evidence_status or a
+# contradiction's resolution_status (it reports the conflict; a human/next full
+# run decides), and never fabricates a confidence delta.
+# --------------------------------------------------------------------------- #
+
+_RECHECK_SCHEMA_VERSION = "7.8"
+_RECHECK_ADAPTERS = ["publisher", "crossref", "openalex", "semantic_scholar", "arxiv", "pubmed"]
+_NEGATIVE_CHANGE = {"retracted", "superseded", "corrected", "unavailable"}
+_VERIFIED_STATUSES = {"PUBLISHED_VERIFIED", "PREPRINT_VERIFIED"}
+_UNRESOLVED_STATUSES = {"UNRESOLVED", "METADATA_PARTIAL"}
+_GATE_SUMMARY_KEYS = ("status", "coverage_score", "traceability_score",
+                      "contradiction_handling_score", "recommendation_support_score")
+# gate_changed compares the six keys verify() returns — status + four scores +
+# the three issue lists (§7.4) — so a same-tier-but-new-issue change still shows.
+_GATE_COMPARE_KEYS = _GATE_SUMMARY_KEYS + ("blocking_issues", "major_issues", "minor_issues")
+
+# Fixed per-change_class detail templates. `not_rechecked` deliberately avoids any
+# "confirmed"/"still valid" wording — it is the honest-uncertainty state, not a
+# clean bill of health. `unchanged` always carries the "as of this recheck"
+# qualifier (asserted by a test) so a verified-negative is never read as permanent.
+_CHANGE_DETAIL = {
+    "not_rechecked": ("Could not be re-verified this pass (no resolvable "
+                      "identifier, or every adapter was offline/uncached). The "
+                      "prior status is carried forward, not re-checked."),
+    "unchanged": ("Re-resolved via {via}; no retraction/correction/supersession "
+                  "relation present. This holds the source is still clean as of "
+                  "this recheck — it does not prove nothing will ever change."),
+    "retracted": "A retraction relation is now present (via {via}) that was absent before.",
+    "superseded": "A supersession/version relation is now present (via {via}) that was absent before.",
+    "corrected": "A correction/erratum relation is now present (via {via}) that was absent before.",
+    "unavailable": ("This source resolved to a verified identity before but its "
+                    "identifier no longer resolves this pass (via {via}); it was "
+                    "checkable, and is now unavailable."),
+}
+
+
+def _rec_status(rec) -> str | None:
+    if not isinstance(rec, dict):
+        return None
+    pi = rec.get("publication_identity")
+    return pi.get("status") if isinstance(pi, dict) else None
+
+
+def _change_class(before_rec, after_rec, meta_row) -> str:
+    """Per-source change_class decision, exhaustive and deterministic (§7.1).
+
+    Rules 1 and 2 (nothing was queryable / everything was offline) are evaluated
+    FIRST and UNCONDITIONALLY, so a source that could not be reached can never
+    fall through to "unchanged" by omission — the load-bearing honesty property."""
+    checked = meta_row.get("checked") if isinstance(meta_row, dict) else None
+    checked = checked or []
+    # rule 1: no adapter had a usable identifier to query
+    if not checked:
+        return "not_rechecked"
+    # rule 2: an identifier existed but every adapter was offline/uncached
+    if all(entry.get("offline") for entry in checked):
+        return "not_rechecked"
+    # rule 3: at least one adapter returned live or cached data this pass
+    after_flags = (after_rec or {}).get("flags") or {}
+    before_flags = (before_rec or {}).get("flags") or {}
+    if after_flags.get("retracted") and not before_flags.get("retracted"):
+        return "retracted"
+    if after_flags.get("superseded") and not before_flags.get("superseded"):
+        return "superseded"
+    if after_flags.get("corrected") and not before_flags.get("corrected"):
+        return "corrected"
+    # rule 3d: was verified before, resolves to nothing now despite a live/cached hit
+    if _rec_status(before_rec) in _VERIFIED_STATUSES and _rec_status(after_rec) in _UNRESOLVED_STATUSES:
+        return "unavailable"
+    # rule 3e: flags identical to before, or first clean resolve
+    return "unchanged"
+
+
+def _gate_summary(gate: dict) -> dict:
+    return {k: gate.get(k) for k in _GATE_SUMMARY_KEYS}
+
+
+def _recheck_since(d: Path) -> str | None:
+    """Date of the artifact being rechecked: the run manifest's generated_at if
+    present, else the quality gate's mtime as a fallback, else None (rendered as
+    'first check')."""
+    f = d / "run_manifest.json"
+    if f.exists():
+        try:
+            m = json.loads(f.read_text(encoding="utf-8"))
+        except ValueError:
+            m = None
+        if isinstance(m, dict):
+            for k in ("generated_at", "created_at", "timestamp"):
+                if m.get(k):
+                    return str(m[k])[:10]
+    g = d / "06_quality_gate.json"
+    if g.exists():
+        return datetime.fromtimestamp(g.stat().st_mtime, timezone.utc).date().isoformat()
+    return None
+
+
+def _recheck_tripwires(d: Path, change_by_source: dict):
+    """Evaluate 08 decision_tripwires.json if present, else return None so the key
+    is omitted (never []). A tripwire whose monitoring_source was not_rechecked is
+    reported condition_fired=null (unknown, not cleared)."""
+    f = d / "decision_tripwires.json"
+    if not f.exists():
+        return None
+    try:
+        arr = json.loads(f.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
+    if not isinstance(arr, list):
+        return None
+    out = []
+    for t in arr:
+        if not isinstance(t, dict):
+            continue
+        ms = t.get("monitoring_source")
+        cc = change_by_source.get(ms)
+        if cc is None or cc == "not_rechecked":
+            out.append({"id": t.get("id"), "monitoring_source": ms, "was_rechecked": False,
+                        "condition_fired": None,
+                        "note": f"monitoring_source {ms} was not_rechecked this pass; "
+                                "tripwire status unknown, not cleared"})
+        elif cc in _NEGATIVE_CHANGE:
+            out.append({"id": t.get("id"), "monitoring_source": ms, "was_rechecked": True,
+                        "condition_fired": True,
+                        "note": f"monitoring_source {ms} changed to {cc}, matching this "
+                                "tripwire's condition"})
+        else:
+            out.append({"id": t.get("id"), "monitoring_source": ms, "was_rechecked": True,
+                        "condition_fired": False,
+                        "note": f"monitoring_source {ms} re-resolved unchanged this pass"})
+    return out
+
+
+def _recheck_pivotal(d: Path, touched_claim_ids: list):
+    """Cross-reference 07c decision_criticality.json if present, else return None
+    so the key is omitted (never []). Reports only claims this pass touched that
+    07c marked pivotal — never invents a criticality 07c did not make."""
+    f = d / "decision_criticality.json"
+    if not f.exists():
+        return None
+    try:
+        data = json.loads(f.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
+    crit = {}
+    if isinstance(data, dict) and isinstance(data.get("claims"), list):
+        for c in data["claims"]:
+            if isinstance(c, dict) and c.get("claim_id"):
+                crit[c["claim_id"]] = str(c.get("criticality") or "").lower()
+    elif isinstance(data, dict):
+        for k, v in data.items():
+            if isinstance(v, str):
+                crit[k] = v.lower()
+    return [cid for cid in touched_claim_ids if crit.get(cid) == "pivotal"]
+
+
+def recheck(d, *, as_of=None, fetcher=None, no_retrieve=False, cache_dir=None) -> dict:
+    """Re-resolve every source's publication identity and diff the quality gate
+    before vs after. Returns the refresh_diff document (§4). Writes source_versions.jsonl
+    / metadata_verification.jsonl / retrieval_log.jsonl (via the unchanged
+    metadata_adapters seam); writing refresh_diff.json is the caller's job (--write)."""
+    import metadata_adapters
+    d = Path(d)
+
+    # 1. before gate: the on-disk gate verbatim if present (so the diff reflects
+    #    what the reader was actually told), else computed fresh — the same
+    #    deterministic verify() run once before the metadata refresh, never faked.
+    gate_path = d / "06_quality_gate.json"
+    gate_before = None
+    if gate_path.exists():
+        try:
+            gate_before = json.loads(gate_path.read_text(encoding="utf-8"))
+        except ValueError:
+            gate_before = None
+    if not isinstance(gate_before, dict):
+        gate_before = verify(d)
+
+    # 2. prior per-source publication-identity records (the flags to diff against).
+    before_versions = _load_source_versions(d)
+
+    # 3. metadata refresh through the existing, unmodified seam.
+    cache = Path(cache_dir) if cache_dir else (d / ".metadata_cache")
+    md = metadata_adapters.verify_publication_identity(
+        d, fetcher=fetcher, no_retrieve=no_retrieve, cache_dir=cache)
+    after_versions = {r.get("source_id"): r for r in md["source_versions"]}
+    meta_by_id = {r.get("source_id"): r for r in md["metadata_verification"]}
+
+    # 4. after gate: the same verify(), re-run now that source_versions.jsonl is refreshed.
+    gate_after = verify(d)
+
+    # 5. deterministic diff.
+    claims, _, _, contradictions, sources, _ = _load(d)
+    source_changes = []
+    change_by_source: dict = {}
+    for s in sources:
+        sid = s.get("source_id")
+        if not sid:
+            continue
+        before_rec = before_versions.get(sid)
+        after_rec = after_versions.get(sid)
+        meta_row = meta_by_id.get(sid) or {}
+        cc = _change_class(before_rec, after_rec, meta_row)
+        change_by_source[sid] = cc
+        checked = meta_row.get("checked") or []
+        via = [entry.get("adapter") for entry in checked
+               if entry.get("adapter") and not entry.get("offline")]
+        if cc == "not_rechecked":
+            # carried forward unchanged, NEVER inferred as confirmed.
+            before_status = after_status = _rec_status(before_rec)
+        else:
+            before_status = _rec_status(before_rec)
+            after_status = _rec_status(after_rec)
+        source_changes.append({
+            "source_id": sid,
+            "change_class": cc,
+            "before_status": before_status,
+            "after_status": after_status,
+            "detected_via": via,
+            "detail": _CHANGE_DETAIL[cc].format(via=", ".join(via) or "cache"),
+        })
+
+    claim_changes = []
+    for c in claims:
+        cid = c.get("claim_id")
+        if not cid:
+            continue
+        status = c.get("evidence_status")
+        sids = list(c.get("source_ids") or [])
+        weak_sources = [sid for sid in sids if change_by_source.get(sid) in _NEGATIVE_CHANGE]
+        if status in _SUPPORTED and weak_sources:
+            cls = change_by_source.get(weak_sources[0])
+            claim_changes.append({
+                "claim_id": cid,
+                "direction": "weakened",
+                "rule": f"supported_claim_cites_now_{cls}_source",
+                "source_ids": weak_sources,
+                "before_evidence_status": status,
+                "after_evidence_status": status,   # verify.py never auto-rewrites evidence_status
+                "note": (f"Cites now-{cls} source(s) {', '.join(weak_sources)}; verify.py raises "
+                         "this as a new blocking/major issue on recheck (see gate_after). The "
+                         "claim's evidence_status is not auto-edited — a human decides."),
+            })
+            continue
+        # strengthened (narrow, §7.3): a source this claim cites was flagged
+        # before and now resolves clean this pass. Never "strengthened" merely
+        # because nothing changed.
+        strengthened_sources = []
+        for sid in sids:
+            bf = ((before_versions.get(sid) or {}).get("flags") or {})
+            af = ((after_versions.get(sid) or {}).get("flags") or {})
+            was_flagged = bf.get("superseded") or bf.get("corrected") or bf.get("retracted")
+            now_clean = not (af.get("superseded") or af.get("corrected") or af.get("retracted"))
+            if was_flagged and now_clean and change_by_source.get(sid) == "unchanged":
+                strengthened_sources.append(sid)
+        if status in _SUPPORTED and strengthened_sources:
+            claim_changes.append({
+                "claim_id": cid,
+                "direction": "strengthened",
+                "rule": "previously_flagged_source_now_resolves_clean",
+                "source_ids": strengthened_sources,
+                "before_evidence_status": status,
+                "after_evidence_status": status,
+                "note": (f"A source this claim cites ({', '.join(strengthened_sources)}) was "
+                         "flagged (superseded/corrected/retracted) before and now resolves clean."),
+            })
+
+    contradiction_changes = []
+    for x in contradictions:
+        xid = _contradiction_id(x)
+        if xid == "?":
+            continue
+        st = x.get("resolution_status") or "unresolved"
+        ref_claim_ids = set(_contradiction_claim_ids(x))
+        touched = sorted({
+            sid for c in claims if c.get("claim_id") in ref_claim_ids
+            for sid in (c.get("source_ids") or [])
+            if change_by_source.get(sid) in _NEGATIVE_CHANGE
+        })
+        if touched:
+            reason = (f"referenced source(s) {', '.join(touched)} changed class this pass; "
+                      "resolution_status is unchanged (recheck does not re-adjudicate contradictions)")
+        else:
+            reason = "no source referenced by this contradiction's claims changed class"
+        contradiction_changes.append({
+            "id": xid, "status_before": st, "status_after": st, "reason": reason,
+        })
+
+    performed = _seal_now()
+    n_not = sum(1 for r in source_changes if r["change_class"] == "not_rechecked")
+    diff = {
+        "schema_version": _RECHECK_SCHEMA_VERSION,
+        "recheck": {
+            "performed_at": performed,
+            "as_of": as_of or performed[:10],
+            "since": _recheck_since(d),
+            "offline": bool(no_retrieve),
+            "cache_dir": str(cache),
+            "adapters_available": list(_RECHECK_ADAPTERS),
+            "sources_considered": len(source_changes),
+            "sources_rechecked": len(source_changes) - n_not,
+            "sources_not_rechecked": n_not,
+        },
+        "source_changes": source_changes,
+        "claim_changes": claim_changes,
+        "contradiction_changes": contradiction_changes,
+        "gate_before": _gate_summary(gate_before),
+        "gate_after": _gate_summary(gate_after),
+        "gate_changed": any(gate_before.get(k) != gate_after.get(k) for k in _GATE_COMPARE_KEYS),
+    }
+    tripwires = _recheck_tripwires(d, change_by_source)
+    if tripwires is not None:
+        diff["tripwires_evaluated"] = tripwires
+    pivotal = _recheck_pivotal(d, [cc["claim_id"] for cc in claim_changes])
+    if pivotal is not None:
+        diff["pivotal_claims_touched"] = pivotal
+    return diff
+
+
+def _refresh_report_md(diff: dict) -> str:
+    """Plain-Markdown mirror of refresh_diff.json — a derived convenience, never a
+    second source of truth."""
+    r = diff.get("recheck") or {}
+    since = r.get("since") or "first check"
+    lines = [f"# What changed since {since}", ""]
+    lines.append(f"- Re-checked {r.get('sources_rechecked', 0)} of "
+                 f"{r.get('sources_considered', 0)} sources"
+                 + (" (offline)" if r.get("offline") else "")
+                 + f", as of {r.get('as_of', '?')}.")
+    gb = (diff.get("gate_before") or {}).get("status")
+    ga = (diff.get("gate_after") or {}).get("status")
+    if diff.get("gate_changed"):
+        lines.append(f"- Quality gate moved: **{gb} → {ga}**.")
+    else:
+        lines.append(f"- Quality gate did not move ({ga}).")
+    lines += ["", "## Sources", ""]
+    for row in diff.get("source_changes") or []:
+        lines.append(f"- `{row['source_id']}` — **{row['change_class']}**: {row['detail']}")
+    if diff.get("claim_changes"):
+        lines += ["", "## Claims", ""]
+        for cc in diff["claim_changes"]:
+            lines.append(f"- `{cc['claim_id']}` — {cc['direction']} ({cc['rule']}): "
+                         f"{', '.join(cc.get('source_ids') or [])}")
+    return "\n".join(lines) + "\n"
+
+
+def _write_quality_gate(d: Path, gate: dict) -> None:
+    """Write 06_quality_gate.json and patch report_data.json's status/review — the
+    shared --write side-effect used by both plain verify and --recheck."""
+    (d / "06_quality_gate.json").write_text(
+        json.dumps(gate, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    rf = d / "report_data.json"
+    if rf.exists():
+        report = json.loads(rf.read_text(encoding="utf-8"))
+        scores = {"coverage": gate["coverage_score"], "traceability": gate["traceability_score"],
+                  "contradiction": gate["contradiction_handling_score"],
+                  "recommendation": gate["recommendation_support_score"]}
+        report.setdefault("status", {})["verdict"] = gate["status"]
+        report["status"]["scores"] = scores
+        report["review"] = {"verdict": gate["status"], "scores": scores,
+                            "blocking": gate["blocking_issues"], "major": gate["major_issues"],
+                            "minor": gate["minor_issues"]}
+        rf.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _run_recheck(d: Path, args) -> int:
+    cache = args.cache or str(d / ".metadata_cache")
+    diff = recheck(d, as_of=args.as_of, no_retrieve=args.offline, cache_dir=cache)
+    r = diff["recheck"]
+    print(f"recheck: {r['sources_rechecked']} of {r['sources_considered']} sources re-checked "
+          f"(as of {r['as_of']}, since {r['since'] or 'first check'})"
+          + (" [offline]" if r["offline"] else ""))
+    tally: dict = {}
+    for row in diff["source_changes"]:
+        tally[row["change_class"]] = tally.get(row["change_class"], 0) + 1
+    for k in ("retracted", "superseded", "corrected", "unavailable", "unchanged", "not_rechecked"):
+        if tally.get(k):
+            print(f"  {k}: {tally[k]}")
+    gb, ga = diff["gate_before"]["status"], diff["gate_after"]["status"]
+    print(f"  quality gate moved: {gb} -> {ga}" if diff["gate_changed"]
+          else f"  quality gate did not move ({ga})")
+
+    if args.write:
+        gate = verify(d)  # == gate_after; source_versions.jsonl already refreshed
+        _write_quality_gate(d, gate)
+        (d / "refresh_diff.json").write_text(
+            json.dumps(diff, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        (d / "refresh_report.md").write_text(_refresh_report_md(diff), encoding="utf-8")
+        print("wrote refresh_diff.json, refresh_report.md, 06_quality_gate.json (after gate)")
+        # 07a re-seal so provenance_manifest.json covers the refreshed artifacts.
+        _run_seal(d)
+
+    if args.strict and diff["gate_after"]["status"] in {"REVISE", "BLOCKED_PENDING_EVIDENCE"}:
+        return 2
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Verify a Storm Council output dir and compute the quality gate.")
     ap.add_argument("output_dir")
     ap.add_argument("--write", action="store_true", help="write 06_quality_gate.json and patch report_data.json")
     ap.add_argument("--strict", action="store_true", help="exit 2 on REVISE / BLOCKED_PENDING_EVIDENCE")
+    ap.add_argument(
+        "--recheck", action="store_true",
+        help="re-resolve every source's publication identity through the shipped "
+             "metadata adapters, re-run verify(), and emit a before/after diff "
+             "(refresh_diff.json under --write). A manual, point-in-time re-check "
+             "of 'what changed since' the brief was written — it schedules nothing "
+             "and watches nothing on its own.")
+    ap.add_argument(
+        "--as-of", dest="as_of", metavar="DATE",
+        help="ISO date (YYYY-MM-DD) recorded as the 'as of' label in refresh_diff.json. "
+             "A label only: it does NOT fetch historical metadata (the adapters cannot "
+             "ask an API what it said on a past date). Defaults to today.")
+    ap.add_argument(
+        "--offline", action="store_true",
+        help="pass no_retrieve=True to the metadata adapters: use only cached "
+             "responses. With an empty cache every source becomes 'not_rechecked' "
+             "(an honest 'we did not check', never 'unchanged').")
+    ap.add_argument(
+        "--cache", dest="cache", metavar="DIR",
+        help="cache dir for adapter responses (default <output_dir>/.metadata_cache). "
+             "Point at a fresh directory to force fresh re-resolution — a stale cache "
+             "returns the old response and would report 'unchanged'.")
     seal_group = ap.add_mutually_exclusive_group()
     seal_group.add_argument(
         "--seal", action="store_true",
@@ -932,6 +1364,9 @@ def main(argv=None) -> int:
     if args.check_seal:
         return _run_check_seal(d)
 
+    if args.recheck:
+        return _run_recheck(d, args)
+
     gate = verify(d)
 
     print(f"verdict: {gate['status']}")
@@ -943,17 +1378,7 @@ def main(argv=None) -> int:
             print(f"  [{sev.split('_')[0]}] {msg}")
 
     if args.write:
-        (d / "06_quality_gate.json").write_text(json.dumps(gate, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        rf = d / "report_data.json"
-        if rf.exists():
-            report = json.loads(rf.read_text(encoding="utf-8"))
-            scores = {"coverage": gate["coverage_score"], "traceability": gate["traceability_score"],
-                      "contradiction": gate["contradiction_handling_score"], "recommendation": gate["recommendation_support_score"]}
-            report.setdefault("status", {})["verdict"] = gate["status"]
-            report["status"]["scores"] = scores
-            report["review"] = {"verdict": gate["status"], "scores": scores,
-                                "blocking": gate["blocking_issues"], "major": gate["major_issues"], "minor": gate["minor_issues"]}
-            rf.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        _write_quality_gate(d, gate)
         print("wrote 06_quality_gate.json and patched report_data.json")
 
     if args.seal:

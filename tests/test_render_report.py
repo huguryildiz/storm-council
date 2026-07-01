@@ -1130,5 +1130,75 @@ class LayerRenderingTest(unittest.TestCase):
         self.assertNotIn("Provenance &amp; integrity", html)
 
 
+class RefreshDiffPanelTest(unittest.TestCase):
+    """07b — the "What changed since" living-brief panel."""
+
+    def _diff(self, *, offline=False, rows=None, gate_changed=True):
+        rows = rows if rows is not None else [
+            {"source_id": "S-004", "change_class": "retracted",
+             "before_status": "PUBLISHED_VERIFIED", "after_status": "RETRACTED",
+             "detected_via": ["crossref", "openalex"], "detail": "A retraction relation is now present."},
+            {"source_id": "S-002", "change_class": "unchanged",
+             "before_status": "PUBLISHED_VERIFIED", "after_status": "PUBLISHED_VERIFIED",
+             "detected_via": ["crossref"], "detail": "Re-resolved via crossref; clean as of this recheck."},
+        ]
+        considered = len(rows)
+        not_rechecked = sum(1 for r in rows if r["change_class"] == "not_rechecked")
+        return {
+            "schema_version": "7.8",
+            "recheck": {"as_of": "2026-08-14", "since": "2026-06-30", "offline": offline,
+                        "sources_considered": considered,
+                        "sources_rechecked": considered - not_rechecked,
+                        "sources_not_rechecked": not_rechecked},
+            "source_changes": rows,
+            "claim_changes": [], "contradiction_changes": [],
+            "gate_before": {"status": "PASS_WITH_CAVEATS"},
+            "gate_after": {"status": "REVISE" if gate_changed else "PASS_WITH_CAVEATS"},
+            "gate_changed": gate_changed,
+        }
+
+    def test_refresh_diff_panel_renders_in_brief(self):
+        html = render_report.build({"title": "A decision", "refresh_diff": self._diff()}, "brief")
+        self.assertIn("What changed since 2026-06-30", html)
+        self.assertIn("2026-08-14", html)  # as_of date
+        self.assertIn("sources re-checked", html)
+
+    def test_refresh_diff_offline_renders_not_rechecked_not_unchanged(self):
+        diff = self._diff(offline=True, gate_changed=False, rows=[
+            {"source_id": "S-001", "change_class": "not_rechecked",
+             "before_status": None, "after_status": None, "detected_via": [],
+             "detail": "Could not be re-verified this pass. The prior status is carried forward, not re-checked."},
+        ])
+        html = render_report.build({"title": "A decision", "refresh_diff": diff}, "all")
+        self.assertIn("could not be re-verified", html.lower())
+        # No confirmation tone for a not_rechecked-only run.
+        self.assertNotIn("confirmed", html.lower())
+        self.assertNotIn("still valid", html.lower())
+        self.assertNotIn('tag done">unchanged', html)  # no calm/positive "unchanged" badge
+
+    def test_refresh_diff_absent_renders_nothing(self):
+        html = render_report.build({"title": "A decision"})
+        self.assertNotIn("What changed since", html)
+        self.assertNotIn("could not be re-verified", html)
+
+    def test_appendix_full_diff_table_lists_every_source_row(self):
+        diff = self._diff(rows=[
+            {"source_id": "S-001", "change_class": "retracted", "before_status": "PUBLISHED_VERIFIED",
+             "after_status": "RETRACTED", "detected_via": ["crossref"], "detail": "x"},
+            {"source_id": "S-002", "change_class": "unchanged", "before_status": "PUBLISHED_VERIFIED",
+             "after_status": "PUBLISHED_VERIFIED", "detected_via": ["crossref"], "detail": "y"},
+            {"source_id": "S-003", "change_class": "not_rechecked", "before_status": None,
+             "after_status": None, "detected_via": [], "detail": "z"},
+        ])
+        html = render_report.build({"title": "A decision", "refresh_diff": diff}, "appendix")
+        for sid in ("S-001", "S-002", "S-003"):  # every row present, not_rechecked never dropped
+            self.assertIn(sid, html)
+
+    def test_refresh_diff_panel_never_says_monitoring(self):
+        html = render_report.build({"title": "A decision", "refresh_diff": self._diff()}, "all")
+        self.assertNotIn("monitoring", html.lower())
+        self.assertNotIn("currently monitoring", html.lower())
+
+
 if __name__ == "__main__":
     unittest.main()

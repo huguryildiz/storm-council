@@ -1,0 +1,75 @@
+{
+  "schema_version": "7.8",
+  "recheck": {
+    "performed_at": "2026-08-14T09:30:00+00:00",
+    "as_of": "2026-08-14",
+    "since": "2026-06-30",
+    "offline": false,
+    "cache_dir": ".metadata_cache",
+    "adapters_available": ["publisher", "crossref", "openalex", "semantic_scholar", "arxiv", "pubmed"],
+    "sources_considered": 9,
+    "sources_rechecked": 7,
+    "sources_not_rechecked": 2
+  },
+  "source_changes": [
+    {
+      "source_id": "S-004",
+      "change_class": "retracted",
+      "before_status": "PUBLISHED_VERIFIED",
+      "after_status": "RETRACTED",
+      "detected_via": ["crossref", "openalex"],
+      "detail": "A retraction relation is now present (via crossref, openalex) that was absent before."
+    },
+    {
+      "source_id": "S-002",
+      "change_class": "unchanged",
+      "before_status": "PUBLISHED_VERIFIED",
+      "after_status": "PUBLISHED_VERIFIED",
+      "detected_via": ["crossref"],
+      "detail": "Re-resolved via crossref; no retraction/correction/supersession relation present. This holds the source is still clean as of this recheck - it does not prove nothing will ever change."
+    },
+    {
+      "source_id": "S-007",
+      "change_class": "not_rechecked",
+      "before_status": "PUBLISHED_VERIFIED",
+      "after_status": "PUBLISHED_VERIFIED",
+      "detected_via": [],
+      "detail": "Could not be re-verified this pass (no resolvable identifier, or every adapter was offline/uncached). The prior status is carried forward, not re-checked."
+    }
+  ],
+  "claim_changes": [
+    {
+      "claim_id": "C-012",
+      "direction": "weakened",
+      "rule": "supported_claim_cites_now_retracted_source",
+      "source_ids": ["S-004"],
+      "before_evidence_status": "supported",
+      "after_evidence_status": "supported",
+      "note": "Cites now-retracted source(s) S-004; verify.py raises this as a new blocking/major issue on recheck (see gate_after). The claim's evidence_status is not auto-edited - a human decides."
+    }
+  ],
+  "contradiction_changes": [
+    {
+      "id": "X-003",
+      "status_before": "unresolved",
+      "status_after": "unresolved",
+      "reason": "no source referenced by this contradiction's claims changed class"
+    }
+  ],
+  "gate_before": {
+    "status": "PASS_WITH_CAVEATS",
+    "coverage_score": 100,
+    "traceability_score": 100,
+    "contradiction_handling_score": 25,
+    "recommendation_support_score": 100
+  },
+  "gate_after": {
+    "status": "REVISE",
+    "coverage_score": 100,
+    "traceability_score": 100,
+    "contradiction_handling_score": 25,
+    "recommendation_support_score": 100
+  },
+  "gate_changed": true,
+  "_schema_notes": "Written by `verify.py --recheck --write`. change_class is a closed enum: not_rechecked | unchanged | retracted | superseded | corrected | unavailable. not_rechecked (nothing was queryable, or every adapter was offline) is decided BEFORE any flag comparison, so a source that could not be reached is NEVER reported 'unchanged'. after_evidence_status always equals before_evidence_status - a recheck never auto-edits 03_claims.jsonl or 04_contradictions.json; it surfaces the conflict through gate_after and a human (or the next full run) decides. No confidence delta is ever fabricated; verify() computes both gates. tripwires_evaluated is present only if 08/decision_tripwires.json exists (omitted, never []); pivotal_claims_touched only if 07c/decision_criticality.json exists. This is a manual, point-in-time re-check ('what changed since'), not monitoring - nothing runs unless invoked."
+}

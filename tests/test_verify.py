@@ -745,5 +745,180 @@ class SealTest(unittest.TestCase):
             self.assertIsNone(manifest["signature"])
 
 
+# --------------------------------------------------------------------------- #
+# 07b — living, re-verifiable brief (verify.py --recheck)
+# --------------------------------------------------------------------------- #
+
+FIXTURES = ROOT / "tests" / "fixtures" / "metadata"
+
+
+class _FakeFetcher:
+    """Maps URL substrings to fixture files (bytes). A None mapping raises
+    OSError (simulating an offline/404 adapter). Unmapped URLs raise too, which
+    cached_json/cached_text catch and log as offline."""
+    def __init__(self, mapping):
+        self.mapping = mapping
+        self.calls = []
+
+    def __call__(self, url, headers=None, timeout=20):
+        self.calls.append(url)
+        for key, fixture in self.mapping.items():
+            if key in url:
+                if fixture is None:
+                    raise OSError("offline or 404")
+                return (FIXTURES / fixture).read_text(encoding="utf-8").encode("utf-8")
+        raise OSError("unexpected URL: " + url)
+
+
+_CLEAN_VERSION = {
+    "source_id": "S-001", "canonical_source_id": "S-001", "duplicate_of": None,
+    "identifiers": {"doi_normalized": "10.5555/retracted.paper"},
+    "publication_identity": {"status": "PUBLISHED_VERIFIED", "retraction_status": "not_retracted"},
+    "flags": {"retracted": False, "superseded": False, "corrected": False, "duplicate_version": False},
+}
+
+_RETRACTED_FETCHER = {
+    "10.5555%2Fretracted.paper": "crossref_retracted.json",
+    "doi.org/10.5555/retracted.paper": "crossref_retracted.json",
+    "openalex.org/works/doi:10.5555%2Fretracted.paper": "openalex_retracted.json",
+}
+
+_CLEAN_FETCHER = {
+    "10.5555%2Fretracted.paper": "crossref_duplicate.json",
+    "doi.org/10.5555/retracted.paper": "crossref_duplicate.json",
+}
+
+
+class RecheckTest(unittest.TestCase):
+    def _bundle(self, base, *, with_prior_versions=None, with_gate=False):
+        _write_run(
+            base,
+            sources=[{"source_id": "S-001", "title": "Paper",
+                      "doi": "10.5555/retracted.paper", "source_type": "peer_reviewed"}],
+            claims=[{"claim_id": "C-001", "perspective": "academic", "claim_text": "A.",
+                     "claim_type": "fact", "evidence_status": "supported",
+                     "source_ids": ["S-001"]}],
+            contradictions=[],
+        )
+        if with_prior_versions is not None:
+            (base / "source_versions.jsonl").write_text(
+                "\n".join(json.dumps(v) for v in with_prior_versions) + "\n", encoding="utf-8")
+        if with_gate:
+            verify_mod._write_quality_gate(base, verify_mod.verify(base))
+
+    def test_recheck_offline_never_reports_unchanged(self):
+        # THE most important assertion of this phase. --offline, fresh cache, a
+        # source WITH a DOI: every row must be not_rechecked, none "unchanged".
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._bundle(base)
+            diff = verify_mod.recheck(base, no_retrieve=True, cache_dir=str(base / "cache"))
+        classes = [r["change_class"] for r in diff["source_changes"]]
+        self.assertTrue(classes)
+        self.assertTrue(all(c == "not_rechecked" for c in classes), classes)
+        self.assertNotIn("unchanged", classes)
+
+    def test_recheck_detects_new_retraction_and_downgrades_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._bundle(base, with_prior_versions=[_CLEAN_VERSION], with_gate=True)
+            gate_before_status = verify_mod.verify(base)["status"]
+            fetcher = _FakeFetcher(_RETRACTED_FETCHER)
+            diff = verify_mod.recheck(base, fetcher=fetcher, cache_dir=str(base / "cache_new"))
+
+        self.assertEqual(len(diff["source_changes"]), 1)
+        self.assertEqual(diff["source_changes"][0]["change_class"], "retracted")
+        weakened = [c for c in diff["claim_changes"] if c["direction"] == "weakened"]
+        self.assertEqual([c["claim_id"] for c in weakened], ["C-001"])
+        self.assertEqual(weakened[0]["source_ids"], ["S-001"])
+        self.assertIn(diff["gate_after"]["status"], {"REVISE", "BLOCKED_PENDING_EVIDENCE"})
+        self.assertNotEqual(diff["gate_after"]["status"], gate_before_status)
+        self.assertTrue(diff["gate_changed"])
+        # verify.py must NOT auto-rewrite the claim's evidence_status.
+        self.assertEqual(weakened[0]["before_evidence_status"],
+                         weakened[0]["after_evidence_status"])
+
+    def test_recheck_unchanged_source_is_explicit_not_implicit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._bundle(base, with_prior_versions=[_CLEAN_VERSION])
+            fetcher = _FakeFetcher(_CLEAN_FETCHER)
+            diff = verify_mod.recheck(base, fetcher=fetcher, cache_dir=str(base / "cache"))
+        row = diff["source_changes"][0]
+        self.assertEqual(row["change_class"], "unchanged")
+        self.assertIn("as of this recheck", row["detail"])
+        self.assertNotIn("permanent", row["detail"].lower())
+
+    def test_recheck_source_with_no_identifier_is_not_rechecked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(
+                base,
+                sources=[{"source_id": "S-001", "title": "No identifier",
+                          "url": "https://example.org/thing", "source_type": "gray"}],
+                claims=[{"claim_id": "C-001", "perspective": "academic", "claim_text": "A.",
+                         "claim_type": "fact", "evidence_status": "supported",
+                         "source_ids": ["S-001"]}],
+                contradictions=[],
+            )
+            diff = verify_mod.recheck(base, no_retrieve=True, cache_dir=str(base / "cache"))
+        self.assertEqual(diff["source_changes"][0]["change_class"], "not_rechecked")
+
+    def test_recheck_missing_prior_gate_computes_before_without_fabrication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._bundle(base)  # no 06_quality_gate.json on disk
+            self.assertFalse((base / "06_quality_gate.json").exists())
+            diff = verify_mod.recheck(base, no_retrieve=True, cache_dir=str(base / "cache"))
+            fresh_status = verify_mod.verify(base)["status"]
+        self.assertIn("status", diff["gate_before"])
+        # gate_before is a real deterministic verify() result, not a fabricated one.
+        self.assertEqual(diff["gate_before"]["status"], fresh_status)
+
+    def test_recheck_writes_source_versions_that_plain_verify_then_reads(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._bundle(base, with_prior_versions=[_CLEAN_VERSION], with_gate=True)
+            fetcher = _FakeFetcher(_RETRACTED_FETCHER)
+            verify_mod.recheck(base, fetcher=fetcher, cache_dir=str(base / "cache_new"))
+            gate = verify_mod.verify(base)  # plain verify, reads refreshed source_versions.jsonl
+        self.assertTrue(any("retracted source S-001" in m for m in gate["blocking_issues"]))
+
+    def test_recheck_omits_tripwire_and_pivotal_keys_when_absent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._bundle(base)
+            diff = verify_mod.recheck(base, no_retrieve=True, cache_dir=str(base / "cache"))
+        self.assertNotIn("tripwires_evaluated", diff)
+        self.assertNotIn("pivotal_claims_touched", diff)
+
+    def test_recheck_write_reseals_bundle(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._bundle(base, with_prior_versions=[_CLEAN_VERSION], with_gate=True)
+            verify_mod.main([str(base), "--write"])  # seal-eligible gate exists
+
+            class _Args:
+                write, strict, offline = True, False, True
+                as_of, cache = None, str(base / "cache")
+            verify_mod._run_recheck(base, _Args())
+
+            self.assertTrue((base / "refresh_diff.json").exists())
+            self.assertTrue((base / "refresh_report.md").exists())
+            rep = verify_mod.check_seal(base)
+        # after re-seal the bundle is byte-consistent with its fresh manifest.
+        self.assertTrue(rep["ok"], rep)
+
+    def test_recheck_help_has_no_monitoring_language(self):
+        import contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), self.assertRaises(SystemExit):
+            verify_mod.main(["--help"])
+        text = buf.getvalue().lower()
+        self.assertIn("--recheck", text)
+        self.assertNotIn("monitoring", text)
+        self.assertNotIn("live", text)
+
+
 if __name__ == "__main__":
     unittest.main()

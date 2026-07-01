@@ -31,6 +31,7 @@ docs/                                  # methodology, safety-and-limitations, cl
 | 6 Adversarial Review | `06_adversarial_review.md`, `06_quality_gate.json` |
 | Final | `report_data.json` → `storm_council_report.html` |
 | Seal (optional) | `provenance_manifest.json` (`verify.py --seal`; integrity, not authenticity) |
+| Recheck (optional) | `refresh_diff.json`, `refresh_report.md` (`verify.py --recheck`; before/after diff, re-seals on `--write`) |
 
 ## ID conventions (enforced by verify.py)
 
@@ -52,6 +53,12 @@ python3 scripts/verify.py <output_dir> --seal
 
 # Later, re-hash and report PASS / ALTERED (offline, no LLM):
 python3 scripts/verify.py <output_dir> --check-seal
+
+# Re-check a finished bundle: re-resolve every source's publication identity and
+# emit a deterministic before/after diff (refresh_diff.json + refresh_report.md).
+# Manual + point-in-time (NOT monitoring); --write re-seals the bundle afterward:
+python3 scripts/verify.py <output_dir> --recheck --write
+python3 scripts/verify.py <output_dir> --recheck --offline   # cache-only, honest "not_rechecked"
 
 # Render the shareable HTML report:
 python3 scripts/render_report.py <output_dir>/report_data.json -o <output_dir>/storm_council_report.html

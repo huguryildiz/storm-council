@@ -94,6 +94,117 @@ def _provenance_html(p) -> str:
     return f'{note}<table class="manifest-table"><tbody>{rows}</tbody></table>{detail}'
 
 
+# 07b: badge tone per change_class. Reuses the EXISTING severity palette (no new
+# color token) so a reader's learned color-vocabulary still applies: open=red
+# (retracted/unavailable), part=amber (superseded/corrected), done=calm (unchanged),
+# kind=neutral (not_rechecked — the honest-uncertainty state, never green/red).
+_REFRESH_BADGE = {
+    "retracted": ("open", "retracted"),
+    "unavailable": ("open", "unavailable"),
+    "superseded": ("part", "superseded"),
+    "corrected": ("part", "corrected"),
+    "unchanged": ("done", "unchanged"),
+    "not_rechecked": ("kind", "not re-checked"),
+}
+
+
+def _refresh_diff_html(diff: dict) -> dict:
+    """Build the three-tier "What changed since" panel bodies from refresh_diff.json.
+
+    Returns {brief, report, appendix} HTML fragments. Honesty rules enforced in the
+    builder, not just copy (07b §9/§10): `not_rechecked` rows never render a
+    confirmation tone; the one-line summary is computed from the JSON counts (never
+    hand-typed prose that could drift); the language is retrospective ("since"),
+    never "monitoring"/"live"."""
+    if not isinstance(diff, dict):
+        return {"brief": "", "report": "", "appendix": ""}
+    rc = diff.get("recheck") or {}
+    changes = diff.get("source_changes") or []
+
+    tally: dict = {}
+    for row in changes:
+        cc = row.get("change_class")
+        tally[cc] = tally.get(cc, 0) + 1
+    parts = []
+    for key, label in (("retracted", "retraction(s) detected"),
+                       ("superseded", "superseded"), ("corrected", "corrected"),
+                       ("unavailable", "no longer available"),
+                       ("unchanged", "re-resolved clean"),
+                       ("not_rechecked", "could not be re-verified")):
+        if tally.get(key):
+            parts.append(f"{tally[key]} {label}")
+    considered = rc.get("sources_considered", len(changes))
+    rechecked = rc.get("sources_rechecked", 0)
+    summary = (f"{rechecked} of {considered} sources re-checked"
+               + (" (offline — cache only)" if rc.get("offline") else "")
+               + " — " + ("; ".join(parts) if parts else "no sources to re-check") + ".")
+
+    gb = (diff.get("gate_before") or {}).get("status") or "?"
+    ga = (diff.get("gate_after") or {}).get("status") or "?"
+    if diff.get("gate_changed"):
+        gate_line = (f'<p class="lead"><b>Quality gate moved: {e(gb)} → {e(ga)}.</b> '
+                     'Re-read the review verdict below.</p>')
+    else:
+        gate_line = f'<p class="lead">Quality gate did not move ({e(ga)}).</p>'
+
+    as_of = rc.get("as_of")
+    stamp = f'<p class="lead">Re-checked as of {e(as_of)}.</p>' if as_of else ""
+    brief = f'{stamp}<p class="lead">{e(summary)}</p>{gate_line}'
+
+    # Report tier — per-claim and per-contradiction effects.
+    report_bits = ""
+    claim_changes = diff.get("claim_changes") or []
+    if claim_changes:
+        items = ""
+        for cc in claim_changes:
+            srcs = ", ".join(cc.get("source_ids") or [])
+            items += ('<li>%s <b>%s</b> — <span class="mono">%s</span> (%s)</li>' % (
+                refs([cc.get("claim_id")]) if cc.get("claim_id") else "",
+                e(cc.get("direction", "")), e(cc.get("rule", "")), e(srcs)))
+        report_bits += ('<p class="lead"><b>Claim effects</b></p>'
+                        f'<ul class="clean">{items}</ul>')
+    cx_changes = [x for x in (diff.get("contradiction_changes") or [])
+                  if "changed class" in str(x.get("reason", ""))]
+    if cx_changes:
+        items = "".join(
+            '<li>%s %s → %s — %s</li>' % (
+                refs([x.get("id")]) if x.get("id") else "",
+                e(x.get("status_before", "")), e(x.get("status_after", "")), e(x.get("reason", "")))
+            for x in cx_changes)
+        report_bits += ('<p class="lead"><b>Contradictions touched</b></p>'
+                        f'<ul class="clean">{items}</ul>')
+
+    # Appendix tier — full per-source table (every row, never truncated).
+    rows = ""
+    for row in changes:
+        cc = row.get("change_class", "")
+        tone, label = _REFRESH_BADGE.get(cc, ("kind", cc or "—"))
+        via = ", ".join(row.get("detected_via") or []) or "—"
+        bstat = row.get("before_status") or "—"
+        astat = row.get("after_status") or "—"
+        rows += ('<tr><td class="mono">%s</td><td><span class="tag %s">%s</span></td>'
+                 '<td>%s → %s</td><td class="mono">%s</td><td>%s</td></tr>' % (
+                     e(row.get("source_id", "")), tone, e(label),
+                     e(bstat), e(astat), e(via), e(row.get("detail", ""))))
+    appendix = ('<table><thead><tr><th>Source</th><th>Change</th><th>Status</th>'
+                '<th>Detected via</th><th>Detail</th></tr></thead>'
+                f'<tbody>{rows}</tbody></table>') if rows else ""
+
+    tw = diff.get("tripwires_evaluated")
+    if isinstance(tw, list) and tw:
+        items = "".join(
+            '<li>%s monitoring %s — %s</li>' % (
+                e(str(t.get("id", ""))), e(str(t.get("monitoring_source", ""))), e(str(t.get("note", ""))))
+            for t in tw)
+        appendix += f'<p class="lead"><b>Tripwires evaluated</b></p><ul class="clean">{items}</ul>'
+    pivotal = diff.get("pivotal_claims_touched")
+    if isinstance(pivotal, list) and pivotal:
+        appendix += ('<p class="lead"><b>Pivotal claims touched:</b> '
+                     + ", ".join(e(str(p)) for p in pivotal) + "</p>")
+
+    return {"brief": brief, "report": report_bits, "appendix": appendix}
+
+
 def build(data: dict, layer: str = "all") -> str:
     if layer not in _LAYERS:
         layer = "all"
@@ -227,6 +338,19 @@ def build(data: dict, layer: str = "all") -> str:
 
     if data.get("bottom_line"):
         sec("Bottom line", '<div class="bottom-line-card"><p>%s</p></div>' % text_refs(data["bottom_line"]), "brief")
+
+    # 07b: "What changed since" panel — rendered only when refresh_diff.json was
+    # folded in. Absent ⇒ nothing (no panel, no placeholder, no "never rechecked"
+    # banner: that would over-claim knowledge about a bundle this phase never touched).
+    rd = data.get("refresh_diff")
+    if isinstance(rd, dict) and rd.get("source_changes") is not None:
+        panels = _refresh_diff_html(rd)
+        since = ((rd.get("recheck") or {}).get("since")) or "first check"
+        sec(f"What changed since {since}", panels["brief"], "brief")
+        if panels["report"]:
+            sec("What changed — claim & contradiction effects", panels["report"], "report")
+        if panels["appendix"]:
+            sec("What changed — full re-check detail", panels["appendix"], "appendix")
 
     if data.get("decision_frame"):
         sec("Decision frame", f'<div class="artifact">{_md_block(data["decision_frame"])}</div>', "appendix")
@@ -674,6 +798,18 @@ def _fold_in_artifacts(data: dict, base: Path, layer: str = "all") -> None:
                 manifest = None
             if isinstance(manifest, dict):
                 data["provenance"] = manifest
+
+    # 07b: fold the living-brief re-check diff when present (additive-optional —
+    # a bundle without refresh_diff.json renders exactly as before).
+    if not data.get("refresh_diff"):
+        f = base / "refresh_diff.json"
+        if f.exists():
+            try:
+                diff = json.loads(f.read_text(encoding="utf-8"))
+            except ValueError:
+                diff = None
+            if isinstance(diff, dict):
+                data["refresh_diff"] = diff
 
     if want_appendix and not data.get("evidence_plan"):
         f = base / "03_evidence_plan.md"
