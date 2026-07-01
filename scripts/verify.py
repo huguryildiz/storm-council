@@ -55,6 +55,10 @@ _SUPPORTED = {"supported", "partially_supported"}
 _RETRACTED = {"retracted"}
 _DOWNGRADED_STATUS = {"superseded", "corrected", "duplicate_version"}
 
+# Source provenance classes (schema §7.3). A run's own search/retrieval log is
+# `run_log` — provenance for what was queried, never external support for a claim.
+_SOURCE_CLASSES = {"peer_reviewed", "preprint", "official", "gray", "run_log"}
+
 # Content verification statuses (schema v2).
 _DIRECT = "direct_support"
 _VERDICT_VALUES = {"entails", "partial", "does_not_entail", "uncertain"}
@@ -168,6 +172,15 @@ def _full_text_status(s: dict) -> str:
     acc = s.get("access") if isinstance(s.get("access"), dict) else {}
     val = _source_field({**s, **acc}, "full_text_status")
     return val.lower()
+
+
+def _source_class(s: dict) -> str:
+    """Return the source's provenance class. An unknown or missing class
+    defaults to ``gray`` — never ``peer_reviewed`` — so a backfill gap can only
+    ever weaken a source's standing, and an old registry that omits the field is
+    read as ordinary (gray) support, not blocked."""
+    val = _source_field(s, "source_class").lower()
+    return val if val in _SOURCE_CLASSES else "gray"
 
 
 def _claim_full_text_status(c: dict, sources_by_id: dict) -> str:
@@ -401,6 +414,19 @@ def verify(d: Path) -> dict:
         for sid in c.get("source_ids", []) if sid in low_set
     ]
 
+    # A run's own retrieval/search log (source_class == run_log) records what was
+    # queried; it is not independent support. A supported claim whose *only*
+    # sources are run_log therefore has no external evidence behind it — major.
+    # Missing source_class defaults to gray, so pre-Phase-3 registries never trip
+    # this (back-compat: absence is never turned into a blocking/major issue).
+    run_log_only_support = [
+        c.get("claim_id", "?")
+        for c in claims
+        if c.get("evidence_status") in _SUPPORTED
+        for sids in [[sid for sid in c.get("source_ids", []) if sid in sources_by_id]]
+        if sids and all(_source_class(sources_by_id[sid]) == "run_log" for sid in sids)
+    ]
+
     # placeholder / unverifiable URLs
     placeholder_src = {s.get("source_id") for s in sources
                        if is_placeholder_url(s.get("url"))}
@@ -601,6 +627,10 @@ def verify(d: Path) -> dict:
         major.append("Unsupported strong claims: " + "; ".join(unsupported_strong))
     if supported_on_low:
         major.append("Supported claims depend on low-credibility sources: " + "; ".join(supported_on_low))
+    if run_log_only_support:
+        major.append(
+            "Supported claims rest only on run-log provenance (no external source): "
+            + ", ".join(run_log_only_support))
     if (options or actions) and recommendation < 50:
         major.append(f"Recommendations weakly justified (support score {recommendation}).")
 

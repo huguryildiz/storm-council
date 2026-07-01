@@ -414,7 +414,9 @@
       "recommendation": 100
     },
     "blocking": [],
-    "major": [],
+    "major": [
+      "Supported claims rest only on run-log provenance (no external source): C-026"
+    ],
     "minor": [
       "Verdicts not individually reasoned: 43 evidence verdicts share one identical rationale (verification may be rubber-stamping).",
       "Open contradictions remain for human review: X-002, X-005, X-007, X-008",

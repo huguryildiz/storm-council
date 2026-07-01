@@ -89,8 +89,11 @@ Register every source once in `03_source_registry.csv` and `03_sources.bib`
 using the source shape: `source_id`, `title`, `author/publisher`, `year`,
 `url`, `source_type`, identifiers (`doi`, `arxiv_id`, …), a publication
 `status` (`PUBLISHED_VERIFIED` / `PREPRINT_VERIFIED` / `RETRACTED` /
-`SUPERSEDED` / …), a `full_text_status`, and a `credibility` note. Claims
-reference sources **only by ID**.
+`SUPERSEDED` / …), a `full_text_status`, a `source_class`
+(`peer_reviewed` / `preprint` / `official` / `gray` / `run_log`; a run's own
+search/retrieval log is `run_log` and never counts as external support for a
+claim — default an unknown class to `gray`, never `peer_reviewed`), and a
+`credibility` note. Claims reference sources **only by ID**.
 
 **Hard rules:**
 - **Never fake retrieval.** Only mark a claim `supported` if a tool actually

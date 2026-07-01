@@ -362,6 +362,36 @@ class RenderReportTest(unittest.TestCase):
         self.assertIn("active", html)
         self.assertIn("full_text", html)
 
+    def test_abstract_only_badge_renders(self):
+        # Phase 3: source_class + abstract-only render as badges in the source list.
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            (base / "03_source_registry.csv").write_text(
+                "source_id,title,authors,year,venue,publisher,source_type,url,doi,arxiv_id,"
+                "publication_status,full_text_status,source_class,credibility_notes,relevance_notes\n"
+                "S-001,Robot Tax,A. Author,2022,RESTUD,OUP,peer_reviewed,https://example.test,"
+                "10.1000/test,,active,abstract_only,peer_reviewed,Bot-challenged,Formal model\n"
+                "S-002,Run log,Storm Council,2026,Run evidence,Local,primary,,,,active,full_text,"
+                "run_log,Run-local audit,Retrieval log\n",
+                encoding="utf-8",
+            )
+            data = {"title": "A decision",
+                    "sources": [{"id": "S-001", "title": "Robot Tax"},
+                                {"id": "S-002", "title": "Run log"}]}
+            render_report._enrich_source_urls(data, base)
+
+        html = render_report.build(data)
+        self.assertIn("abstract-only", html)
+        self.assertIn("peer-reviewed", html)
+        self.assertIn("run log", html)
+
+    def test_source_without_class_renders_no_class_badge(self):
+        # Back-compat: a source with no source_class shows no provenance badge.
+        html = render_report.build(
+            {"title": "A decision", "sources": [{"id": "S-001", "title": "Paper"}]})
+        self.assertNotIn("gray literature", html)
+        self.assertNotIn("abstract-only", html)
+
     def test_argument_map_renders_inline_svg_with_links(self):
         mmd = (
             "flowchart TD\n"

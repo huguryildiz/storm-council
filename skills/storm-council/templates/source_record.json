@@ -7,6 +7,7 @@
   "publisher": "Publisher / venue or null",
   "publication_date": "YYYY-MM-DD or null",
   "source_type": "primary|peer_reviewed|government|standards|industry|news|blog|other",
+  "source_class": "peer_reviewed|preprint|official|gray|run_log",
   "url": "https://… or null",
   "identifiers": {
     "doi_raw": "10.xxxx/xxxxx or null",

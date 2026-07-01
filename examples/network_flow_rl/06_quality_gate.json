@@ -1,7 +1,9 @@
 {
   "status": "PASS_WITH_CAVEATS",
   "blocking_issues": [],
-  "major_issues": [],
+  "major_issues": [
+    "Supported claims rest only on run-log provenance (no external source): C-012"
+  ],
   "minor_issues": [
     "Verdicts not individually reasoned: 48 evidence verdicts share one identical rationale (verification may be rubber-stamping).",
     "Open contradictions remain for human review: X-002, X-004, X-006, X-008",
@@ -12,5 +14,5 @@
   "traceability_score": 100,
   "contradiction_handling_score": 25,
   "recommendation_support_score": 100,
-  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 0 major, 4 minor (computed by verify.py over 28 claims, 9 sources, 20 evidence records, 48 evidence verdicts, 8 contradictions)."
+  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 1 major, 4 minor (computed by verify.py over 28 claims, 9 sources, 20 evidence records, 48 evidence verdicts, 8 contradictions)."
 }

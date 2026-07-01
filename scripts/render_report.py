@@ -1231,6 +1231,30 @@ def _source_identity_badges(src: dict) -> str:
     return " ".join(badges)
 
 
+_SOURCE_CLASS_LABELS = {
+    "peer_reviewed": "peer-reviewed",
+    "preprint": "preprint",
+    "official": "official",
+    "gray": "gray literature",
+    "run_log": "run log",
+}
+
+
+def _source_class_badges(src: dict) -> str:
+    """Badge a source's provenance class and an abstract-only access status.
+    Rendered only when the fields are present, so pre-Phase-3 reports (which omit
+    them) stay unchanged. ``run_log`` and ``abstract_only`` get an amber tone to
+    signal weaker standing; the other classes are neutral."""
+    badges = []
+    klass = (src.get("source_class") or "").strip().lower()
+    if klass in _SOURCE_CLASS_LABELS:
+        tone = "part" if klass == "run_log" else "kind"
+        badges.append(f'<span class="tag {tone}">{e(_SOURCE_CLASS_LABELS[klass])}</span>')
+    if (src.get("full_text_status") or "").strip().lower() == "abstract_only":
+        badges.append('<span class="tag part">abstract-only</span>')
+    return " ".join(badges)
+
+
 def _verdicts_by_evidence(verdicts) -> dict:
     by_evidence: dict = {}
     if not isinstance(verdicts, list):
@@ -2319,7 +2343,7 @@ def build(data: dict, layer: str = "all") -> str:
                         val_html = text_refs(val)
                     meta_bits.append(f"<span>{label_name}: {val_html}</span>")
             source_meta = f'<span class="source-meta">{"".join(meta_bits)}</span>' if meta_bits else ""
-            identity = _source_identity_badges(s)
+            identity = " ".join(b for b in (_source_class_badges(s), _source_identity_badges(s)) if b)
             identity_html = (" " + identity) if identity else ""
             items += ('<li id="ref-%s"><span class="sid">%s</span> %s <span class="ty">· %s</span>%s%s</li>' % (
                 e(sid), e(sid), display, e(s.get("type", "")), identity_html, note + source_meta))
@@ -2427,8 +2451,8 @@ def _enrich_source_urls(data: dict, base: Path) -> None:
                 s["type"] = ty
         for key in (
             "authors", "year", "venue", "doi", "arxiv_id", "publication_status",
-            "full_text_status", "publisher", "publication_date", "accessed_at",
-            "credibility_notes", "relevance_notes",
+            "full_text_status", "source_class", "publisher", "publication_date",
+            "accessed_at", "credibility_notes", "relevance_notes",
         ):
             val = (row.get(key) or "").strip()
             if val and val.lower() != "null" and not s.get(key):

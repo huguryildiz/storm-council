@@ -25,7 +25,7 @@ def _write_run(base: Path, *, claims=None, sources=None, contradictions=None,
         buf = io.StringIO()
         cols = ["source_id", "title", "url", "publisher", "publication_date",
                 "source_type", "accessed_at", "credibility_notes", "relevance_notes",
-                "doi", "full_text_status", "publication_status"]
+                "doi", "full_text_status", "publication_status", "source_class"]
         w = csv.DictWriter(buf, fieldnames=cols)
         w.writeheader()
         for s in sources:
@@ -488,6 +488,77 @@ class AntiRubberStampTest(unittest.TestCase):
                                  for m in gate["minor_issues"]))
             self.assertFalse(any("did not push back" in m.lower()
                                  for m in gate["minor_issues"]))
+
+
+class SourceClassIntegrityTest(unittest.TestCase):
+    """Phase 3: a run's own retrieval log is not interchangeable with external
+    evidence at the support layer."""
+
+    def test_run_log_only_support_is_major(self):
+        # A supported claim whose only source is a run_log ⇒ major (never blocking).
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(
+                base,
+                claims=[{"claim_id": "C-001", "perspective": "skeptic",
+                         "claim_text": "Live queries returned no production RL replacement.",
+                         "claim_type": "fact", "evidence_status": "supported",
+                         "source_ids": ["S-009"]}],
+                sources=[{"source_id": "S-009", "title": "Run query log",
+                          "url": "", "source_type": "primary",
+                          "source_class": "run_log", "credibility_notes": "run-local audit"}],
+                contradictions=[],
+            )
+            gate = verify_mod.verify(base)
+            self.assertTrue(any("run-log provenance" in m and "C-001" in m
+                                for m in gate["major_issues"]))
+            self.assertEqual(gate["blocking_issues"], [])
+
+    def test_missing_source_class_is_not_run_log_only(self):
+        # Back-compat: a registry with no source_class must never trip the gate.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(
+                base,
+                claims=[{"claim_id": "C-001", "perspective": "academic",
+                         "claim_text": "Solvers are mature.", "claim_type": "fact",
+                         "evidence_status": "supported", "source_ids": ["S-001"]}],
+                sources=[{"source_id": "S-001", "title": "OR-Tools",
+                          "url": "https://developers.google.com/optimization",
+                          "source_type": "industry", "credibility_notes": "Official docs"}],
+                contradictions=[],
+            )
+            gate = verify_mod.verify(base)
+            self.assertFalse(any("run-log provenance" in m for m in gate["major_issues"]))
+
+    def test_run_log_plus_external_source_is_clean(self):
+        # A supported claim also citing a real source is not run-log-only.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(
+                base,
+                claims=[{"claim_id": "C-001", "perspective": "academic",
+                         "claim_text": "Result holds.", "claim_type": "fact",
+                         "evidence_status": "supported", "source_ids": ["S-001", "S-009"]}],
+                sources=[{"source_id": "S-001", "title": "Paper",
+                          "url": "https://arxiv.org/abs/2004.11986",
+                          "source_type": "peer_reviewed", "source_class": "peer_reviewed",
+                          "credibility_notes": "ok"},
+                         {"source_id": "S-009", "title": "Run log", "url": "",
+                          "source_type": "primary", "source_class": "run_log",
+                          "credibility_notes": "run-local audit"}],
+                contradictions=[],
+            )
+            gate = verify_mod.verify(base)
+            self.assertFalse(any("run-log provenance" in m for m in gate["major_issues"]))
+
+    def test_committed_examples_stay_pass_with_caveats(self):
+        # The backfilled example bundles raise the run-log-only major but the
+        # verdict tier must remain PASS_WITH_CAVEATS.
+        for name in ("network_flow_rl", "ai_jobs_policy"):
+            gate = verify_mod.verify(ROOT / "examples" / name)
+            self.assertEqual(gate["status"], "PASS_WITH_CAVEATS", name)
+            self.assertTrue(any("run-log provenance" in m for m in gate["major_issues"]), name)
 
 
 if __name__ == "__main__":
