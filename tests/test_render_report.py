@@ -107,14 +107,18 @@ class RenderReportTest(unittest.TestCase):
             }
         )
 
-        self.assertIn('class="lens-radar"', html)
+        # A5: the numeric radar and per-lens 0–1 decimals are gone; a qualitative
+        # posture list remains (tone dot + stance, no numbers, no chart).
+        self.assertIn('class="lens-posture"', html)
+        self.assertNotIn('<div class="lens-radar"', html)
+        self.assertNotIn('<svg class="lens-radar-chart"', html)
         self.assertIn("Lens posture snapshot", html)
         self.assertIn("Skeptic pressure is high; hybrid support remains bounded.", html)
-        self.assertIn("0 low emphasis · 1 high emphasis", html)
+        self.assertNotIn("0.91", html)  # invented per-lens intensity is gone
         self.assertIn("Academic", html)
         self.assertIn("production caution", html)
-        self.assertIn("This is a council posture map, not a quality score.", html)
-        self.assertLess(html.index('class="lens-radar"'), html.index("<table>"))
+        self.assertIn("This is a qualitative council posture map, not a quality score.", html)
+        self.assertLess(html.index('class="lens-posture"'), html.index("<table>"))
 
     def test_claim_refs_render_as_clickable_chips(self):
         html = render_report.build(
@@ -863,7 +867,8 @@ class RenderReportTest(unittest.TestCase):
 
         nums = re.findall(r'<span class="num">(\d+)</span>', html)
         self.assertEqual(nums, [f"{i:02d}" for i in range(1, len(nums) + 1)])
-        self.assertEqual(len(nums), 10)
+        # A7 adds an appendix "Lens charters — full" section (10 -> 11 in --layer all).
+        self.assertEqual(len(nums), 11)
 
     def test_evidence_registry_renders_locators_and_excerpts(self):
         html = render_report.build(
@@ -1348,11 +1353,16 @@ class LayerRenderingTest(unittest.TestCase):
         self.assertIn("basis not recorded", without_basis)
 
     def test_kpi_copy_no_calibration_claim(self):
-        html = render_report.build(self._rich_data(), "report")
+        # A4: per-claim confidence decimals and the KPI explainer live in the
+        # appendix / --layer all only; the reader path carries neither.
+        html = render_report.build(self._rich_data(), "all")
         # The confidence KPI must explicitly disclaim calibration rather than let
         # a bare 2-decimal number read as a calibrated probability.
         self.assertIn("not a calibrated probability", html)
         self.assertIn("basis", html)
+        report_html = render_report.build(self._rich_data(), "report")
+        self.assertNotIn("not a calibrated probability", report_html)
+        self.assertNotIn("⚡", report_html)
 
     # --- 07a provenance seal ------------------------------------------------- #
     _PROVENANCE = {
@@ -1617,7 +1627,10 @@ class ResolutionPlanRenderTest(unittest.TestCase):
         html = render_report.build(self._data({
             "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved",
                       "resolution_plan": self._plan()}}))
-        self.assertIn("How to resolve this", html)
+        # A6 dedup: the plan prints once, under "What would settle them" — not also
+        # inline in the row detail ("How to resolve this").
+        self.assertNotIn("How to resolve this", html)
+        self.assertIn("What would settle them", html)
         self.assertIn("head_to_head_benchmark", html)
         self.assertIn("Effort: medium", html)
         self.assertIn("Might flip the decision", html)

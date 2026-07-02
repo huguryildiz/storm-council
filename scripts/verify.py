@@ -106,6 +106,14 @@ _VERDICT_VALUES = {"entails", "partial", "does_not_entail", "uncertain"}
 _SCOPE_VERDICT_VALUES = {"yes", "narrowed", "overclaimed", "uncertain"}
 _JUDGE_TYPES = {"llm_assisted", "human"}
 _SOURCE_ACCESS_VALUES = {"full_text", "abstract_only", "metadata_only"}
+# A support packet that declares full_text access but stores a passage shorter
+# than this is really a snippet/abstract excerpt, not a claim-length full text.
+# Kept in sync with the renderer's relabel threshold (scripts/report/layers/
+# evidence.py:_FULL_TEXT_MIN_CHARS). Advisory only — never blocks.
+_FULL_TEXT_MIN_CHARS = 1000
+# Rate-limit / throttling signatures a retrieval_log error string may carry.
+_RATE_LIMIT_TOKENS = ("429", "too many requests", "rate limit", "ratelimit",
+                      "quota", "throttl")
 
 # A locator is satisfied by any one of these (evidence record or inline).
 _LOCATOR_KEYS = ("page", "section", "subsection", "table", "figure",
@@ -808,6 +816,129 @@ def _tripwire_minor_issues(tripwires, claim_ids: set, src_ids: set, report: dict
 
 
 # --------------------------------------------------------------------------- #
+# Workflow-honesty advisories (Phase B2) — all MINOR, computed from artifacts,
+# never hand-set scores and never blocking. Each fires only when its own data is
+# present, so pre-Phase-B bundles see no change to their verdict.
+# --------------------------------------------------------------------------- #
+
+def _full_text_over_snippet_issues(support_packets: list) -> list:
+    """B2.1 — a packet declaring full_text access whose stored quoted passage is
+    shorter than a claim-length full text. Catches snippets labeled full_text."""
+    out = []
+    for p in support_packets:
+        if not isinstance(p, dict):
+            continue
+        if (p.get("source_access") or "").lower() != "full_text":
+            continue
+        quote = p.get("quoted_passage")
+        if isinstance(quote, str) and 0 < len(quote) < _FULL_TEXT_MIN_CHARS:
+            out.append(_packet_label(p))
+    if not out:
+        return []
+    return [
+        "full_text labeled over snippet-length passages (packets "
+        + ", ".join(sorted(out))
+        + f"): each stores under {_FULL_TEXT_MIN_CHARS} chars — mark abstract_only "
+        "or store the claim-length passage."
+    ]
+
+
+_ID_TOKEN_RE = re.compile(r"\b[A-Z]-\d+\b")
+_NUM_TOKEN_RE = re.compile(r"\d+")
+
+
+def _normalize_rationale(text: str) -> str:
+    """Collapse ID / number tokens so verdicts that differ only by which C-/P-/E-
+    they name normalize to one template string."""
+    t = _ID_TOKEN_RE.sub("#", text)
+    t = _NUM_TOKEN_RE.sub("#", t)
+    return " ".join(t.split()).lower()
+
+
+def _templated_verdict_issue(verdicts: list, identical_max_repeat: int) -> str | None:
+    """B2.2 — verdict rationales that are byte-different but structurally one
+    template (vary only by the claim/packet ID). Fires only when the plain
+    identical-rationale check (≥3 identical) did NOT already catch it, so the two
+    advisories never double-report the same wording."""
+    if identical_max_repeat >= 3:
+        return None
+    counts: dict = {}
+    for v in verdicts:
+        r = v.get("rationale")
+        if isinstance(r, str) and r.strip():
+            key = _normalize_rationale(r)
+            counts[key] = counts.get(key, 0) + 1
+    worst = max(counts.values(), default=0)
+    if worst >= 3:
+        return (
+            f"Entailment verdicts are templated: {worst} rationales differ only by "
+            "the IDs they name — per-claim reasoning is not evidenced.")
+    return None
+
+
+_RECOMMENDATION_SELF_MARKS = (
+    "not quoted", "not a quote", "brief's recommendation", "briefs recommendation",
+    "recommendation, not", "synthesis judgement", "synthesis judgment",
+    "author's recommendation", "authors recommendation",
+)
+
+
+def _recommendation_overreach_issues(claims: list) -> list:
+    """B2.3 — a recommendation-type claim carrying direct_support while its own
+    limitations admit the support is the brief's recommendation, not a quoted
+    finding. The evidence is being stretched across a clause it doesn't cover."""
+    out = []
+    for c in claims:
+        if not isinstance(c, dict):
+            continue
+        if c.get("claim_type") != "recommendation":
+            continue
+        cv = c.get("content_verification") if isinstance(c.get("content_verification"), dict) else {}
+        if (cv.get("status") or "").lower() != _DIRECT:
+            continue
+        lim = c.get("limitations")
+        lim_text = lim if isinstance(lim, str) else " ".join(map(str, lim)) if isinstance(lim, list) else ""
+        low = lim_text.lower()
+        if any(mark in low for mark in _RECOMMENDATION_SELF_MARKS):
+            out.append(c.get("claim_id", "?"))
+    if not out:
+        return []
+    return [
+        "Recommendation claims marked direct_support but self-described as the "
+        "brief's recommendation (not a quoted finding): " + ", ".join(sorted(out))
+        + " — downgrade to indirect_support or reframe."
+    ]
+
+
+def _retrieval_coverage(d: Path) -> tuple[bool, str | None]:
+    """B2.4 — inspect retrieval_log.jsonl (written by metadata_adapters). Returns
+    (retrieval_partial, advisory). Partial when the log shows a rate-limit/throttle
+    error, or when live retrieval effectively terminated on a single success while
+    other attempts failed. Absent log ⇒ (False, None), never an error."""
+    rows = _read_jsonl(d / "retrieval_log.jsonl")
+    if not rows:
+        return False, None
+    live = [r for r in rows if isinstance(r, dict) and not r.get("offline")]
+    rate_limited = any(
+        isinstance(r.get("error"), str)
+        and any(tok in r["error"].lower() for tok in _RATE_LIMIT_TOKENS)
+        for r in rows if isinstance(r, dict)
+    )
+    successes = [r for r in live if not r.get("error")]
+    failures = [r for r in live if r.get("error")]
+    thin_success = bool(failures) and len(successes) <= 1
+    if rate_limited:
+        return True, ("Retrieval was rate-limited (retrieval_log shows a "
+                      "429/throttle) — coverage is partial; treat absence claims "
+                      "as run-scoped, not established gaps.")
+    if thin_success:
+        return True, ("Retrieval coverage is thin: live search returned at most "
+                      "one success alongside failures — treat absence claims as "
+                      "run-scoped, not established gaps.")
+    return False, None
+
+
+# --------------------------------------------------------------------------- #
 # Verification
 # --------------------------------------------------------------------------- #
 
@@ -920,6 +1051,9 @@ def verify(d: Path) -> dict:
         minor.append(
             f"Verdicts not individually reasoned: {max_repeat} evidence verdicts share "
             "one identical rationale (verification may be rubber-stamping).")
+    templated_issue = _templated_verdict_issue(verdicts, max_repeat)
+    if templated_issue:
+        minor.append(templated_issue)
 
     # --- lens independence: output convergence (Phase 5) ------------------- #
     # run_manifest.json can *assert* independent lens contexts; this reads the
@@ -1270,6 +1404,15 @@ def verify(d: Path) -> dict:
     minor += _resolution_plan_minor_issues(
         contradictions, claim_ids, pivotal_ids, tripwire_ids, dc_doc is not None)
 
+    # --- workflow-honesty advisories (Phase B2) ----------------------------- #
+    # Minor-only, each gated on its own artifact. retrieval_partial is also
+    # returned as a machine field so the renderer's integrity line can surface it.
+    minor += _full_text_over_snippet_issues(support_packets)
+    minor += _recommendation_overreach_issues(claims)
+    retrieval_partial, retrieval_issue = _retrieval_coverage(d)
+    if retrieval_issue:
+        minor.append(retrieval_issue)
+
     # --- verdict ------------------------------------------------------------ #
     if evidence_absent:
         verdict = "BLOCKED_PENDING_EVIDENCE"
@@ -1293,6 +1436,7 @@ def verify(d: Path) -> dict:
         "argument_support_status": argument_support_status,
         "contradiction_handling_score": contradiction_handling,
         "recommendation_support_score": recommendation,
+        "retrieval_partial": retrieval_partial,
         "review_summary": f"{verdict} — {len(blocking)} blocking, {len(major)} major, {len(minor)} minor "
                           f"(computed by verify.py over {len(claims)} claims, {len(sources)} sources, "
                           f"{len(evidence)} evidence records, {len(support_packets)} support packets, "
@@ -1861,6 +2005,7 @@ def _write_quality_gate(d: Path, gate: dict) -> None:
         report["status"]["scores"] = scores
         report["review"] = {"verdict": gate["status"], "scores": scores,
                             "argument_support_status": gate["argument_support_status"],
+                            "retrieval_partial": gate.get("retrieval_partial", False),
                             "blocking": gate["blocking_issues"], "major": gate["major_issues"],
                             "minor": gate["minor_issues"]}
         rf.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

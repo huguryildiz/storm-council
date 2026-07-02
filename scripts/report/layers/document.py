@@ -15,7 +15,7 @@ from report.layers.argument_map import _argument_map_interactive_html
 from report.layers.claims import _claims_table_html
 from report.layers.deliberation import _claim_effects_from_deliberation, _cx_detail_html, _deliberation_html, _resolution_plan_inner, _run_manifest_html
 from report.layers.evidence import _evidence_table_html
-from report.layers.lenses import _evidence_plan_html, _lens_charters_html, _lens_snapshot_html
+from report.layers.lenses import _evidence_plan_html, _lens_charter_table_html, _lens_charters_html, _lens_snapshot_html
 
 
 CSS = (Path(__file__).resolve().parent.parent / "styles.css").read_text(encoding="utf-8")
@@ -339,6 +339,78 @@ def _tripwires_html(tripwires) -> str:
     )
 
 
+# --- A6/A1/A2: contradiction resolution status (shared) --------------------- #
+# A disagreement counts as *resolved* (a condition of validity, folded near the
+# synthesis) when its resolution status is anything but genuinely unresolved.
+_CX_RESOLVED_STATES = {"resolved", "partially_resolved", "closed", "mitigated", "credited"}
+
+
+def _cx_resolution_status(c: dict, cdetail: dict) -> str:
+    """Best available resolution status for a contradiction: the detail record's
+    ``resolution_status`` wins, else the summary row's ``status``."""
+    det = cdetail.get(c.get("id")) if isinstance(cdetail, dict) else None
+    if isinstance(det, dict) and det.get("resolution_status"):
+        return str(det.get("resolution_status")).lower()
+    return str(c.get("status") or "").lower()
+
+
+def _cx_is_open(c: dict, cdetail: dict) -> bool:
+    """A disagreement is *open* (it decides the paper) only when it is genuinely
+    unresolved; resolved / partially-resolved records are conditions of validity."""
+    return _cx_resolution_status(c, cdetail) not in _CX_RESOLVED_STATES
+
+
+def _integrity_line_html(data: dict) -> str:
+    """Plain-language referential-integrity line for the reader path (A1).
+
+    Replaces the five 100-point gauges above the fold — those measure bookkeeping
+    integrity, not research quality. States only what is honestly derivable from
+    the artifacts: claim traceability and how many logged disagreements are still
+    open. It never asserts a retrieval- or domain-coverage claim the renderer
+    cannot substantiate."""
+    claims = [c for c in (data.get("claims") or []) if isinstance(c, dict)]
+    cons = [c for c in (data.get("contradictions") or []) if isinstance(c, dict)]
+    cdetail = data.get("contradiction_detail") or {}
+    parts: list = []
+    if claims:
+        n = len(claims)
+        traced = sum(1 for c in claims if c.get("source_ids"))
+        parts.append(f"All {n} claims trace to a source" if traced >= n
+                     else f"{traced} of {n} claims trace to a source")
+    if cons:
+        k = len(cons)
+        open_n = sum(1 for c in cons if _cx_is_open(c, cdetail))
+        parts.append(f"{open_n} of {k} disagreements open")
+    # B2.4: verify.py sets review.retrieval_partial when the retrieval_log shows a
+    # rate-limit / thin-coverage run. Only surfaced when the machine field is true —
+    # the renderer never infers it from prose.
+    review = data.get("review") if isinstance(data.get("review"), dict) else {}
+    if review.get("retrieval_partial"):
+        parts.append("retrieval partial")
+    if not parts:
+        return ""
+    return '<p class="integrity-line">' + e(" · ".join(parts)) + "</p>"
+
+
+def _contradiction_howto_item(data: dict, scores: dict) -> str:
+    """A2: the contradiction-score reading note branches on whether disagreements
+    were actually logged. The "50 = no data" wording is only honest when zero were
+    logged; once the ledger has entries, describe how they were handled."""
+    cons = [c for c in (data.get("contradictions") or []) if isinstance(c, dict)]
+    if not cons:
+        return ("<b>A Contradiction score of 50 means no contradictions were logged</b> "
+                "— a neutral \"no data\" reading, not a penalty. It only drops toward 0 "
+                "when logged contradictions are left unresolved.")
+    cdetail = data.get("contradiction_detail") or {}
+    k = len(cons)
+    open_n = sum(1 for c in cons if _cx_is_open(c, cdetail))
+    credited = k - open_n
+    return ("<b>The Contradiction score is not a quality grade.</b> This run logged "
+            f"{k} disagreement{'s' if k != 1 else ''}; {credited} of {k} "
+            f"{'are' if credited != 1 else 'is'} credited as resolved and {open_n} "
+            f"remain open for human review — kept on the record, not forced to a verdict.")
+
+
 def build(data: dict, layer: str = "all") -> str:
     if layer not in _LAYERS:
         layer = "all"
@@ -408,7 +480,10 @@ def build(data: dict, layer: str = "all") -> str:
         cls = _STATUS_CLASS.get(str(st.get("level", "")).lower(), "")
         verdict = st.get("verdict", "")
         srow = ""
-        if scores:
+        # A1: the five 100-point gauges measure referential integrity, not research
+        # quality. Keep them only in the appendix / --layer all; the reader path gets
+        # a plain-language integrity line instead.
+        if scores and _layer_visible(layer, "appendix"):
             def _verdict_badge_cls(v):
                 vl = str(v).upper()
                 if vl == "PASS": return "vb-pass"
@@ -450,15 +525,17 @@ def build(data: dict, layer: str = "all") -> str:
                     e(str(c.get("tone", "")).lower()), e(c.get("value", "")), e(c.get("label", "")))
                 for c in checks)
             crow = f'<div class="checks">{chips}</div>'
-        a('<div class="status %s"><span class="pill">%s</span><b>%s</b><p>%s</p>%s%s</div>' % (
-            cls, e(st.get("pill", "STATUS")), e(st.get("headline", "")), text_refs(st.get("detail", "")), crow, srow))
+        integrity_html = "" if _layer_visible(layer, "appendix") else _integrity_line_html(data)
+        a('<div class="status %s"><span class="pill">%s</span><b>%s</b><p>%s</p>%s%s%s</div>' % (
+            cls, e(st.get("pill", "STATUS")), e(st.get("headline", "")), text_refs(st.get("detail", "")),
+            crow, srow, integrity_html))
 
     howto = data.get("how_to_read") or [
         "<b>The panel is author-constructed.</b> Where the lenses agree, treat it as a strong hypothesis, not independent proof.",
         "<b>Confidence (0.0-1.0) is separate from evidence status.</b> A high-confidence forecast is still a forecast.",
         "<b>Fact, inference, and recommendation are labelled separately.</b>",
         "<b>Disagreements are kept on the record</b>, not resolved by force.",
-        "<b>A Contradiction score of 50 means no contradictions were logged</b> — a neutral \"no data\" reading, not a penalty. It only drops toward 0 when logged contradictions are left unresolved.",
+        _contradiction_howto_item(data, scores),
     ]
     a('<div class="howto"><h3>How to read this</h3><ul>' +
       "".join(f"<li>{li}</li>" for li in howto) + "</ul></div>")
@@ -532,6 +609,7 @@ def build(data: dict, layer: str = "all") -> str:
     if refresh_appendix_html:
         sec("What changed — full re-check detail", refresh_appendix_html, "appendix")
 
+    charter_table_html = _lens_charter_table_html(data.get("lens_charters"))
     charters_html = _lens_charters_html(data.get("lens_charters"))
     frame_html = ""
     if data.get("decision_frame"):
@@ -539,13 +617,25 @@ def build(data: dict, layer: str = "all") -> str:
     council_parts = []
     if frame_html:
         council_parts.append(frame_html)
-    if charters_html:
+    if charter_table_html:
+        # A7: reader path gets the compact 5-row table; the full charter cards live
+        # in an appendix section (linked from here when the whole file is rendered).
+        pointer = ""
+        if layer == "all" and charters_html:
+            pointer = ('<p class="lead">Full charters — priority questions, blind spots, '
+                       'escalation triggers — in the appendix: '
+                       '<a href="#sec-lens-charters">lens charters</a>.</p>')
+        elif charters_html:
+            pointer = ('<p class="lead">Full charters (priority questions, blind spots, '
+                       'escalation triggers) are in the appendix.</p>')
         council_parts.append(
             '<details class="block-detail"><summary>Meet the five lenses</summary>'
-            f'{charters_html}</details>'
+            f'{charter_table_html}{pointer}</details>'
         )
     if council_parts:
         sec("The question and the council", "".join(council_parts), "report")
+    if charters_html:
+        sec("Lens charters — full", charters_html, "appendix", slug="lens-charters")
 
     def _attr(cls, label, d):
         persp = e(" + ".join(p.title() for p in d.get("perspectives", []))) if d.get("perspectives") else ""
@@ -602,9 +692,13 @@ def build(data: dict, layer: str = "all") -> str:
         evidence_parts.append(body)
 
     effects_by_claim = _claim_effects_from_deliberation(data.get("deliberation"))
-    claims_html = _claims_table_html(data.get("claims"), effects_by_claim)
+    # A4: the reader path keeps status + evidence-basis; per-claim confidence
+    # decimals and the adversarial-check stamp move to the appendix / --layer all
+    # ledger only. ``full`` is True exactly when the appendix tier is visible.
+    claims_full = _layer_visible(layer, "appendix")
+    claims_html = _claims_table_html(data.get("claims"), effects_by_claim, full=claims_full)
     confidence_kpi = ""
-    if claims_html:
+    if claims_html and claims_full:
         confidence_kpi = (
             '<div class="kpi-card"><span class="kpi-icon">⚡</span><div>'
             '<b class="kpi-title">Confidence score (0.0–1.0)</b>'
@@ -737,11 +831,33 @@ def build(data: dict, layer: str = "all") -> str:
     delib_html = _deliberation_html(data.get("deliberation"))
     claim_by_id = {(c.get("claim_id") or c.get("id")): c
                    for c in (data.get("claims") or []) if isinstance(c, dict)}
-    # 07d: resolution plans are report-detail within the disagreement section,
-    # ordered would_flip -> might_flip -> unlikely_to_change (stable within a tier).
+    # A6: only genuinely unresolved records are open disagreements that decide the
+    # paper; resolved / partially-resolved records are conditions of validity.
+    open_cons = [c for c in cons if _cx_is_open(c, cdetail)]
+    cond_cons = [c for c in cons if not _cx_is_open(c, cdetail)]
     _RP_ORDER = {"would_flip": 0, "might_flip": 1, "unlikely_to_change": 2}
+
+    def _cx_row(c):
+        tcls, tlbl = _CONFLICT.get(str(c.get("status", "")).lower(), ("part", c.get("status", "")))
+        stake = text_refs(c.get("stake", ""))
+        det = cdetail.get(c.get("id"))
+        # show_plan=False dedupes: each plan prints once, in "What would settle them".
+        if layer != "brief" and isinstance(det, dict):
+            stake += _cx_detail_html(det, claim_by_id, show_plan=False)
+        crit_chip = ""
+        xdc = det.get("decision_criticality") if isinstance(det, dict) else None
+        if isinstance(xdc, dict):
+            xcrit = str(xdc.get("criticality") or "").lower()
+            if xcrit in ("pivotal", "contributing", "peripheral"):
+                crit_chip = f' <span class="claim-chip claim-crit-{xcrit}">{e(xcrit)}</span>'
+        return ('<tr id="ref-%s"><td class="mono">%s</td><td><span class="tag kind">%s</span></td>'
+                '<td>%s</td><td><span class="tag %s">%s</span>%s</td></tr>' % (
+                    e(c.get("id", "")), e(c.get("id", "")), e(c.get("kind", "")),
+                    stake, tcls, e(tlbl), crit_chip))
+
+    # "What would settle them" — resolution plans for still-open disagreements only.
     planned = []
-    for i, c in enumerate(cons):
+    for i, c in enumerate(open_cons):
         det = cdetail.get(c.get("id"))
         if isinstance(det, dict) and isinstance(det.get("resolution_plan"), dict):
             planned.append((i, c, det))
@@ -769,47 +885,48 @@ def build(data: dict, layer: str = "all") -> str:
             '<div class="rp-list">' + cards + "</div>"
         )
     if cons:
-        rows = ""
-        for c in cons:
-            tcls, tlbl = _CONFLICT.get(str(c.get("status","")).lower(), ("part", c.get("status","")))
-            stake = text_refs(c.get("stake", ""))
-            # The one-page brief shows only the summary row; the expandable
-            # positions/resolution detail belongs to the fuller layers.
-            det = cdetail.get(c.get("id"))
-            if layer != "brief" and isinstance(det, dict):
-                stake += _cx_detail_html(det, claim_by_id)
-            # 07c: mirror the contradiction's criticality chip into the Status cell.
-            crit_chip = ""
-            xdc = det.get("decision_criticality") if isinstance(det, dict) else None
-            if isinstance(xdc, dict):
-                xcrit = str(xdc.get("criticality") or "").lower()
-                if xcrit in ("pivotal", "contributing", "peripheral"):
-                    crit_chip = f' <span class="claim-chip claim-crit-{xcrit}">{e(xcrit)}</span>'
-            rows += ('<tr id="ref-%s"><td class="mono">%s</td><td><span class="tag kind">%s</span></td>'
-                     '<td>%s</td><td><span class="tag %s">%s</span>%s</td></tr>' % (
-                         e(c.get("id","")), e(c.get("id","")), e(c.get("kind","")), stake, tcls, e(tlbl), crit_chip))
-        body = (lens_snapshot + '<table><thead><tr><th>Conflict</th><th>Kind</th><th>What is at stake</th>'
-                '<th>Status</th></tr></thead><tbody>' + rows + "</tbody></table>")
-        # 07d brief line: how many still-open disagreements could flip the decision.
+        if open_cons:
+            rows = "".join(_cx_row(c) for c in open_cons)
+            open_table = ('<table><thead><tr><th>Conflict</th><th>Kind</th>'
+                          '<th>What is at stake</th><th>Status</th></tr></thead><tbody>'
+                          + rows + "</tbody></table>")
+        else:
+            open_table = ('<p class="lead">No disagreement is still open — every logged record '
+                          'has been resolved or narrowed into a condition of validity below.</p>')
+        body = lens_snapshot + open_table
+        # Brief line: how many still-open disagreements could flip the decision.
         would_flip_n = 0
-        for c in cons:
+        for c in open_cons:
             det = cdetail.get(c.get("id"))
-            if not isinstance(det, dict):
-                continue
-            plan = det.get("resolution_plan")
+            plan = det.get("resolution_plan") if isinstance(det, dict) else None
             if (isinstance(plan, dict)
-                    and str(plan.get("decision_impact") or "").lower() == "would_flip"
-                    and str(det.get("resolution_status") or "").lower() != "resolved"):
+                    and str(plan.get("decision_impact") or "").lower() == "would_flip"):
                 would_flip_n += 1
-        if would_flip_n:
-            if would_flip_n == 1:
-                body += ('<p class="rp-brief">1 open disagreement could change the decision; '
-                         'there is a plan for how to settle it.</p>')
-            else:
-                body += ('<p class="rp-brief">%d open disagreements could change the decision; '
-                         'there are plans for how to settle them.</p>' % would_flip_n)
+        if would_flip_n == 1:
+            body += ('<p class="rp-brief">1 open disagreement could change the decision; '
+                     'there is a plan for how to settle it.</p>')
+        elif would_flip_n:
+            body += ('<p class="rp-brief">%d open disagreements could change the decision; '
+                     'there are plans for how to settle them.</p>' % would_flip_n)
         if layer != "brief" and resolution_body:
             body += resolution_body
+        # A6: resolved / partially-resolved records fold in as conditions of validity.
+        if cond_cons:
+            if layer == "brief":
+                body += ('<p class="rp-brief">%d further disagreement%s resolved or narrowed '
+                         'into conditions of validity.</p>' % (
+                             len(cond_cons), " was" if len(cond_cons) == 1 else "s were"))
+            else:
+                crows = "".join(_cx_row(c) for c in cond_cons)
+                body += (
+                    '<details class="block-detail"><summary>Conditions of validity (%d) — '
+                    'resolved or narrowed, not open questions</summary>'
+                    '<p class="rp-intro">These records were resolved or scoped down during '
+                    'deliberation. They bound where the recommendation holds; they are not '
+                    'open disagreements that decide it.</p>'
+                    '<table><thead><tr><th>Conflict</th><th>Kind</th>'
+                    '<th>What is at stake</th><th>Status</th></tr></thead><tbody>%s'
+                    '</tbody></table></details>' % (len(cond_cons), crows))
         appendix_links = []
         if data.get("contradiction_ledger"):
             appendix_links.append(("contradiction ledger notes", "contradiction-ledger-notes"))
@@ -902,7 +1019,8 @@ def build(data: dict, layer: str = "all") -> str:
     review_parts = []
     if rev:
         chips = ""
-        if scores:
+        # A1: numeric quality gauges live only in the appendix / --layer all.
+        if scores and _layer_visible(layer, "appendix"):
             for k, lbl in (("coverage","coverage"),("traceability","traceability"),
                            ("argument_support","argument-support"),
                            ("contradiction","contradiction-handling"),("recommendation","recommendation-support")):

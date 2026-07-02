@@ -220,7 +220,10 @@ def _resolution_plan_inner(plan) -> str:
     return rows
 
 
-def _cx_detail_html(detail: dict, claim_by_id: dict) -> str:
+def _cx_detail_html(detail: dict, claim_by_id: dict, show_plan: bool = True) -> str:
+    """Render a contradiction's positions/detail. ``show_plan=False`` suppresses the
+    inline resolution plan so it is not printed twice — the disagreement section
+    renders each plan once, under "What would settle them" (A6 dedup)."""
     def pos(cid):
         cl = claim_by_id.get(cid)
         chip = refs([cid]).strip() if cid else ""
@@ -279,7 +282,7 @@ def _cx_detail_html(detail: dict, claim_by_id: dict) -> str:
         if resolution.get("rationale"):
             inner += f'<p class="cx-why">{text_refs(resolution["rationale"])}</p>'
         inner += "</div>"
-    plan_html = _resolution_plan_inner(detail.get("resolution_plan"))
+    plan_html = _resolution_plan_inner(detail.get("resolution_plan")) if show_plan else ""
     if plan_html:
         inner += ('<div class="cx-plan"><p class="cx-meta">How to resolve this</p>'
                   + plan_html + "</div>")

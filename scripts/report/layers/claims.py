@@ -8,7 +8,11 @@ from report.components.base import _field_details, e, refs, text_refs
 from report.layers.deliberation import _round_label
 
 
-def _claims_table_html(claims, effects_by_claim=None) -> str:
+def _claims_table_html(claims, effects_by_claim=None, full=True) -> str:
+    """Render the claims ledger. ``full`` (appendix / --layer all) shows the raw
+    per-claim confidence decimal and the adversarial-check stamp; the reader path
+    (``full=False``) keeps the status label and the qualitative evidence-basis but
+    drops the uncalibrated decimal and the per-claim "passed" stamp (A4)."""
     if not isinstance(claims, list) or not claims:
         return ""
     effects_by_claim = effects_by_claim or {}
@@ -28,20 +32,27 @@ def _claims_table_html(claims, effects_by_claim=None) -> str:
         if c.get("confidence") is not None:
             basis = c.get("confidence_basis")
             band = c.get("confidence_band")
-            conf_title = f' title="{e(str(basis))}"' if basis else ""
-            meta_chips.append(f'<span class="claim-chip"{conf_title}>⚡ {e(str(c.get("confidence")))}</span>')
-            # Confidence provenance (Phase 4): a bare float must carry a basis or
-            # band so it never reads as calibrated. Missing on old artifacts is a
-            # visible soft-warn, never blocking.
-            if band or basis:
+            btitle = f' title="{e(str(basis))}"' if basis else ""
+            if full:
+                conf_title = f' title="{e(str(basis))}"' if basis else ""
+                meta_chips.append(f'<span class="claim-chip"{conf_title}>⚡ {e(str(c.get("confidence")))}</span>')
+                # Confidence provenance (Phase 4): a bare float must carry a basis or
+                # band so it never reads as calibrated. Missing on old artifacts is a
+                # visible soft-warn, never blocking.
+                if band or basis:
+                    label = e(str(band)) if band else "basis noted"
+                    meta_chips.append(f'<span class="claim-chip claim-basis"{btitle}>{label}</span>')
+                else:
+                    meta_chips.append(
+                        '<span class="claim-chip claim-basis-missing" title="No confidence '
+                        'basis recorded (evidence tier × verdict × full-text status).">'
+                        'basis not recorded</span>')
+            elif band or basis:
+                # Reader path (A4): keep the qualitative evidence-basis, drop the
+                # uncalibrated decimal. A claim with no recorded basis shows nothing
+                # here — the "basis not recorded" soft-warn stays in the appendix.
                 label = e(str(band)) if band else "basis noted"
-                btitle = f' title="{e(str(basis))}"' if basis else ""
                 meta_chips.append(f'<span class="claim-chip claim-basis"{btitle}>{label}</span>')
-            else:
-                meta_chips.append(
-                    '<span class="claim-chip claim-basis-missing" title="No confidence '
-                    'basis recorded (evidence tier × verdict × full-text status).">'
-                    'basis not recorded</span>')
         # 07c: decision-criticality chip (pivotal / contributing / peripheral),
         # copied from the claim's own mirror field — ordinal-only, never a number.
         dc = c.get("decision_criticality")
@@ -76,7 +87,9 @@ def _claims_table_html(claims, effects_by_claim=None) -> str:
                 "full_text_status": verification.get("full_text_status"),
                 "entailment_rationale": verification.get("entailment_rationale"),
                 "evidence_locator": _locator_text(locator) if isinstance(locator, dict) else locator,
-                "adversarial_check": verification.get("adversarial_check"),
+                # A4: the per-claim adversarial-check stamp implies scrutiny that the
+                # real (5-bullet) review did not perform per claim — appendix only.
+                "adversarial_check": verification.get("adversarial_check") if full else None,
             }
         atom = c.get("atomicity")
         if isinstance(atom, dict):

@@ -97,6 +97,13 @@
   .lens-score{ font-family:ui-monospace,Menlo,monospace; color:var(--faint); }
   .lens-tone{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:1px; background:var(--brand); }
   .lens-tone.challenge{ background:var(--red); } .lens-tone.caution{ background:var(--amber); } .lens-tone.mixed{ background:var(--faint); } .lens-tone.support{ background:var(--green); }
+  .integrity-line{ margin:14px 0 0; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--muted); line-height:1.55; }
+  .lens-posture{ margin:0 0 18px; }
+  .charter-table{ width:100%; border-collapse:collapse; margin:0 0 4px; font-size:13px; }
+  .charter-table th, .charter-table td{ text-align:left; vertical-align:top; padding:7px 10px; border-bottom:1px solid rgba(0,0,0,.07); }
+  .charter-table th{ font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:700; }
+  .charter-lens{ white-space:nowrap; font-weight:600; }
+  .charter-lens .ca-icon-svg{ vertical-align:middle; margin-right:6px; }
   .opt{ border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin:12px 0; background:var(--card); }
   .opt h4{ margin:0 0 4px; font-size:16px; }
   .opt .chip{ float:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; padding:3px 9px; border-radius:999px; font-weight:700; }

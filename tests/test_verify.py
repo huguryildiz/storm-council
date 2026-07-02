@@ -1614,5 +1614,130 @@ class ResolutionPlanTest(unittest.TestCase):
                 self.assertEqual(gb[k], gc[k], f"{k} moved between broken and clean plan")
 
 
+class WorkflowHonestyAdvisoryTest(unittest.TestCase):
+    """Phase B2 — full-text-over-snippet, templated verdicts, recommendation
+    overreach, and thin-retrieval advisories. All must be MINOR only."""
+
+    def test_full_text_over_snippet_flags_short_full_text_packet(self):
+        short = {"packet_id": "P-001", "source_access": "full_text",
+                 "quoted_passage": "A two-sentence snippet, far under the threshold."}
+        long_ok = {"packet_id": "P-002", "source_access": "full_text",
+                   "quoted_passage": "x" * (verify_mod._FULL_TEXT_MIN_CHARS + 1)}
+        abstract = {"packet_id": "P-003", "source_access": "abstract_only",
+                    "quoted_passage": "short abstract excerpt"}
+        issues = verify_mod._full_text_over_snippet_issues([short, long_ok, abstract])
+        self.assertEqual(len(issues), 1)
+        self.assertIn("P-001", issues[0])
+        self.assertNotIn("P-002", issues[0])
+        self.assertNotIn("P-003", issues[0])
+
+    def test_full_text_over_snippet_empty_when_none(self):
+        self.assertEqual(verify_mod._full_text_over_snippet_issues([]), [])
+
+    def test_templated_verdict_flags_id_varying_rationales(self):
+        verdicts = [
+            {"rationale": "Packet P-1 supports the narrowed claim scope for C-1."},
+            {"rationale": "Packet P-2 supports the narrowed claim scope for C-2."},
+            {"rationale": "Packet P-3 supports the narrowed claim scope for C-3."},
+        ]
+        issue = verify_mod._templated_verdict_issue(verdicts, identical_max_repeat=1)
+        self.assertIsNotNone(issue)
+        self.assertIn("templated", issue.lower())
+
+    def test_templated_verdict_defers_to_identical_check(self):
+        verdicts = [{"rationale": "same"}] * 3
+        # identical check already fired (>=3) → templated advisory stays silent.
+        self.assertIsNone(verify_mod._templated_verdict_issue(verdicts, identical_max_repeat=3))
+
+    def test_recommendation_overreach_flags_self_marked_claim(self):
+        claims = [
+            {"claim_id": "C-010", "claim_type": "recommendation",
+             "content_verification": {"status": "direct_support"},
+             "limitations": "This is the brief's recommendation, not quoted from a source."},
+            {"claim_id": "C-011", "claim_type": "recommendation",
+             "content_verification": {"status": "direct_support"},
+             "limitations": "Bounded to simulation results."},
+            {"claim_id": "C-012", "claim_type": "fact",
+             "content_verification": {"status": "direct_support"},
+             "limitations": "not quoted"},
+        ]
+        issues = verify_mod._recommendation_overreach_issues(claims)
+        self.assertEqual(len(issues), 1)
+        self.assertIn("C-010", issues[0])
+        self.assertNotIn("C-011", issues[0])
+        self.assertNotIn("C-012", issues[0])  # fact, not recommendation
+
+    def _write_log(self, base: Path, rows):
+        (base / "retrieval_log.jsonl").write_text(
+            "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+
+    def test_retrieval_coverage_flags_rate_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._write_log(base, [
+                {"offline": False, "error": None},
+                {"offline": False, "error": "HTTP Error 429: Too Many Requests"},
+            ])
+            partial, msg = verify_mod._retrieval_coverage(base)
+            self.assertTrue(partial)
+            self.assertIn("rate-limited", msg)
+
+    def test_retrieval_coverage_flags_thin_success(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._write_log(base, [
+                {"offline": False, "error": None},
+                {"offline": False, "error": "connection reset"},
+                {"offline": False, "error": "timeout"},
+            ])
+            partial, msg = verify_mod._retrieval_coverage(base)
+            self.assertTrue(partial)
+            self.assertIn("thin", msg)
+
+    def test_retrieval_coverage_healthy_is_not_partial(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            self._write_log(base, [
+                {"offline": False, "error": None},
+                {"offline": False, "error": None},
+                {"offline": False, "error": "timeout"},
+            ])
+            partial, msg = verify_mod._retrieval_coverage(base)
+            self.assertFalse(partial)
+            self.assertIsNone(msg)
+
+    def test_retrieval_coverage_absent_log_is_not_partial(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            partial, msg = verify_mod._retrieval_coverage(Path(tmp))
+            self.assertFalse(partial)
+            self.assertIsNone(msg)
+
+    def test_verify_exposes_retrieval_partial_field(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(
+                base,
+                claims=[{"claim_id": "C-001", "perspective": "academic",
+                         "claim_text": "Solvers are mature.", "claim_type": "fact",
+                         "evidence_status": "supported", "source_ids": ["S-001"]}],
+                sources=[{"source_id": "S-001", "title": "OR-Tools",
+                          "url": "https://developers.google.com/optimization",
+                          "source_type": "industry", "credibility_notes": "Official"}],
+                contradictions=[],
+            )
+            self._write_log(base, [{"offline": False, "error": "HTTP 429 rate limit"}])
+            gate = verify_mod.verify(base)
+            self.assertTrue(gate["retrieval_partial"])
+            self.assertTrue(any("rate-limited" in m for m in gate["minor_issues"]))
+
+    def test_advisories_stay_minor_on_committed_example(self):
+        # The committed example has no retrieval_log / support packets, so the new
+        # advisories must not change its verdict or emit a partial-retrieval flag.
+        gate = verify_mod.verify(ROOT / "examples" / "network_flow_rl")
+        self.assertEqual(gate["status"], "PASS_WITH_CAVEATS")
+        self.assertEqual(gate["blocking_issues"], [])
+        self.assertFalse(gate["retrieval_partial"])
+
+
 if __name__ == "__main__":
     unittest.main()

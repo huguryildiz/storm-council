@@ -82,7 +82,14 @@ Every claim is a structured record:
   `status` (`direct_support` | `partial_support` | `indirect_support` |
   `contradiction` | `out_of_scope` | `not_verifiable`), `full_text_status`
   (`full_text` | `abstract_only` | `metadata_only`), an `entailment_rationale`,
-  and an `evidence_locator`.
+  and an `evidence_locator`. **Set the tier truthfully by what you actually held,
+  not by what you wish you had:** use `full_text` **only** when you retrieved and
+  stored a verbatim passage long enough to entail the claim on its own; if all you
+  had was the abstract or a 2–4 sentence search snippet, the tier is
+  `abstract_only`, and if you never saw the text at all it is `metadata_only`. A
+  short quoted excerpt drawn from a genuinely retrieved full text is still
+  `full_text`; a short excerpt that *is* everything you retrieved is not. Never
+  upgrade a snippet to `full_text` to clear the abstract-only gate.
 - `support_scope` — preserve the source's scope: `population_or_domain`,
   `dataset_or_benchmark`, `comparison_baseline`, `metric`, `conditions`,
   `time_horizon`, `deployment_context` (`deployment`/`simulation`), and
@@ -110,7 +117,13 @@ linked claim/evidence/source IDs, a relative `source_material_path` under
 `source_material/`, the file's SHA-256 hash, a concrete locator, the exact
 `quoted_passage`, `source_access` (`full_text`, `abstract_only`, or
 `metadata_only`), `extraction_method`, optional `retrieval_log_id`, and a
-short `context_note`.
+short `context_note`. The `quoted_passage` must be a **verbatim quote** copied
+from the stored material with a real locator (section / paragraph / page), never
+a paraphrase or a summary in your own words — if you can only paraphrase, you did
+not verify the passage, so drop the `direct_support` claim to `partial_support`.
+Set `source_access = full_text` **only** when the stored material is a
+claim-length verbatim passage; a 2–4 sentence snippet or an abstract excerpt is
+`abstract_only`, even when it is quoted exactly.
 
 Do not write support packets from bibliographic metadata alone unless
 `source_access` is `metadata_only`. Metadata-only packets may identify a source,
@@ -137,6 +150,10 @@ claim — default an unknown class to `gray`, never `peer_reviewed`), and a
   cannot `direct_support` a strong empirical, causal, comparative, quantitative,
   or safety-critical claim — at most mark it `partial_support` and lower the
   confidence.
+- **Say the tier at the claim level.** When only an abstract or snippet was
+  retrieved, record that on the claim (`full_text_status`/`source_access`) — do
+  not let the packet read `full_text` while the material is a snippet. An honest
+  `abstract_only` beats an inflated `full_text` every time.
 - **Preserve scope.** Do not turn `some → all`, `simulation → deployment`,
   `associated with → causes`, one dataset → the general case, or
   `better on metric A → superior overall`.

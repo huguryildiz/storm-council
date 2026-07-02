@@ -39,8 +39,11 @@ examples use `examples/network_flow_rl/` and `examples/ai_jobs_policy/`.
 
 ```bash
 python3 scripts/verify.py examples/network_flow_rl --write
-python3 scripts/render_report.py examples/network_flow_rl/report_data.json -o examples/network_flow_rl/storm_council_report.html
+python3 scripts/render_report.py examples/network_flow_rl/report_data.json -o examples/network_flow_rl/storm_council_report.html --layer report
 ```
+
+(The committed example ships the `--layer report` reading path; omit `--layer` for
+the single-file `all` version that also folds in the appendix.)
 
 Expected report path:
 

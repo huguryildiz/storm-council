@@ -67,8 +67,11 @@ python3 scripts/verify.py <output_dir> --check-seal
 python3 scripts/verify.py <output_dir> --recheck --write
 python3 scripts/verify.py <output_dir> --recheck --offline   # cache-only, honest "not_rechecked"
 
-# Render the shareable HTML report:
-python3 scripts/render_report.py <output_dir>/report_data.json -o <output_dir>/storm_council_report.html
+# Render the shareable HTML report (--layer report: the 7-section reading path;
+# omit --layer, or pass --layer all, for the single-file version that also
+# includes the appendix -- raw claims/evidence registries, run manifest,
+# provenance, adversarial review notes):
+python3 scripts/render_report.py <output_dir>/report_data.json -o <output_dir>/storm_council_report.html --layer report
 ```
 
 `verify.py` and `render_report.py` are pure Python stdlib. `metadata_adapters.py`

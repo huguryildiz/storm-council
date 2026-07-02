@@ -27,48 +27,17 @@ def _fmt_points(points: list[tuple[float, float]]) -> str:
 
 
 def _lens_snapshot_html(snapshot) -> str:
+    """Qualitative council-posture summary (A5).
+
+    The old version drew a radar from invented 0–1 "posture intensity" decimals
+    about role-play personas — fake precision no caption could rescue. This renders
+    one plain-language posture line per lens (tone dot + stance), with no numbers
+    and no chart, so nothing reads as a measurement."""
     if not isinstance(snapshot, dict):
         return ""
     lenses = [x for x in snapshot.get("lenses", []) if isinstance(x, dict)]
     if len(lenses) < 3:
         return ""
-
-    cx = 140.0
-    cy = 115.0
-    radius = 64.0
-    step = 360.0 / len(lenses)
-    angles = [-90.0 + i * step for i in range(len(lenses))]
-    outer = [_radar_point(cx, cy, radius, a) for a in angles]
-    grid = "".join(
-        f'<polygon class="lens-radar-grid" points="{_fmt_points([_radar_point(cx, cy, radius * level, a) for a in angles])}" />'
-        for level in (1 / 3, 2 / 3, 1)
-    )
-    axes = "".join(
-        f'<line class="lens-radar-axis" x1="{cx:.1f}" y1="{cy:.1f}" x2="{x:.1f}" y2="{y:.1f}" />'
-        for x, y in outer
-    )
-    area_points = [
-        _radar_point(cx, cy, radius * _clamped_score(lens.get("score")), angle)
-        for lens, angle in zip(lenses, angles)
-    ]
-    dots = "".join(
-        f'<circle class="lens-radar-dot" cx="{x:.1f}" cy="{y:.1f}" r="3.5" />'
-        for x, y in area_points
-    )
-
-    labels = ""
-    for lens, angle in zip(lenses, angles):
-        x, y = _radar_point(cx, cy, radius + 20, angle)
-        anchor = "middle"
-        if x < cx - 12:
-            anchor = "end"
-        elif x > cx + 12:
-            anchor = "start"
-        labels += (
-            f'<text class="lens-radar-label" x="{x:.1f}" y="{y:.1f}" '
-            f'text-anchor="{anchor}" dominant-baseline="middle">'
-            f'{e(str(lens.get("name", "")).replace("_", " ").title())}</text>'
-        )
 
     rows = ""
     tone_classes = {"support", "challenge", "caution", "mixed"}
@@ -76,36 +45,22 @@ def _lens_snapshot_html(snapshot) -> str:
         name = str(lens.get("name", "")).replace("_", " ").title()
         tone = str(lens.get("tone", "")).lower()
         tone_class = tone if tone in tone_classes else ""
-        score = _clamped_score(lens.get("score"))
         stance = lens.get("stance") or lens.get("note") or ""
         rows += (
             '<div class="lens-row">'
             f'<span class="lens-name"><span class="lens-tone {e(tone_class)}"></span>{e(name)}</span>'
             f'<span class="lens-stance">{e(stance)}</span>'
-            f'<span class="lens-score">{score:.2f}</span>'
             '</div>'
         )
 
-    summary = snapshot.get("summary") or "A compact view of how strongly each council lens presses on the decision."
-    scale = snapshot.get("scale_label") or "0 low emphasis · 1 high emphasis"
+    summary = snapshot.get("summary") or "A compact view of where each council lens stands on the decision."
     title = snapshot.get("title") or "Lens posture snapshot"
     return (
-        '<div class="lens-radar">'
-        '<div class="lens-radar-plot">'
-        '<svg class="lens-radar-chart" viewBox="0 0 280 230" role="img" aria-label="Five-lens council posture radar">'
-        '<title>Five-lens council posture radar</title>'
-        f"{grid}{axes}"
-        f'<polygon class="lens-radar-area" points="{_fmt_points(area_points)}" />'
-        f"{dots}{labels}"
-        '</svg>'
-        f'<p class="lens-radar-scale">{e(scale)}</p>'
-        '</div>'
-        '<div class="lens-radar-copy">'
+        '<div class="lens-posture">'
         f'<p class="lens-radar-kicker">{e(title)}</p>'
         f'<p class="lens-radar-summary">{text_refs(summary)}</p>'
-        '<p class="lens-radar-note">This is a council posture map, not a quality score.</p>'
+        '<p class="lens-radar-note">This is a qualitative council posture map, not a quality score.</p>'
         f'<div class="lens-list">{rows}</div>'
-        '</div>'
         '</div>'
     )
 
@@ -293,6 +248,41 @@ def _lens_plans_html(text: str) -> str:
         '<p class="lplan-intro">What each lens set out to retrieve — and the evidence '
         'that would have changed its mind.</p>'
         f'<div class="lplan-grid">{"".join(cards)}</div>'
+    )
+
+
+def _lens_charter_table_html(charters) -> str:
+    """Compact one-row-per-lens charter table for the reader path (A7): lens ·
+    charter · main pressure. The five full charter cards (priority questions,
+    blind spots, escalation triggers) predict conflicts the ledger then records —
+    that scaffolding moves to the appendix; this table is what the reader needs."""
+    if not isinstance(charters, list):
+        return ""
+    rows = ""
+    for ch in charters:
+        if not isinstance(ch, dict):
+            continue
+        name = str(ch.get("name") or ch.get("lens") or "").replace("_", " ")
+        role = (ch.get("role_charter") or ch.get("focus")
+                or ch.get("charter") or ch.get("role_focus") or "")
+        pressure = (ch.get("potential_conflicts") or ch.get("conflicts_with_other_lenses")
+                    or ch.get("escalation_triggers") or ch.get("likely_blind_spots")
+                    or ch.get("likely_blind_spot") or "")
+        if isinstance(pressure, str):
+            pressure = [pressure]
+        pressure = "; ".join(str(v) for v in pressure if v) if isinstance(pressure, list) else str(pressure)
+        slug = re.sub(r'[^a-z0-9]+', '-', name.lower().strip('-'))
+        icon = _lens_icon_ca(slug)
+        rows += (
+            f'<tr><td class="charter-lens">{icon}<span style="text-transform:capitalize">{e(name)}</span></td>'
+            f'<td>{text_refs(role)}</td>'
+            f'<td>{text_refs(pressure) if pressure else "—"}</td></tr>'
+        )
+    if not rows:
+        return ""
+    return (
+        '<table class="charter-table"><thead><tr><th>Lens</th><th>Charter</th>'
+        f'<th>Main pressure it applies</th></tr></thead><tbody>{rows}</tbody></table>'
     )
 
 

@@ -1,9 +1,9 @@
 """Golden-file guardrail for the render_report refactor (roadmap Phase 6).
 
 Reproduces the exact pipeline that produced each example's committed
-``storm_council_report.html`` (enrich -> fold(all) -> build(all)) and asserts the
-output is byte-identical. This is the refactor guardrail: any behavior change in
-the renderer package shows up here as a non-empty diff.
+``storm_council_report.html`` (enrich -> fold(report) -> build(report)) and
+asserts the output is byte-identical. This is the refactor guardrail: any
+behavior change in the renderer package shows up here as a non-empty diff.
 """
 import importlib.util
 import json
@@ -35,8 +35,8 @@ class RenderGoldenTest(unittest.TestCase):
         base = ROOT / "examples" / example
         data = json.loads((base / "report_data.json").read_text(encoding="utf-8"))
         render_report._enrich_source_urls(data, base)
-        render_report._fold_in_artifacts(data, base, "all")
-        return render_report.build(data, "all")
+        render_report._fold_in_artifacts(data, base, "report")
+        return render_report.build(data, "report")
 
     def _normalize_seal_time(self, html: str) -> str:
         html = _SEALED_AT_RE.sub(r"\1<sealed-at>\2<sealed-at>\3", html)
