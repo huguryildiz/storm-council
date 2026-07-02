@@ -151,7 +151,7 @@ See [`docs/architecture.md`](docs/architecture.md).
 | 🕰️ Historian | Precedent, adoption patterns, institutional memory |
 
 There is no implemented Four Horsemen runtime. See
-[`docs/role-model.md`](docs/role-model.md).
+[`docs/architecture.md`](docs/architecture.md#role-model).
 
 ## 📚 Documentation
 
@@ -159,8 +159,7 @@ There is no implemented Four Horsemen runtime. See
 [`Examples`](docs/examples.md) ·
 [`Output bundle`](docs/output-bundle.md) ·
 [`Verification`](docs/verification-and-provenance.md) ·
-[`Recheck`](docs/recheck-and-refresh.md) ·
-[`Limitations`](docs/limitations.md) ·
+[`Limitations`](docs/safety-and-limitations.md) ·
 [`Claims audit`](docs/CLAIMS_VS_IMPLEMENTATION.md)
 
 ## 🧰 Development

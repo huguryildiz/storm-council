@@ -3,8 +3,6 @@
 Storm Council is decision-*support*. It is designed to make uncertainty and
 disagreement visible — not to remove the human from the decision.
 
-For the concise current limitation contract, see [`limitations.md`](limitations.md).
-
 ## Model hallucination risk
 
 A real LLM adapter can fabricate claims or sources. Storm Council mitigates this
