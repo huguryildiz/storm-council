@@ -475,8 +475,11 @@ def build(data: dict, layer: str = "all") -> str:
             stable_anchor = f'<span id="sec-{e(slug)}" class="section-anchor" tabindex="-1"></span>'
         a(f'<section id="sec-{num}">{stable_anchor}<h2><span class="num">{num}</span>{e(title)}</h2>{body}</section>')
 
+    bottom_parts = []
     if data.get("bottom_line"):
-        sec("Bottom line", '<div class="bottom-line-card"><p>%s</p></div>' % text_refs(data["bottom_line"]), "brief")
+        bottom_parts.append(
+            '<div class="bottom-line-card"><p>%s</p></div>' % text_refs(data["bottom_line"])
+        )
 
     # 07c: the single load-bearing claim — rendered only when decision_criticality.json
     # named a `most_load_bearing` that resolves to a `pivotal` ranking. Absent ⇒ nothing.
@@ -506,20 +509,26 @@ def build(data: dict, layer: str = "all") -> str:
             if trace:
                 body += f'<p class="pivotal-trace">{e(trace)}</p>'
             body += '</div>'
-            sec("If this is wrong, the recommendation changes", body, "brief")
+            bottom_parts.append('<p class="sec-kicker">If this is wrong</p>' + body)
 
     # 07b: "What changed since" panel — rendered only when refresh_diff.json was
     # folded in. Absent ⇒ nothing (no panel, no placeholder, no "never rechecked"
     # banner: that would over-claim knowledge about a bundle this phase never touched).
     rd = data.get("refresh_diff")
+    refresh_report_html = ""
+    refresh_appendix_html = ""
     if isinstance(rd, dict) and rd.get("source_changes") is not None:
         panels = _refresh_diff_html(rd)
         since = ((rd.get("recheck") or {}).get("since")) or "first check"
-        sec(f"What changed since {since}", panels["brief"], "brief")
-        if panels["report"]:
-            sec("What changed — claim & contradiction effects", panels["report"], "report")
-        if panels["appendix"]:
-            sec("What changed — full re-check detail", panels["appendix"], "appendix")
+        if panels["brief"]:
+            bottom_parts.append(f'<p class="sec-kicker">What changed since {e(since)}</p>{panels["brief"]}')
+        refresh_report_html = panels["report"]
+        refresh_appendix_html = panels["appendix"]
+
+    if bottom_parts:
+        sec("Bottom line", "".join(bottom_parts), "brief")
+    if refresh_appendix_html:
+        sec("What changed — full re-check detail", refresh_appendix_html, "appendix")
 
     if data.get("decision_frame"):
         sec("Decision frame", f'<div class="artifact">{_md_block(data["decision_frame"])}</div>', "appendix")
@@ -825,6 +834,7 @@ def build(data: dict, layer: str = "all") -> str:
         sec("Adversarial review notes", f'<div class="artifact">{_md_block(data["adversarial_review"])}</div>', "appendix")
 
     rev = data.get("review", {})
+    review_parts = []
     if rev:
         chips = ""
         if scores:
@@ -846,7 +856,28 @@ def build(data: dict, layer: str = "all") -> str:
         )
         body = (f'<div class="scores">{chips}</div>'
                 f'<p class="lead">Verdict <b>{e(verdict)}</b>.</p>{summary}{issues}')
-        sec("Independent review", body, "brief")
+        review_parts.append(body)
+    if layer != "brief" and refresh_report_html:
+        review_parts.append(
+            '<p class="sec-kicker">Claim &amp; contradiction effects</p>' + refresh_report_html
+        )
+    if review_parts:
+        audit_items = []
+        if data.get("run_manifest"):
+            audit_items.append("run manifest")
+        if provenance_html:
+            audit_items.append("provenance & integrity")
+        if data.get("adversarial_review"):
+            audit_items.append("adversarial review notes")
+        if refresh_appendix_html:
+            audit_items.append("full re-check detail")
+        if audit_items:
+            review_parts.append(
+                '<p class="lead">Audit trail material in the appendix: '
+                + e(", ".join(audit_items))
+                + '.</p>'
+            )
+        sec("How this brief was checked", "".join(review_parts), "brief")
 
     a('<footer><p><b>Storm Council</b> is inspired by research-first knowledge-curation systems, '
       'especially Stanford OVAL\'s STORM line of work. For context, see '

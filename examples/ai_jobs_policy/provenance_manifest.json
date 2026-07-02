@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "generator_version": "storm-council/verify.py",
-  "sealed_at": "2026-07-02T11:00:29+00:00",
+  "sealed_at": "2026-07-02T11:07:06+00:00",
   "tool": {
     "name": "verify.py",
     "invocation": "seal"
@@ -128,8 +128,8 @@
     },
     {
       "path": "storm_council_report.html",
-      "sha256": "5bb681b562497020fea18bda4c5eefdc719bcb3d21c82aac11252ebf9aa4d672",
-      "bytes": 644436
+      "sha256": "f4a6d7b6eef2590fcabc485c214894de6c1d14477625a8573e256d6b1a1302e5",
+      "bytes": 644393
     }
   ],
   "signature": null,
