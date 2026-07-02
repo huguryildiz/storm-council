@@ -464,13 +464,16 @@ def build(data: dict, layer: str = "all") -> str:
     section_no = [0]
     toc_items: list = []
 
-    def sec(title, body, tier="report"):
+    def sec(title, body, tier="report", slug=None):
         if not _layer_visible(layer, tier):
             return
         section_no[0] += 1
         num = f"{section_no[0]:02d}"
         toc_items.append((num, title))
-        a(f'<section id="sec-{num}"><h2><span class="num">{num}</span>{e(title)}</h2>{body}</section>')
+        stable_anchor = ""
+        if slug:
+            stable_anchor = f'<span id="sec-{e(slug)}" class="section-anchor" tabindex="-1"></span>'
+        a(f'<section id="sec-{num}">{stable_anchor}<h2><span class="num">{num}</span>{e(title)}</h2>{body}</section>')
 
     if data.get("bottom_line"):
         sec("Bottom line", '<div class="bottom-line-card"><p>%s</p></div>' % text_refs(data["bottom_line"]), "brief")
@@ -874,6 +877,18 @@ def build(data: dict, layer: str = "all") -> str:
           'if(c&&m[c])m[c].classList.add("active");}'
           'document.addEventListener("scroll",u,{passive:true});'
           'window.addEventListener("resize",u);u();})();</script>')
+
+    a('<script>(function(){function o(h){if(!h)return;var id=h.charAt(0)==="#"?h.slice(1):h;'
+      'try{id=decodeURIComponent(id);}catch(e){}'
+      'var t=document.getElementById(id);if(!t)return;'
+      'var p=t.parentElement;while(p){if(p.tagName&&p.tagName.toLowerCase()==="details")p.open=true;p=p.parentElement;}'
+      'if(!t.hasAttribute("tabindex"))t.setAttribute("tabindex","-1");'
+      't.scrollIntoView({block:"start"});'
+      'try{t.focus({preventScroll:true});}catch(e){t.focus();}}'
+      'document.addEventListener("click",function(ev){var a=ev.target.closest?ev.target.closest("a[href^=\\"#ref-\\"]"):null;'
+      'if(a){setTimeout(function(){o(a.getAttribute("href"));},0);}});'
+      'window.addEventListener("hashchange",function(){o(location.hash);});'
+      'if(location.hash)setTimeout(function(){o(location.hash);},0);})();</script>')
 
     a('<script>(function(){document.querySelectorAll("time.ts-local").forEach(function(el){'
       'var d=new Date(el.dataset.ts);if(!isNaN(d.getTime())){'
