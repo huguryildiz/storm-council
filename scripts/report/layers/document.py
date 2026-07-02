@@ -364,10 +364,11 @@ def build(data: dict, layer: str = "all") -> str:
         if cid:
             _ANCHORS.add(cid)
             _EMITTED_CLAIM_TARGETS.add(cid)
-    for ev in data.get("evidence", []) or []:
-        eid = ev.get("evidence_id") or ev.get("id")
-        if eid:
-            _ANCHORS.add(eid)
+    if _layer_visible(layer, "appendix"):
+        for ev in data.get("evidence", []) or []:
+            eid = ev.get("evidence_id") or ev.get("id")
+            if eid:
+                _ANCHORS.add(eid)
 
     a("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />")
     a('<meta name="viewport" content="width=device-width, initial-scale=1" />')
@@ -585,6 +586,7 @@ def build(data: dict, layer: str = "all") -> str:
         except (TypeError, ValueError):
             return float("-inf")
 
+    evidence_parts = []
     fnd = data.get("strongest_findings", [])
     if fnd:
         ranked_findings = sorted(
@@ -596,10 +598,11 @@ def build(data: dict, layer: str = "all") -> str:
             + "".join(_finding_card(f, i) for i, (_, f) in enumerate(ranked_findings, 1))
             + "</div>"
         )
-        sec("Strongest evidence-backed findings", body, "brief")
+        evidence_parts.append(body)
 
     effects_by_claim = _claim_effects_from_deliberation(data.get("deliberation"))
     claims_html = _claims_table_html(data.get("claims"), effects_by_claim)
+    confidence_kpi = ""
     if claims_html:
         confidence_kpi = (
             '<div class="kpi-card"><span class="kpi-icon">⚡</span><div>'
@@ -615,7 +618,59 @@ def build(data: dict, layer: str = "all") -> str:
             'whose status is not <code>supported</code> as possible overconfidence &mdash; worth a second '
             'look.</p></div></div>'
         )
-        sec("Claims & evidence ledger", confidence_kpi + claims_html, "report")
+
+    srcs = data.get("sources", [])
+    source_body = ""
+    if srcs:
+        bib_entries = _parse_bibtex(data.get("source_bibtex") or "")
+        items = ""
+        for s in srcs:
+            sid = s.get("id", "")
+            url = s.get("url")
+            bib = bib_entries.get(sid)
+            if bib:
+                display = _format_apa_html(bib, url or "")
+                if s.get("synthetic"):
+                    display = f'<span class="syn">{display}</span>'
+            else:
+                label = e(s.get("title", ""))
+                if url and not s.get("synthetic"):
+                    label = f'<a class="slink" href="{e(url)}" target="_blank" rel="noopener">{label}</a>'
+                display = f'<span class="syn">{label}</span>' if s.get("synthetic") else label
+            note = f'<span class="note">{text_refs(s["note"])}</span>' if s.get("note") else ""
+            meta_bits = []
+            for label_name, key in (
+                ("Authors", "authors"),
+                ("Year", "year"),
+                ("Venue", "venue"),
+                ("Publisher", "publisher"),
+                ("Published", "publication_date"),
+                ("Accessed", "accessed_at"),
+                ("DOI", "doi"),
+                ("arXiv", "arxiv_id"),
+                ("Publication status", "publication_status"),
+                ("Full text", "full_text_status"),
+                ("Credibility", "credibility_notes"),
+                ("Relevance", "relevance_notes"),
+            ):
+                val = s.get(key)
+                if val and str(val).lower() != "null":
+                    if key in ("publication_date", "accessed_at"):
+                        val_html = _fmt_datetime_html(str(val))
+                    else:
+                        val_html = text_refs(val)
+                    meta_bits.append(f"<span>{label_name}: {val_html}</span>")
+            source_meta = f'<span class="source-meta">{"".join(meta_bits)}</span>' if meta_bits else ""
+            identity = " ".join(b for b in (_source_class_badges(s), _source_identity_badges(s)) if b)
+            identity_html = (" " + identity) if identity else ""
+            items += ('<li id="ref-%s"><span class="sid">%s</span> %s <span class="ty">· %s</span>%s%s</li>' % (
+                e(sid), e(sid), display, e(s.get("type", "")), identity_html, note + source_meta))
+        source_body = '<ul class="src">' + items + "</ul>"
+        if data.get("source_bibtex"):
+            source_body += (
+                '<details class="bibtex-detail"><summary>BibTeX records</summary>'
+                f'<pre>{e(data["source_bibtex"])}</pre></details>'
+            )
 
     _sources_by_id = {
         (s.get("id") or s.get("source_id")): s
@@ -628,17 +683,52 @@ def build(data: dict, layer: str = "all") -> str:
     argument_support_html = _argument_support_html(
         data.get("review") or {}, data.get("support_packets"), data.get("evidence_verdicts"), scores
     )
-    if argument_support_html:
-        sec("Argument support", argument_support_html, "report")
-    if evidence_html:
-        sec("Evidence registry", evidence_html, "report")
-
+    evidence_plan_html = _evidence_plan_html(data["evidence_plan"]) if data.get("evidence_plan") else ""
     # The interactive Cytoscape map (and its ~373 KB inline library) is heavy;
     # keep it in the appendix so brief/report stay lightweight and printable.
+    argmap_html = ""
     if _layer_visible(layer, "appendix"):
         argmap_html = _argument_map_interactive_html(data.get("argument_map"), data)
-        if argmap_html:
-            sec("Argument map", argmap_html, "appendix")
+    if layer != "brief":
+        if claims_html:
+            claim_count = len(data.get("claims") or [])
+            evidence_parts.append(
+                '<details class="block-detail"><summary>Full claims &amp; evidence ledger '
+                f'({claim_count} claims)</summary>{confidence_kpi}{claims_html}</details>'
+            )
+        if source_body:
+            source_count = len(srcs)
+            evidence_parts.append(
+                f'<details class="block-detail"><summary>Sources ({source_count})</summary>'
+                f'{source_body}</details>'
+            )
+        appendix_links = []
+        if evidence_html:
+            appendix_links.append(("evidence excerpts", "evidence-registry"))
+        if argument_support_html:
+            appendix_links.append(("passage checks", "passage-level-support-checks"))
+        if evidence_plan_html:
+            appendix_links.append(("search plan", "evidence-plan"))
+        if argmap_html or (layer == "report" and data.get("argument_map")):
+            appendix_links.append(("interactive argument map", "argument-map"))
+        if appendix_links:
+            if layer == "all":
+                labels = [f'<a href="#sec-{slug}">{e(label)}</a>' for label, slug in appendix_links]
+            else:
+                labels = [e(label) for label, _slug in appendix_links]
+            evidence_parts.append(
+                '<p class="lead">Appendix material for inspection: '
+                + ", ".join(labels) + ".</p>"
+            )
+    if evidence_parts:
+        sec("What the evidence shows", "".join(evidence_parts), "brief")
+    if argument_support_html:
+        sec("Passage-level support checks", argument_support_html, "appendix", slug="passage-level-support-checks")
+    if evidence_html:
+        sec("Evidence registry", evidence_html, "appendix", slug="evidence-registry")
+
+    if argmap_html:
+        sec("Argument map", argmap_html, "appendix", slug="argument-map")
 
     cons = data.get("contradictions", [])
     lens_snapshot = _lens_snapshot_html(data.get("lens_snapshot"))
@@ -769,66 +859,13 @@ def build(data: dict, layer: str = "all") -> str:
         sec("Evidence gaps & frontier questions", body, "brief")
 
     if data.get("source_mapped_synthesis"):
-        sec("Source-mapped synthesis notes", f'<div class="artifact">{_md_block(data["source_mapped_synthesis"])}</div>', "appendix")
+        sec("Synthesis notes (source-mapped)", f'<div class="artifact">{_md_block(data["source_mapped_synthesis"])}</div>', "appendix")
 
     if data.get("decision_brief"):
         sec("Decision brief artifact", f'<div class="artifact">{_md_block(data["decision_brief"])}</div>', "appendix")
 
-    if data.get("evidence_plan"):
-        sec("Evidence plan", _evidence_plan_html(data["evidence_plan"]), "appendix")
-
-    srcs = data.get("sources", [])
-    if srcs:
-        bib_entries = _parse_bibtex(data.get("source_bibtex") or "")
-        items = ""
-        for s in srcs:
-            sid = s.get("id", "")
-            url = s.get("url")
-            bib = bib_entries.get(sid)
-            if bib:
-                display = _format_apa_html(bib, url or "")
-                if s.get("synthetic"):
-                    display = f'<span class="syn">{display}</span>'
-            else:
-                label = e(s.get("title", ""))
-                if url and not s.get("synthetic"):
-                    label = f'<a class="slink" href="{e(url)}" target="_blank" rel="noopener">{label}</a>'
-                display = f'<span class="syn">{label}</span>' if s.get("synthetic") else label
-            note = f'<span class="note">{text_refs(s["note"])}</span>' if s.get("note") else ""
-            meta_bits = []
-            for label_name, key in (
-                ("Authors", "authors"),
-                ("Year", "year"),
-                ("Venue", "venue"),
-                ("Publisher", "publisher"),
-                ("Published", "publication_date"),
-                ("Accessed", "accessed_at"),
-                ("DOI", "doi"),
-                ("arXiv", "arxiv_id"),
-                ("Publication status", "publication_status"),
-                ("Full text", "full_text_status"),
-                ("Credibility", "credibility_notes"),
-                ("Relevance", "relevance_notes"),
-            ):
-                val = s.get(key)
-                if val and str(val).lower() != "null":
-                    if key in ("publication_date", "accessed_at"):
-                        val_html = _fmt_datetime_html(str(val))
-                    else:
-                        val_html = text_refs(val)
-                    meta_bits.append(f"<span>{label_name}: {val_html}</span>")
-            source_meta = f'<span class="source-meta">{"".join(meta_bits)}</span>' if meta_bits else ""
-            identity = " ".join(b for b in (_source_class_badges(s), _source_identity_badges(s)) if b)
-            identity_html = (" " + identity) if identity else ""
-            items += ('<li id="ref-%s"><span class="sid">%s</span> %s <span class="ty">· %s</span>%s%s</li>' % (
-                e(sid), e(sid), display, e(s.get("type", "")), identity_html, note + source_meta))
-        source_body = '<ul class="src">' + items + "</ul>"
-        if data.get("source_bibtex"):
-            source_body += (
-                '<details class="bibtex-detail"><summary>BibTeX records</summary>'
-                f'<pre>{e(data["source_bibtex"])}</pre></details>'
-            )
-        sec("Sources", source_body, "report")
+    if evidence_plan_html:
+        sec("Evidence plan", evidence_plan_html, "appendix", slug="evidence-plan")
 
     manifest_html = _run_manifest_html(data.get("run_manifest"))
     if manifest_html:

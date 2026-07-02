@@ -238,7 +238,7 @@ class RenderReportTest(unittest.TestCase):
             }
         )
 
-        self.assertIn("Claims &amp; evidence ledger", html)
+        self.assertIn("Full claims &amp; evidence ledger", html)
         self.assertIn('class="claims-table"', html)
         # The ledger row owns the single C-001 anchor target...
         self.assertEqual(html.count('id="ref-C-001"'), 1)
@@ -758,7 +758,7 @@ class RenderReportTest(unittest.TestCase):
         self.assertIn("<ol>", html)
         self.assertIn("Contradiction ledger notes", html)
         self.assertIn("The ledger blocks only a broad replacement recommendation.", html)
-        self.assertIn("Source-mapped synthesis notes", html)
+        self.assertIn("Synthesis notes (source-mapped)", html)
         self.assertIn("RL around the optimizer", html)
         self.assertIn("Decision brief artifact", html)
         self.assertIn("Do not fund an end-to-end RL replacement.", html)
@@ -863,7 +863,7 @@ class RenderReportTest(unittest.TestCase):
 
         nums = re.findall(r'<span class="num">(\d+)</span>', html)
         self.assertEqual(nums, [f"{i:02d}" for i in range(1, len(nums) + 1)])
-        self.assertEqual(len(nums), 13)
+        self.assertEqual(len(nums), 11)
 
     def test_evidence_registry_renders_locators_and_excerpts(self):
         html = render_report.build(
@@ -1019,7 +1019,7 @@ class RenderReportTest(unittest.TestCase):
             }
         )
 
-        self.assertIn("Argument support", html)
+        self.assertIn("Passage-level support checks", html)
         self.assertIn("partial/review", html)
         self.assertIn("passage-checked", html)
         self.assertIn("metadata only", html)
@@ -1046,7 +1046,7 @@ class RenderReportTest(unittest.TestCase):
                 ],
             }
         )
-        self.assertIn("Argument support", html)
+        self.assertIn("Passage-level support checks", html)
         self.assertIn("not checked", html)
         self.assertNotIn("passage-checked", html)
 
@@ -1122,9 +1122,83 @@ class LayerRenderingTest(unittest.TestCase):
         html = render_report.build(self._rich_data(), "report")
         self.assertIn("The question and the council", html)
         self.assertIn("Raw stage markdown.", html)
-        self.assertIn("Claims &amp; evidence ledger", html)
+        self.assertIn("Full claims &amp; evidence ledger", html)
         self.assertNotIn("Cytoscape Consortium", html)
         self.assertNotIn("Run manifest", html)
+
+    def test_report_layer_merges_findings_ledger_and_sources(self):
+        data = self._rich_data()
+        data["strongest_findings"] = [
+            {"title": "Finding", "text": "A backed finding.", "claims": ["C-001"]}
+        ]
+        html = render_report.build(data, "report")
+
+        self.assertIn("What the evidence shows", html)
+        self.assertIn("A backed finding.", html)
+        self.assertIn("Full claims &amp; evidence ledger (1 claims)", html)
+        self.assertIn("Sources (1)", html)
+        self.assertIn('<details class="block-detail"><summary>Full claims', html)
+        self.assertIn('<details class="block-detail"><summary>Sources (1)</summary>', html)
+        self.assertNotIn("Strongest evidence-backed findings", html)
+        self.assertNotIn("<span>Claims &amp; evidence ledger</span>", html)
+        self.assertNotIn("<span>Sources</span>", html)
+
+    def test_report_demotes_passage_checks_and_evidence_registry_to_appendix(self):
+        data = self._rich_data()
+        data["evidence"] = [
+            {
+                "id": "E-001",
+                "claim_id": "C-001",
+                "source_id": "S-001",
+                "quote": "The quoted passage.",
+                "locator": "p. 1",
+            }
+        ]
+        data["review"] = {
+            "verdict": "PASS_WITH_CAVEATS",
+            "scores": {"argument_support": 50},
+            "argument_support_status": "partial_review",
+        }
+        data["support_packets"] = [
+            {
+                "packet_id": "P-001",
+                "claim_id": "C-001",
+                "evidence_id": "E-001",
+                "source_id": "S-001",
+                "source_material_path": "source_material/S-001.txt",
+                "source_access": "full_text",
+                "quoted_passage": "The quoted passage.",
+            }
+        ]
+
+        report_html = render_report.build(data, "report")
+        appendix_html = render_report.build(data, "appendix")
+
+        self.assertNotIn("Argument support", report_html)
+        self.assertNotIn("Evidence registry", report_html)
+        self.assertIn("Passage-level support checks", appendix_html)
+        self.assertIn("partial/review", appendix_html)
+        self.assertIn("Evidence registry", appendix_html)
+        self.assertIn("E-001", appendix_html)
+
+    def test_report_layer_does_not_link_appendix_only_evidence_targets(self):
+        data = self._rich_data()
+        data["claims"][0]["evidence_ids"] = ["E-001"]
+        data["evidence"] = [
+            {
+                "id": "E-001",
+                "claim_id": "C-001",
+                "source_id": "S-001",
+                "quote": "The quoted passage.",
+            }
+        ]
+
+        report_html = render_report.build(data, "report")
+        all_html = render_report.build(data, "all")
+
+        self.assertNotIn('href="#ref-E-001"', report_html)
+        self.assertIn('href="#ref-E-001"', all_html)
+        self.assertIn('id="ref-E-001"', all_html)
 
     def test_appendix_hosts_cytoscape_and_manifest(self):
         html = render_report.build(self._rich_data(), "appendix")
