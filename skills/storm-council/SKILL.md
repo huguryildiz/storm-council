@@ -104,6 +104,7 @@ stage's question into a source-traceable, artifact-producing pipeline.
 | 1 Decision Frame | [`prompts/stage1_decision_frame.md`](prompts/stage1_decision_frame.md) |
 | 2 Perspective Scan | [`prompts/stage2_perspective_scan.md`](prompts/stage2_perspective_scan.md) |
 | 3 Evidence | [`prompts/stage3_evidence_inquiry.md`](prompts/stage3_evidence_inquiry.md) |
+| 3b Passage Support Audit | [`prompts/stage_content_verification.md`](prompts/stage_content_verification.md) |
 | 4 Contradiction Ledger | [`prompts/stage4_contradiction_ledger.md`](prompts/stage4_contradiction_ledger.md) |
 | 5 Synthesis | [`prompts/stage5_synthesis.md`](prompts/stage5_synthesis.md) |
 | 6 Adversarial Review | [`prompts/stage6_adversarial_review.md`](prompts/stage6_adversarial_review.md) |

@@ -76,9 +76,6 @@ python3 -m unittest discover -s tests
 
 # Run pytest when pytest is installed in the selected interpreter
 python3 -m pytest tests/
-
-# Build documentation when MkDocs is installed
-.venv/bin/python -m mkdocs build --strict
 ```
 
 `verify.py` and `render_report.py` are pure standard library and make no model
