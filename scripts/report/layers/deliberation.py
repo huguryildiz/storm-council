@@ -175,9 +175,9 @@ _RP_IMPACT_LABEL = {
 def _resolution_plan_inner(plan) -> str:
     """Render a contradiction's resolution_plan body (07d): evidence type, the
     proposed experiment/source, ordinal effort + decision-impact chips, and linked
-    claims/options/tripwires. Shared by the appendix detail view and the report
-    "How to resolve the disagreements that matter" section. Returns "" when the plan
-    is not a usable dict — so a record without a plan renders nothing new."""
+    claims/options/tripwires. Shared by the appendix detail view and the merged
+    disagreement section. Returns "" when the plan is not a usable dict — so a
+    record without a plan renders nothing new."""
     if not isinstance(plan, dict):
         return ""
     rows = ""

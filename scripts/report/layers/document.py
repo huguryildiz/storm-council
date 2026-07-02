@@ -30,9 +30,10 @@ _LAYERS = ("brief", "report", "appendix", "all")
 def _layer_visible(layer: str, tier: str) -> bool:
     """Which section tiers render for a given output layer.
 
-    ``all`` renders everything (byte-identical to the historic single file);
-    ``report`` is the curated brief plus its analytical backbone; ``appendix``
-    is the raw-artifact / heavy-interactive dump on its own."""
+    ``brief`` is the six-section reader path; ``report`` adds the question and
+    report-only analytical details for the seven-section default path;
+    ``appendix`` is the raw-artifact / heavy-interactive dump on its own; and
+    ``all`` renders the deterministic union of reader path plus appendix."""
     if layer == "all":
         return True
     if layer == "brief":
@@ -376,7 +377,7 @@ def build(data: dict, layer: str = "all") -> str:
     a("<style>" + CSS + "</style>")
     if layer == "brief":
         # Print-friendly rules scoped to the standalone brief only, so the
-        # default `all` output stays byte-identical to the historic report.
+        # fuller layers keep their normal report styling.
         a("<style>@media print{.toc{display:none!important}"
           ".page{max-width:none;padding:0}"
           "section,.fcard,.opt,.bottom-line-card{break-inside:avoid}}</style>")
@@ -733,8 +734,40 @@ def build(data: dict, layer: str = "all") -> str:
     cons = data.get("contradictions", [])
     lens_snapshot = _lens_snapshot_html(data.get("lens_snapshot"))
     cdetail = data.get("contradiction_detail") or {}
+    delib_html = _deliberation_html(data.get("deliberation"))
     claim_by_id = {(c.get("claim_id") or c.get("id")): c
                    for c in (data.get("claims") or []) if isinstance(c, dict)}
+    # 07d: resolution plans are report-detail within the disagreement section,
+    # ordered would_flip -> might_flip -> unlikely_to_change (stable within a tier).
+    _RP_ORDER = {"would_flip": 0, "might_flip": 1, "unlikely_to_change": 2}
+    planned = []
+    for i, c in enumerate(cons):
+        det = cdetail.get(c.get("id"))
+        if isinstance(det, dict) and isinstance(det.get("resolution_plan"), dict):
+            planned.append((i, c, det))
+    resolution_body = ""
+    if planned:
+        planned.sort(key=lambda t: (
+            _RP_ORDER.get(str(t[2]["resolution_plan"].get("decision_impact") or "").lower(), 3),
+            t[0]))
+        cards = ""
+        for _i, c, det in planned:
+            xid = c.get("id") or det.get("id") or ""
+            plan = det["resolution_plan"]
+            impact = str(plan.get("decision_impact") or "").lower()
+            muted = " rp-card-muted" if impact == "unlikely_to_change" else ""
+            topic = det.get("topic") or c.get("stake") or ""
+            head = (f'<div class="rp-head">{refs([xid]).strip()} '
+                    f'<span class="rp-topic">{text_refs(topic)}</span></div>')
+            cards += f'<div class="rp-card{muted}">{head}{_resolution_plan_inner(plan)}</div>'
+        resolution_body = (
+            '<p class="sec-kicker">What would settle them</p>'
+            '<p class="rp-intro">These disagreements are still open. Each row is a concrete '
+            'way to settle one — the evidence it needs, roughly how much effort, and whether '
+            'resolving it could change the recommendation. Ordered by decision impact; the '
+            'effort and impact ratings are ordinal judgments, not calculated values.</p>'
+            '<div class="rp-list">' + cards + "</div>"
+        )
     if cons:
         rows = ""
         for c in cons:
@@ -775,49 +808,32 @@ def build(data: dict, layer: str = "all") -> str:
             else:
                 body += ('<p class="rp-brief">%d open disagreements could change the decision; '
                          'there are plans for how to settle them.</p>' % would_flip_n)
-        sec("Where the lenses disagree", body, "brief")
+        if layer != "brief" and resolution_body:
+            body += resolution_body
+        appendix_links = []
+        if data.get("contradiction_ledger"):
+            appendix_links.append(("contradiction ledger notes", "contradiction-ledger-notes"))
+        if delib_html:
+            appendix_links.append(("council deliberation", "council-deliberation"))
+        if layer != "brief" and appendix_links:
+            if layer == "all":
+                labels = [f'<a href="#sec-{slug}">{e(label)}</a>' for label, slug in appendix_links]
+            else:
+                labels = [e(label) for label, _slug in appendix_links]
+            body += '<p class="lead">Appendix material for inspection: ' + ", ".join(labels) + ".</p>"
+        sec("Where the council disagrees — and what would settle it", body, "brief")
     elif lens_snapshot:
-        sec("Lens posture snapshot", lens_snapshot, "report")
-
-    # 07d: "How to resolve the disagreements that matter" — additive-optional,
-    # report tier. Only contradictions carrying a resolution_plan appear, ordered
-    # would_flip → might_flip → unlikely_to_change (stable within a tier). A bundle
-    # with no resolution_plan anywhere registers no section at all.
-    _RP_ORDER = {"would_flip": 0, "might_flip": 1, "unlikely_to_change": 2}
-    planned = []
-    for i, c in enumerate(cons):
-        det = cdetail.get(c.get("id"))
-        if isinstance(det, dict) and isinstance(det.get("resolution_plan"), dict):
-            planned.append((i, c, det))
-    if planned:
-        planned.sort(key=lambda t: (
-            _RP_ORDER.get(str(t[2]["resolution_plan"].get("decision_impact") or "").lower(), 3),
-            t[0]))
-        cards = ""
-        for _i, c, det in planned:
-            xid = c.get("id") or det.get("id") or ""
-            plan = det["resolution_plan"]
-            impact = str(plan.get("decision_impact") or "").lower()
-            muted = " rp-card-muted" if impact == "unlikely_to_change" else ""
-            topic = det.get("topic") or c.get("stake") or ""
-            head = (f'<div class="rp-head">{refs([xid]).strip()} '
-                    f'<span class="rp-topic">{text_refs(topic)}</span></div>')
-            cards += f'<div class="rp-card{muted}">{head}{_resolution_plan_inner(plan)}</div>'
-        body = ('<p class="rp-intro">These disagreements are still open. Each row is a concrete '
-                'way to settle one — the evidence it needs, roughly how much effort, and whether '
-                'resolving it could change the recommendation. Ordered by decision impact; the '
-                'effort and impact ratings are ordinal judgments, not calculated values.</p>'
-                '<div class="rp-list">' + cards + "</div>")
-        sec("How to resolve the disagreements that matter", body, "report")
+        body = '<p class="lead">No disagreements were logged; here is each lens\'s posture.</p>' + lens_snapshot
+        sec("Where the council disagrees — and what would settle it", body, "report")
 
     if data.get("contradiction_ledger"):
-        sec("Contradiction ledger notes", f'<div class="artifact">{_md_block(data["contradiction_ledger"])}</div>', "appendix")
+        sec("Contradiction ledger notes", f'<div class="artifact">{_md_block(data["contradiction_ledger"])}</div>', "appendix", slug="contradiction-ledger-notes")
 
-    delib_html = _deliberation_html(data.get("deliberation"))
     if delib_html:
-        sec("Council deliberation", delib_html, "appendix")
+        sec("Council deliberation", delib_html, "appendix", slug="council-deliberation")
 
     opts = data.get("options", [])
+    option_parts = []
     if opts:
         body = ""
         tripwires = data.get("decision_tripwires") if isinstance(data.get("decision_tripwires"), list) else []
@@ -840,23 +856,27 @@ def build(data: dict, layer: str = "all") -> str:
                 revisit = f'<div class="opt-trips"><b>Revisit if</b><ul>{items}</ul></div>'
             body += ('<div class="opt"><span class="chip %s">%s</span><h4>%s</h4><ul>%s</ul>%s%s</div>' % (
                 ccls, e(clbl), e(o.get("name","")), pts, when, revisit))
-        sec("Decision options & trade-offs", body, "brief")
-
-    tripwires_html = _tripwires_html(data.get("decision_tripwires"))
-    if tripwires_html:
-        sec("Revisit this decision if…", tripwires_html, "brief")
+        option_parts.append(body)
 
     acts = data.get("next_actions", [])
     if acts:
         body = '<ul class="clean">' + "".join(
             f'<li>{text_refs(x.get("text",""))}{refs(x.get("refs"))}</li>' for x in acts) + "</ul>"
-        sec("Recommended next actions", body, "brief")
+        option_parts.append('<p class="sec-kicker">Next moves</p>' + body)
+    if option_parts:
+        sec("Options and next moves", "".join(option_parts), "brief")
 
+    unknown_parts = []
     gaps = data.get("gaps", [])
     if gaps:
         body = '<ul class="clean">' + "".join(
             f'<li>{text_refs(g.get("text",""))}{refs(g.get("refs"))}</li>' for g in gaps) + "</ul>"
-        sec("Evidence gaps & frontier questions", body, "brief")
+        unknown_parts.append(body)
+    tripwires_html = _tripwires_html(data.get("decision_tripwires"))
+    if tripwires_html:
+        unknown_parts.append('<p class="sec-kicker">When to revisit</p>' + tripwires_html)
+    if unknown_parts:
+        sec("What we don't know yet — and when to revisit", "".join(unknown_parts), "brief")
 
     if data.get("source_mapped_synthesis"):
         sec("Synthesis notes (source-mapped)", f'<div class="artifact">{_md_block(data["source_mapped_synthesis"])}</div>', "appendix")

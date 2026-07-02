@@ -863,7 +863,7 @@ class RenderReportTest(unittest.TestCase):
 
         nums = re.findall(r'<span class="num">(\d+)</span>', html)
         self.assertEqual(nums, [f"{i:02d}" for i in range(1, len(nums) + 1)])
-        self.assertEqual(len(nums), 11)
+        self.assertEqual(len(nums), 10)
 
     def test_evidence_registry_renders_locators_and_excerpts(self):
         html = render_report.build(
@@ -1200,6 +1200,84 @@ class LayerRenderingTest(unittest.TestCase):
         self.assertIn('href="#ref-E-001"', all_html)
         self.assertIn('id="ref-E-001"', all_html)
 
+    def test_report_layer_merges_disagreements_options_and_uncertainty(self):
+        data = self._rich_data()
+        data["review"] = {"verdict": "PASS", "blocking": [], "major": [], "minor": []}
+        data["contradictions"] = [
+            {"id": "X-001", "kind": "tension", "stake": "Benchmark gap", "status": "unresolved"}
+        ]
+        data["contradiction_detail"] = {
+            "X-001": {
+                "conflict_id": "X-001",
+                "topic": "Benchmark gap",
+                "resolution_status": "unresolved",
+                "resolution_plan": {
+                    "evidence_type_needed": "head_to_head_benchmark",
+                    "proposed_experiment_or_source": "Run a held-out topology benchmark.",
+                    "approx_effort": "medium",
+                    "decision_impact": "would_flip",
+                    "linked_claims": ["C-001"],
+                    "linked_options": ["Option A"],
+                    "status": "proposed",
+                },
+            }
+        }
+        data["options"] = [
+            {"name": "Option A", "strength": "strong", "points": ["Proceed."], "when": "After review."}
+        ]
+        data["next_actions"] = [{"text": "Run the benchmark.", "refs": ["C-001"]}]
+        data["gaps"] = [{"text": "Missing held-out network evidence."}]
+        data["decision_tripwires"] = [
+            {
+                "id": "T-001",
+                "condition": "Held-out benchmark regresses.",
+                "option": "Option A",
+                "monitor_kind": "manual_watch",
+                "refresh_cadence": "quarterly",
+                "reversal_cost": "medium",
+                "action": "Re-open the recommendation.",
+            }
+        ]
+
+        html = render_report.build(data, "report")
+        sections = re.findall(r'<section id="sec-\d\d">', html)
+
+        self.assertEqual(len(sections), 7)
+        self.assertIn("Where the council disagrees — and what would settle it", html)
+        self.assertIn("What would settle them", html)
+        self.assertIn("Options and next moves", html)
+        self.assertIn("Next moves", html)
+        self.assertIn("What we don&#x27;t know yet — and when to revisit", html)
+        self.assertIn("When to revisit", html)
+        self.assertIn('href="#ref-T-001"', html)
+        self.assertIn('id="ref-T-001"', html)
+        self.assertNotIn("Where the lenses disagree", html)
+        self.assertNotIn("How to resolve the disagreements that matter", html)
+        self.assertNotIn("Decision options &amp; trade-offs", html)
+        self.assertNotIn("Recommended next actions", html)
+        self.assertNotIn("Evidence gaps &amp; frontier questions", html)
+        self.assertNotIn("Revisit this decision if", html)
+
+    def test_no_contradiction_snapshot_uses_disagreement_section(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "lens_snapshot": {
+                    "lenses": [
+                        {"name": "academic", "score": 0.8, "tone": "support", "stance": "Evidence holds."},
+                        {"name": "economist", "score": 0.6, "tone": "mixed", "stance": "Trade-offs remain."},
+                        {"name": "skeptic", "score": 0.4, "tone": "caution", "stance": "Watch assumptions."},
+                    ]
+                },
+            },
+            "report",
+        )
+
+        self.assertIn("Where the council disagrees — and what would settle it", html)
+        self.assertIn("No disagreements were logged", html)
+        self.assertIn("Evidence holds.", html)
+        self.assertNotIn("<span>Lens posture snapshot</span>", html)
+
     def test_appendix_hosts_cytoscape_and_manifest(self):
         html = render_report.build(self._rich_data(), "appendix")
         self.assertIn("am-cy-data", html)
@@ -1452,7 +1530,8 @@ class TripwireRenderTest(unittest.TestCase):
             "title": "A decision",
             "decision_tripwires": [self._tripwire()],
         })
-        self.assertIn("Revisit this decision if", html)
+        self.assertIn("What we don&#x27;t know yet — and when to revisit", html)
+        self.assertIn("When to revisit", html)
         self.assertIn("T-001", html)
         self.assertIn("A new RCT overturns the safety finding.", html)
         self.assertIn("C-016", html)
@@ -1461,7 +1540,7 @@ class TripwireRenderTest(unittest.TestCase):
 
     def test_tripwires_absent_renders_nothing(self):
         html = render_report.build({"title": "A decision"})
-        self.assertNotIn("Revisit this decision if", html)
+        self.assertNotIn("What we don&#x27;t know yet — and when to revisit", html)
 
     def test_tripwire_monitor_kind_badge_distinguishes_auto_vs_manual(self):
         html = render_report.build({
@@ -1484,7 +1563,7 @@ class TripwireRenderTest(unittest.TestCase):
             "title": "A decision",
             "decision_tripwires": [self._tripwire()],
         }, layer="brief")
-        self.assertIn("Revisit this decision if", html)
+        self.assertIn("What we don&#x27;t know yet — and when to revisit", html)
 
     def test_option_level_triggers_view_derived_from_tripwires(self):
         html = render_report.build({
@@ -1495,7 +1574,7 @@ class TripwireRenderTest(unittest.TestCase):
                 monitor_kind="auto_recheckable", monitoring_source="S-007",
                 reversal_cost="high", action="Halt rollout.")],
         })
-        self.assertIn("Decision options &amp; trade-offs", html)
+        self.assertIn("Options and next moves", html)
         self.assertIn("Revisit if", html)
         self.assertIn("T-002", html)
         self.assertIn('href="#ref-T-002"', html)
@@ -1514,11 +1593,11 @@ class TripwireRenderTest(unittest.TestCase):
 
 
 class ResolutionPlanRenderTest(unittest.TestCase):
-    """07d: the report renders resolution_plan fields inside the contradiction
-    detail and as an ordered 'How to resolve the disagreements that matter'
-    section. Absence renders nothing new (additive-optional)."""
+    """07d: the report renders resolution_plan fields inside contradiction
+    detail and under the merged disagreement section."""
 
-    _SEC = "How to resolve the disagreements that matter"
+    _SEC = "Where the council disagrees — and what would settle it"
+    _RESOLVE = "What would settle them"
 
     def _plan(self, **over):
         p = dict(evidence_type_needed="head_to_head_benchmark",
@@ -1550,7 +1629,8 @@ class ResolutionPlanRenderTest(unittest.TestCase):
         # (bare class names appear in the always-inlined CSS; assert the rendered
         # HTML attribute form instead, which only appears when a plan renders)
         self.assertNotIn("How to resolve this", html)
-        self.assertNotIn(self._SEC, html)
+        self.assertIn(self._SEC, html)
+        self.assertNotIn(self._RESOLVE, html)
         self.assertNotIn('class="rp-card', html)
         self.assertNotIn('class="rp-chip', html)
 
@@ -1559,11 +1639,13 @@ class ResolutionPlanRenderTest(unittest.TestCase):
             "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved",
                       "resolution_plan": self._plan()}}))
         self.assertIn(self._SEC, html)
+        self.assertIn(self._RESOLVE, html)
 
     def test_resolve_disagreements_section_absent_when_no_plans(self):
         html = render_report.build(self._data({
             "X-001": {"conflict_id": "X-001", "topic": "T", "resolution_status": "unresolved"}}))
-        self.assertNotIn(self._SEC, html)
+        self.assertIn(self._SEC, html)
+        self.assertNotIn(self._RESOLVE, html)
 
     def test_resolve_disagreements_ordered_by_decision_impact(self):
         # Input order scrambled: unlikely, would_flip, might_flip.
@@ -1575,7 +1657,7 @@ class ResolutionPlanRenderTest(unittest.TestCase):
             "X-002": {"conflict_id": "X-002", "topic": "ZZMIGHTFLIP", "resolution_status": "unresolved",
                       "resolution_plan": self._plan(decision_impact="might_flip")},
         }))
-        sec = html[html.index(self._SEC):]
+        sec = html[html.index(self._RESOLVE):]
         self.assertLess(sec.index("ZZWOULDFLIP"), sec.index("ZZMIGHTFLIP"))
         self.assertLess(sec.index("ZZMIGHTFLIP"), sec.index("ZZUNLIKELY"))
 
@@ -1593,7 +1675,8 @@ class ResolutionPlanRenderTest(unittest.TestCase):
         html = render_report.build(data, layer="brief")
         self.assertIn("could change the decision", html)
         # Full per-contradiction plan detail stays out of the brief tier.
-        self.assertNotIn(self._SEC, html)
+        self.assertIn(self._SEC, html)
+        self.assertNotIn(self._RESOLVE, html)
         self.assertNotIn('class="rp-card', html)
 
 
