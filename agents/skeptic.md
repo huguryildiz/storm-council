@@ -25,7 +25,7 @@ Use available retrieval tools, but do not assume a configured MCP is actually
 running. Prefer primary sources, reproducibility artifacts, corrections,
 retractions, and negative results. If retrieval is unavailable, mark the claim
 `unsupported` or `partially_supported`; do not invent citations.
-Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `WebSearch` / `WebFetch`.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `OpenAlex` (via `paper-search` `search_openalex`, with `OPENALEX_API_KEY`); if OpenAlex is also unavailable, fall back to `WebSearch` / `WebFetch`. When both Semantic Scholar and OpenAlex return the same paper, double-check them against each other (DOI, title, year) and record any divergence in `metadata_mismatches`.
 
 ## How to work
 - Produce 3–6 claims about the question from your lens.

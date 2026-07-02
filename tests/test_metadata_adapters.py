@@ -341,5 +341,53 @@ class MetadataArtifactConsumerTest(unittest.TestCase):
         self.assertIn("UNRESOLVED", html)
 
 
+class CrossCheckTest(unittest.TestCase):
+    def test_agreement_yields_no_mismatches(self):
+        ss = {"doi": "10.1/x", "title": "Deep Nets for Flow", "publication_year": 2021}
+        oa = {"doi": "10.1/x", "title": "Deep Nets for Flow!", "publication_year": 2021}
+        # Title differs only by punctuation/case -> normalized equal -> no mismatch.
+        self.assertEqual(metadata_adapters.cross_check_ss_openalex(ss, oa), [])
+
+    def test_doi_title_and_year_divergence_are_each_flagged(self):
+        ss = {"doi": "10.1/a", "title": "Alpha", "publication_year": 2020}
+        oa = {"doi": "10.1/b", "title": "Beta", "publication_year": 2022}
+        fields = {m["field"] for m in metadata_adapters.cross_check_ss_openalex(ss, oa)}
+        self.assertEqual(fields, {"doi", "title", "publication_year"})
+
+    def test_no_check_when_one_source_missing(self):
+        self.assertEqual(metadata_adapters.cross_check_ss_openalex({}, {"doi": "10.1/x"}), [])
+        self.assertEqual(metadata_adapters.cross_check_ss_openalex({"doi": "10.1/x"}, {}), [])
+
+    def test_missing_comparable_field_is_not_a_mismatch(self):
+        # OpenAlex has no DOI here; a one-sided field can't diverge.
+        ss = {"doi": "10.1/x", "title": "Same Title"}
+        oa = {"title": "Same Title"}
+        self.assertEqual(metadata_adapters.cross_check_ss_openalex(ss, oa), [])
+
+    def test_resolve_source_records_mismatch_and_lowers_consistency(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_sources(base, [{
+                "source_id": "S-001",
+                "title": "A Duplicate Metadata Adapter Paper",
+                "doi": "https://doi.org/10.5555/Example.Duplicate",
+                "url": "https://publisher.example/paper",
+                "source_type": "peer_reviewed",
+            }])
+            fetcher = FakeFetcher({
+                "doi.org/10.5555/example.duplicate": "crossref_duplicate.json",
+                "crossref.org/works/10.5555%2Fexample.duplicate": "crossref_duplicate.json",
+                "openalex.org/works/doi:10.5555%2Fexample.duplicate": "openalex_duplicate.json",
+                "semanticscholar.org/graph/v1/paper/DOI:10.5555%2Fexample.duplicate": "semantic_scholar_year_conflict.json",
+            })
+            result = metadata_adapters.verify_publication_identity(base, fetcher=fetcher)
+
+        record = result["source_versions"][0]
+        mismatches = record["publication_identity"]["metadata_mismatches"]
+        self.assertTrue(any(m["field"] == "publication_year" for m in mismatches))
+        self.assertTrue(record["flags"]["cross_source_mismatch"])
+        self.assertLess(record["publication_identity"]["metadata_consistency_score"], 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()

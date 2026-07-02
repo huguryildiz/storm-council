@@ -375,9 +375,45 @@ def _parse_semantic_scholar(data) -> dict:
         "arxiv_id": ext.get("ArXiv") or ext.get("ARXIV"),
         "pmid": ext.get("PubMed") or ext.get("PMID"),
         "title": data.get("title"),
+        "publication_year": data.get("year"),
         "citation_count": data.get("citationCount"),
         "reference_count": data.get("referenceCount"),
     }
+
+
+def _normalize_title(value) -> str | None:
+    if not value:
+        return None
+    text = re.sub(r"[^a-z0-9]+", " ", str(value).lower()).strip()
+    return re.sub(r"\s+", " ", text) or None
+
+
+def cross_check_ss_openalex(ss: dict, openalex: dict) -> list[dict]:
+    """Deterministic double-check between Semantic Scholar and OpenAlex.
+
+    Only runs when both adapters returned a record. Compares the fields both
+    report (DOI, title, publication year) and returns one entry per divergence.
+    An empty list means the two sources agree on every comparable field.
+    """
+    if not ss or not openalex:
+        return []
+    mismatches: list[dict] = []
+
+    ss_doi, oa_doi = ss.get("doi"), openalex.get("doi")
+    if ss_doi and oa_doi and ss_doi != oa_doi:
+        mismatches.append({"field": "doi", "semantic_scholar": ss_doi, "openalex": oa_doi})
+
+    ss_title, oa_title = _normalize_title(ss.get("title")), _normalize_title(openalex.get("title"))
+    if ss_title and oa_title and ss_title != oa_title:
+        mismatches.append({"field": "title", "semantic_scholar": ss.get("title"),
+                           "openalex": openalex.get("title")})
+
+    ss_year, oa_year = ss.get("publication_year"), openalex.get("publication_year")
+    if ss_year and oa_year and int(ss_year) != int(oa_year):
+        mismatches.append({"field": "publication_year", "semantic_scholar": ss_year,
+                           "openalex": oa_year})
+
+    return mismatches
 
 
 def _xml_text(elem, path: str, ns: dict | None = None) -> str | None:
@@ -583,6 +619,7 @@ def _empty_record(source: dict) -> dict:
             "corrected": False,
             "superseded": False,
             "duplicate_version": False,
+            "cross_source_mismatch": False,
         },
     }
 
@@ -864,7 +901,17 @@ def _resolve_source(source: dict, cache: MetadataCache, fetcher=None,
     pi = record["publication_identity"]
     pi["version"] = domain.get("version") or _version_from_source(source, crossref, ss)
     pi["metadata_sources_checked"] = [item["adapter"] for item in checked]
-    pi["metadata_consistency_score"] = 1.0 if verified else (0.4 if partial else 0.0)
+
+    # Double-check: when both Semantic Scholar and OpenAlex returned a record,
+    # cross-verify them against each other and record any divergence.
+    ss_openalex_mismatches = cross_check_ss_openalex(ss, openalex)
+    pi["metadata_mismatches"] = ss_openalex_mismatches
+    record["flags"]["cross_source_mismatch"] = bool(ss_openalex_mismatches)
+
+    if ss_openalex_mismatches:
+        pi["metadata_consistency_score"] = 0.6 if verified else 0.3
+    else:
+        pi["metadata_consistency_score"] = 1.0 if verified else (0.4 if partial else 0.0)
     if corrected:
         pi["correction_status"] = "corrected"
     if superseded:

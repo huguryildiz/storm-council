@@ -23,7 +23,7 @@ Deployment case studies, tool/solver documentation and changelogs, operational p
 ## How to retrieve evidence
 Operational truth lives largely *outside* the peer-reviewed literature; weight
 primary-operational sources over papers.
-Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `WebSearch` / `WebFetch`.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `OpenAlex` (via `paper-search` `search_openalex`, with `OPENALEX_API_KEY`); if OpenAlex is also unavailable, fall back to `WebSearch` / `WebFetch`. When both Semantic Scholar and OpenAlex return the same paper, double-check them against each other (DOI, title, year) and record any divergence in `metadata_mismatches`.
 
 1. **Vendor and tool documentation** — official docs, release notes, and
    changelogs via `WebFetch`. Behavior is version-specific, so read the version

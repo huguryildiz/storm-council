@@ -1,0 +1,11 @@
+{
+  "paperId": "SS-DUPLICATE",
+  "title": "A Duplicate Metadata Adapter Paper",
+  "year": 2019,
+  "externalIds": {
+    "DOI": "10.5555/example.duplicate",
+    "ArXiv": "2401.00001"
+  },
+  "citationCount": 42,
+  "referenceCount": 12
+}

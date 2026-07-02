@@ -34,7 +34,7 @@ sole source of bibliographic truth. For publication identity, prefer publisher
 landing page / DOI resolver, Crossref, OpenAlex, then Semantic Scholar, with
 domain-specific indexes (PubMed/PMC, arXiv, IEEE Xplore, ACM DL, SSRN/NBER/RePEc,
 standards bodies) where relevant.
-Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `WebSearch` / `WebFetch`.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `OpenAlex` (via `paper-search` `search_openalex`, with `OPENALEX_API_KEY`); if OpenAlex is also unavailable, fall back to `WebSearch` / `WebFetch`. When both Semantic Scholar and OpenAlex return the same paper, double-check them against each other (DOI, title, year) and record any divergence in `metadata_mismatches`.
 
 1. **`paper-search` → `search_papers`** — start here if the server launches.
    Queries arXiv, OpenAlex,

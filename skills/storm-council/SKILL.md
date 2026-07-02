@@ -272,19 +272,38 @@ Academic MCP servers are configured in this project (`.mcp.json`) for optional
 retrieval. Prefer them over general web search whenever peer-reviewed evidence is
 needed and the server actually launches in the current environment. They are not
 guaranteed infrastructure; if a configured MCP is absent or fails to launch, mark
-retrieval quality accordingly and do not invent sources. The `semantic-scholar`
-server sources `.env` on launch, so set `SEMANTIC_SCHOLAR_API_KEY` there (see
-`.env.example`) if you're hitting rate limits.
-Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first for academic
-retrieval, citation graph, or exact-paper metadata work. If no Semantic Scholar
-API key is configured, fall back to `WebSearch` / `WebFetch` and record the
-reduced retrieval quality.
+retrieval quality accordingly and do not invent sources. Both the
+`semantic-scholar` and `paper-search` servers source `.env` on launch, so set
+`SEMANTIC_SCHOLAR_API_KEY` and `OPENALEX_API_KEY` there (see `.env.example`) if
+you're hitting rate limits.
+
+**Retrieval backend ladder (hard rule — apply in this exact order):**
+
+1. **Semantic Scholar first.** Always try `semantic-scholar` with
+   `SEMANTIC_SCHOLAR_API_KEY` first for academic retrieval, citation graph, or
+   exact-paper metadata work.
+2. **OpenAlex second.** If no Semantic Scholar API key is configured (or the
+   `semantic-scholar` server is absent / fails to launch), fall back to
+   **OpenAlex** — via `paper-search` (`search_openalex`) with `OPENALEX_API_KEY`.
+3. **Web search last.** Only if OpenAlex is also unavailable, fall back to
+   `WebSearch` / `WebFetch` and record the reduced retrieval quality
+   (`ILLUSTRATIVE`).
+
+Never skip a rung: web search is a last resort, not a shortcut past OpenAlex.
+
+**Double-check (hard rule).** When both Semantic Scholar and OpenAlex return the
+same paper, double-check them against each other on DOI, title, and publication
+year. Record any divergence in the source record's
+`publication_identity.metadata_mismatches` (this is what `verify.py --recheck`
+and `metadata_adapters.cross_check_ss_openalex` populate deterministically) and
+do not silently trust one source over the other.
 
 ### Tool selection guide
 
 | Goal | Preferred MCP | Tool |
 |---|---|---|
 | Multi-source topic search (arXiv, OpenAlex, PubMed, CORE…) | `paper-search` | `search_papers` |
+| Second-opinion search when Semantic Scholar is unavailable | `paper-search` | `search_openalex` |
 | Download / full-text retrieval | `paper-search` | `download_with_fallback` |
 | Deep citation graph (who cites / what does it cite) | `semantic-scholar` | `paper_citations`, `paper_references` |
 | Paper recommendations from a seed | `semantic-scholar` | `get_paper_recommendations_single` |

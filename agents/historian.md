@@ -23,7 +23,7 @@ Retrospectives, longitudinal surveys, institutional case histories, and technolo
 ## How to retrieve evidence
 Precedent evidence is retrospective and longitudinal; the primary source is often
 a review or a case history, not a fresh experiment.
-Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `WebSearch` / `WebFetch`.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `OpenAlex` (via `paper-search` `search_openalex`, with `OPENALEX_API_KEY`); if OpenAlex is also unavailable, fall back to `WebSearch` / `WebFetch`. When both Semantic Scholar and OpenAlex return the same paper, double-check them against each other (DOI, title, year) and record any divergence in `metadata_mismatches`.
 
 1. **Retrospectives and review articles** — "history/evolution of X" surveys via
    `paper-search`/`search_papers` when available. Then use `semantic-scholar`/`paper_references`

@@ -7,8 +7,8 @@
     },
     "paper-search": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["paper-search-mcp"]
+      "command": "zsh",
+      "args": ["-lc", "set -a; [ -f .env ] && source .env; set +a; exec uvx paper-search-mcp"]
     },
     "fetch": {
       "type": "stdio",
