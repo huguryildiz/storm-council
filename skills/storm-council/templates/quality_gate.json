@@ -5,6 +5,8 @@
   "minor_issues": [],
   "coverage_score": 0,
   "traceability_score": 0,
+  "argument_support_score": 0,
+  "argument_support_status": "passage_checked|partial_review|metadata_only|not_checked",
   "contradiction_handling_score": 0,
   "recommendation_support_score": 0,
   "review_summary": "One paragraph: what passed, what is caveated, what is missing."

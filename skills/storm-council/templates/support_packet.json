@@ -1,0 +1,22 @@
+{
+  "packet_id": "P-001",
+  "claim_id": "C-001",
+  "evidence_id": "E-001",
+  "source_id": "S-001",
+  "source_material_path": "source_material/S-001.txt",
+  "source_material_sha256": "sha256 over the UTF-8 source_material file bytes",
+  "locator": {
+    "page": null,
+    "section": null,
+    "table": null,
+    "figure": null,
+    "equation": null,
+    "clause": null,
+    "paragraph_hint": "Where the quoted passage appears."
+  },
+  "quoted_passage": "Exact passage used to judge support for the atomic claim.",
+  "source_access": "full_text|abstract_only|metadata_only",
+  "extraction_method": "full_text|abstract|metadata|manual",
+  "retrieval_log_id": null,
+  "context_note": "Short note about the surrounding context or limitation."
+}

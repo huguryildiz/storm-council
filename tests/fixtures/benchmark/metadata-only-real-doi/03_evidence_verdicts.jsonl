@@ -1,0 +1,1 @@
+{"claim_id":"C-001","evidence_id":"E-001","judged_claim":"Method X outperforms baseline Y on Benchmark Z.","verdict":"entails","scope_preserved":"yes","rationale":"Legacy verdict has no local passage packet.","human_review_required":false}

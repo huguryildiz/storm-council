@@ -27,16 +27,19 @@ auditable.
 
 ## Current results
 
-Measured on 2026-06-30 with `python3 scripts/benchmark.py`:
+Measured on 2026-07-02 with `python3 scripts/benchmark.py`:
 
 | Metric | Result | Meaning |
 | --- | ---: | --- |
-| False pass | 0/12 (0.0%) | A fixture expected to block or downgrade did not pass cleanly. |
-| False block | 0/3 (0.0%) | A fixture expected to downgrade was not escalated to a hard block. |
+| False pass | 0/15 (0.0%) | A fixture expected to block or downgrade did not pass cleanly. |
+| False block | 0/5 (0.0%) | A fixture expected to downgrade was not escalated to a hard block. |
 | Missing locator | 1/1 (100.0%) | Direct support without a concrete evidence locator was caught. |
 | Source identity mismatch | 3/3 (100.0%) | Duplicate, superseded, or retracted source identity cases were surfaced. |
-| Overclaim detection | 6/6 (100.0%) | Scope, metric, benchmark, deployment, and causal overclaims were surfaced. |
-| Abstract-only downgrade | 1/1 (100.0%) | Abstract-only support for a strong direct claim was blocked/downgraded. |
+| Overclaim detection | 8/8 (100.0%) | Scope, metric, benchmark, deployment, and causal overclaims were surfaced. |
+| Abstract-only downgrade | 2/2 (100.0%) | Abstract-only support for a strong direct claim was blocked/downgraded. |
+| Passage entailment clean | 1/1 (100.0%) | A valid local support packet with `entails/yes` counted as passage-checked. |
+| Passage quote integrity | 1/1 (100.0%) | A support packet whose quote is absent from local source material was caught. |
+| Metadata-only not passage-checked | 1/1 (100.0%) | DOI metadata without a support packet stayed `not_checked`. |
 | Contradiction carry-through | 1/1 (100.0%) | An unresolved contradiction stayed visible in the verifier output. |
 
 ## Covered cases
@@ -55,12 +58,18 @@ Measured on 2026-06-30 with `python3 scripts/benchmark.py`:
 | `average-to-best-overall` | `REVISE` | `average_to_best_overall` |
 | `missing-locator` | `REVISE` | `missing_locator` |
 | `contradiction-carry-through` | `PASS_WITH_CAVEATS` | `contradiction_carry_through` |
+| `metadata-only-real-doi` | `PASS` | `metadata_only_real_doi` |
+| `clean-passage-entails` | `PASS` | `clean_passage_entails` |
+| `quote-not-in-source` | `REVISE` | `quote_not_in_source` |
+| `abstract-only-overclaim` | `REVISE` | `abstract_only_overclaim` |
+| `real-paper-wrong-claim` | `REVISE` | `real_paper_wrong_claim_packet` |
 
 ## Adding a fixture
 
 1. Add a minimal run directory under `tests/fixtures/benchmark/<case>/`.
 2. Include only pre-recorded artifacts: claims, source registry, evidence,
-   verdicts, contradictions, and metadata files as needed.
+   verdicts, support packets/source material, contradictions, and metadata files
+   as needed.
 3. Add `label.json` with `expected_verdict` and a unique `failure_mode`.
 4. Run `python3 scripts/benchmark.py` and update the current results table if
    the measured metric totals change.

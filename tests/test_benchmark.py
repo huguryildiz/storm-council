@@ -11,11 +11,11 @@ SPEC.loader.exec_module(benchmark_mod)
 
 
 class BenchmarkFixtureTest(unittest.TestCase):
-    def test_benchmark_suite_has_twelve_distinct_labelled_cases(self):
+    def test_benchmark_suite_has_seventeen_distinct_labelled_cases(self):
         fixtures = benchmark_mod.load_fixtures(ROOT / "tests" / "fixtures" / "benchmark")
 
-        self.assertEqual(len(fixtures), 12)
-        self.assertEqual(len({f.label["failure_mode"] for f in fixtures}), 12)
+        self.assertEqual(len(fixtures), 17)
+        self.assertEqual(len({f.label["failure_mode"] for f in fixtures}), 17)
         for fixture in fixtures:
             self.assertIn("expected_verdict", fixture.label)
             self.assertIn("failure_mode", fixture.label)
@@ -44,12 +44,15 @@ class BenchmarkFixtureTest(unittest.TestCase):
         )
 
         expected = {
-            "false_pass": (0, 12),
-            "false_block": (0, 3),
+            "false_pass": (0, 15),
+            "false_block": (0, 5),
             "missing_locator": (1, 1),
             "source_identity_mismatch": (3, 3),
-            "overclaim_detection": (6, 6),
-            "abstract_only_downgrade": (1, 1),
+            "overclaim_detection": (8, 8),
+            "abstract_only_downgrade": (2, 2),
+            "passage_entailment_clean": (1, 1),
+            "passage_quote_integrity": (1, 1),
+            "metadata_only_not_passage_checked": (1, 1),
             "contradiction_carry_through": (1, 1),
         }
         for metric, (count, total) in expected.items():
@@ -80,7 +83,7 @@ class BenchmarkFixtureTest(unittest.TestCase):
 
         encoded = benchmark_mod.format_json(report)
 
-        self.assertEqual(json.loads(encoded)["totals"]["fixtures"], 12)
+        self.assertEqual(json.loads(encoded)["totals"]["fixtures"], 17)
 
 
 if __name__ == "__main__":

@@ -46,16 +46,20 @@ class ContentVerificationFixtureTest(unittest.TestCase):
         template = json.loads(
             (ROOT / "skills/storm-council/templates/evidence_verdict.json").read_text(encoding="utf-8")
         )
-        required = {
+        legacy_required = {
             "claim_id", "evidence_id", "judged_claim", "verdict",
             "scope_preserved", "rationale", "human_review_required",
         }
-        self.assertEqual(set(template), required)
+        v2_required = legacy_required | {
+            "packet_id", "claim_atoms", "entailed_atoms", "unsupported_atoms",
+            "judge_type", "judge_prompt_version",
+        }
+        self.assertEqual(set(template), v2_required)
 
         fixture = verify_mod._read_jsonl(
             ROOT / "tests/fixtures/content/wrong-paper/wrong-claim/03_evidence_verdicts.jsonl"
         )[0]
-        self.assertTrue(required <= set(fixture))
+        self.assertTrue(legacy_required <= set(fixture))
         self.assertIn(fixture["verdict"], verify_mod._VERDICT_VALUES)
         self.assertIn(fixture["scope_preserved"], verify_mod._SCOPE_VERDICT_VALUES)
         self.assertIsInstance(fixture["human_review_required"], bool)

@@ -37,15 +37,17 @@ specific claim. For direct support, Storm Council records an `evidence_id` with
 an exact locator (page/section/table/figure/equation/clause/paragraph hint), a
 short excerpt, a content-verification status, and the source scope
 (benchmark/dataset, metric, baseline, conditions, time horizon, and deployment
-vs simulation context). Abstract-only evidence cannot directly support strong
-empirical, causal, comparative, quantitative, or safety-critical claims.
+vs simulation context). Stage 3b then records `03_support_packets.jsonl`: local
+quoted-passage packets whose source text lives under `source_material/` and is
+hashed. Abstract-only evidence cannot directly support strong empirical,
+causal, comparative, quantitative, or safety-critical claims.
 
 Phase 4 adds a separate verdict artifact, `03_evidence_verdicts.jsonl`, for
-LLM-assisted passage-to-claim judgement. Each verdict names the `claim_id` and
-`evidence_id`, records `verdict` (`entails`, `partial`, `does_not_entail`,
-`uncertain`) and `scope_preserved` (`yes`, `narrowed`, `overclaimed`,
-`uncertain`), and includes a short rationale. `uncertain` is a valid downgrade,
-not a failure to hide.
+LLM-assisted or human passage-to-claim judgement. Each verdict names the
+`claim_id`, `evidence_id`, and `packet_id`, records claim atoms, `verdict`
+(`entails`, `partial`, `does_not_entail`, `uncertain`) and `scope_preserved`
+(`yes`, `narrowed`, `overclaimed`, `uncertain`), and includes a short
+rationale. `uncertain` is a valid downgrade, not a failure to hide.
 
 ## 4. Contradiction-ledger logic
 

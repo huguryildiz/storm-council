@@ -1,5 +1,6 @@
 import contextlib
 import csv
+import hashlib
 import importlib.util
 import io
 import json
@@ -16,13 +17,20 @@ SPEC.loader.exec_module(verify_mod)
 
 
 def _write_run(base: Path, *, claims=None, sources=None, contradictions=None,
-               evidence=None, report=None, tripwires=None):
+               evidence=None, report=None, tripwires=None, support_packets=None,
+               verdicts=None):
     if claims is not None:
         (base / "03_claims.jsonl").write_text(
             "\n".join(json.dumps(c) for c in claims) + "\n", encoding="utf-8")
     if evidence is not None:
         (base / "03_evidence.jsonl").write_text(
             "\n".join(json.dumps(e) for e in evidence) + "\n", encoding="utf-8")
+    if support_packets is not None:
+        (base / "03_support_packets.jsonl").write_text(
+            "\n".join(json.dumps(p) for p in support_packets) + "\n", encoding="utf-8")
+    if verdicts is not None:
+        (base / "03_evidence_verdicts.jsonl").write_text(
+            "\n".join(json.dumps(v) for v in verdicts) + "\n", encoding="utf-8")
     if sources is not None:
         buf = io.StringIO()
         cols = ["source_id", "title", "url", "publisher", "publication_date",
@@ -276,6 +284,244 @@ class EvidenceRegistryTest(unittest.TestCase):
             )
             gate = verify_mod.verify(base)
             self.assertTrue(any("E-999" in b for b in gate["blocking_issues"]))
+
+
+class PassageSupportPacketTest(unittest.TestCase):
+    """Passage support audit: source identity/relevance is separate from
+    claim-passage entailment. Existing bundles without packets stay readable;
+    packeted bundles get deterministic quote/hash checks."""
+
+    def _material(self, base: Path, text: str, name: str = "S-001.txt") -> tuple[str, str]:
+        mat_dir = base / "source_material"
+        mat_dir.mkdir()
+        rel = f"source_material/{name}"
+        path = base / rel
+        path.write_text(text, encoding="utf-8")
+        return rel, hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    def _claim(self, **kw):
+        out = {
+            "claim_id": "C-001",
+            "perspective": "academic",
+            "claim_text": "Method X outperforms baseline Y on Benchmark Z.",
+            "claim_type": "fact",
+            "claim_strength": "comparative",
+            "confidence": 0.81,
+            "evidence_status": "supported",
+            "source_ids": ["S-001"],
+            "evidence_ids": ["E-001"],
+            "content_verification": {
+                "status": "direct_support",
+                "full_text_status": "full_text",
+            },
+            "support_scope": {
+                "metric": "score",
+                "comparison_baseline": "baseline Y",
+                "dataset_or_benchmark": "Benchmark Z",
+            },
+        }
+        out.update(kw)
+        return out
+
+    def _source(self, **kw):
+        out = {
+            "source_id": "S-001",
+            "title": "Benchmark Paper",
+            "url": "https://doi.org/10.5555/benchmark.paper",
+            "doi": "10.5555/benchmark.paper",
+            "source_type": "peer_reviewed",
+            "source_class": "peer_reviewed",
+            "full_text_status": "full_text",
+            "publication_status": "PUBLISHED_VERIFIED",
+            "credibility_notes": "ok",
+        }
+        out.update(kw)
+        return out
+
+    def _evidence(self, **kw):
+        out = {
+            "evidence_id": "E-001",
+            "source_id": "S-001",
+            "locator": {"table": "Table 1"},
+            "evidence_excerpt": "Method X reports a higher score than baseline Y on Benchmark Z.",
+        }
+        out.update(kw)
+        return out
+
+    def _packet(self, rel: str, sha: str, quote: str, **kw):
+        out = {
+            "packet_id": "P-001",
+            "claim_id": "C-001",
+            "evidence_id": "E-001",
+            "source_id": "S-001",
+            "source_material_path": rel,
+            "source_material_sha256": sha,
+            "locator": {"table": "Table 1"},
+            "quoted_passage": quote,
+            "source_access": "full_text",
+            "extraction_method": "manual",
+            "retrieval_log_id": "R-001",
+            "context_note": "Table row used for the comparison.",
+        }
+        out.update(kw)
+        return out
+
+    def _verdict(self, **kw):
+        out = {
+            "claim_id": "C-001",
+            "evidence_id": "E-001",
+            "packet_id": "P-001",
+            "judged_claim": "Method X outperforms baseline Y on Benchmark Z.",
+            "claim_atoms": ["Method X has a higher score than baseline Y on Benchmark Z."],
+            "entailed_atoms": ["Method X has a higher score than baseline Y on Benchmark Z."],
+            "unsupported_atoms": [],
+            "verdict": "entails",
+            "scope_preserved": "yes",
+            "rationale": "The table reports the same metric, baseline, and benchmark.",
+            "human_review_required": False,
+            "judge_type": "llm_assisted",
+            "judge_prompt_version": "stage_content_verification.v2",
+        }
+        out.update(kw)
+        return out
+
+    def test_doi_verified_source_without_packet_is_not_passage_checked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            _write_run(
+                base,
+                claims=[self._claim()],
+                evidence=[self._evidence()],
+                sources=[self._source()],
+                contradictions=[],
+                verdicts=[self._verdict(packet_id=None)],
+            )
+            gate = verify_mod.verify(base)
+            self.assertEqual(gate["argument_support_status"], "not_checked")
+            self.assertEqual(gate["argument_support_score"], 0)
+            self.assertEqual(gate["blocking_issues"], [])
+
+    def test_clean_packet_with_quote_present_counts_as_passage_checked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            quote = "Method X reports a higher score than baseline Y on Benchmark Z."
+            rel, sha = self._material(base, f"Intro.\n{quote}\nLimitations.")
+            _write_run(
+                base,
+                claims=[self._claim()],
+                evidence=[self._evidence(evidence_excerpt=quote)],
+                sources=[self._source()],
+                contradictions=[],
+                support_packets=[self._packet(rel, sha, quote)],
+                verdicts=[self._verdict()],
+            )
+            gate = verify_mod.verify(base)
+            self.assertEqual(gate["argument_support_status"], "passage_checked")
+            self.assertEqual(gate["argument_support_score"], 100)
+            self.assertFalse(any("support packet" in m.lower()
+                                 for m in gate["blocking_issues"] + gate["major_issues"]))
+
+    def test_quote_missing_from_source_material_is_blocking_for_direct_support(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            quote = "Method X reports a higher score than baseline Y on Benchmark Z."
+            rel, sha = self._material(base, "The source talks about a different experiment.")
+            _write_run(
+                base,
+                claims=[self._claim()],
+                evidence=[self._evidence(evidence_excerpt=quote)],
+                sources=[self._source()],
+                contradictions=[],
+                support_packets=[self._packet(rel, sha, quote)],
+                verdicts=[self._verdict()],
+            )
+            gate = verify_mod.verify(base)
+            self.assertEqual(gate["argument_support_status"], "partial_review")
+            self.assertTrue(any("quoted passage not found" in b.lower()
+                                for b in gate["blocking_issues"]))
+
+    def test_missing_source_material_hash_cannot_count_as_clean_support(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            quote = "Method X reports a higher score than baseline Y on Benchmark Z."
+            rel, _ = self._material(base, f"Intro.\n{quote}\nLimitations.")
+            _write_run(
+                base,
+                claims=[self._claim()],
+                evidence=[self._evidence(evidence_excerpt=quote)],
+                sources=[self._source()],
+                contradictions=[],
+                support_packets=[self._packet(rel, "", quote)],
+                verdicts=[self._verdict()],
+            )
+            gate = verify_mod.verify(base)
+            self.assertEqual(gate["argument_support_score"], 0)
+            self.assertEqual(gate["argument_support_status"], "partial_review")
+            self.assertTrue(any("missing source_material_sha256" in b
+                                for b in gate["blocking_issues"]))
+
+    def test_abstract_only_packet_does_not_count_as_clean_support(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            quote = "The abstract says Method X is evaluated on Benchmark Z."
+            rel, sha = self._material(base, quote)
+            _write_run(
+                base,
+                claims=[self._claim(content_verification={"status": "direct_support",
+                                                          "full_text_status": "abstract_only"})],
+                evidence=[self._evidence(locator={"section": "Abstract"},
+                                         evidence_excerpt=quote,
+                                         extraction_method="abstract")],
+                sources=[self._source(full_text_status="abstract_only")],
+                contradictions=[],
+                support_packets=[self._packet(rel, sha, quote, source_access="abstract_only")],
+                verdicts=[self._verdict(rationale="Only abstract-level evidence is available.")],
+            )
+            gate = verify_mod.verify(base)
+            self.assertEqual(gate["argument_support_score"], 0)
+            self.assertEqual(gate["argument_support_status"], "partial_review")
+            self.assertTrue(any("abstract" in b.lower() for b in gate["blocking_issues"]))
+
+    def test_metadata_only_packet_sets_metadata_status_not_passage_checked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            quote = "Crossref metadata confirms a paper title about Method X."
+            rel, sha = self._material(base, quote)
+            _write_run(
+                base,
+                claims=[self._claim(content_verification={"status": "partial_support",
+                                                          "full_text_status": "metadata_only"})],
+                evidence=[self._evidence(locator={"section": "DOI metadata"},
+                                         evidence_excerpt=quote,
+                                         extraction_method="metadata")],
+                sources=[self._source(full_text_status="metadata_only")],
+                contradictions=[],
+                support_packets=[self._packet(rel, sha, quote, source_access="metadata_only",
+                                              extraction_method="metadata")],
+                verdicts=[self._verdict(verdict="partial", scope_preserved="uncertain",
+                                        human_review_required=True,
+                                        rationale="Metadata identifies the paper, not the claim.")],
+            )
+            gate = verify_mod.verify(base)
+            self.assertEqual(gate["argument_support_status"], "metadata_only")
+            self.assertEqual(gate["argument_support_score"], 0)
+
+    def test_packet_path_must_stay_under_source_material(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            quote = "Method X reports a higher score than baseline Y on Benchmark Z."
+            _write_run(
+                base,
+                claims=[self._claim()],
+                evidence=[self._evidence(evidence_excerpt=quote)],
+                sources=[self._source()],
+                contradictions=[],
+                support_packets=[self._packet("../outside.txt", "0" * 64, quote)],
+                verdicts=[self._verdict()],
+            )
+            gate = verify_mod.verify(base)
+            self.assertTrue(any("outside source_material" in b.lower()
+                                for b in gate["blocking_issues"]))
 
 
 class StatusBannerHonestyTest(unittest.TestCase):
@@ -619,6 +865,7 @@ class SealTest(unittest.TestCase):
     """07a tamper-evident provenance bundle (verify.py --seal / --check-seal)."""
 
     _VERDICT_FIELDS = ("status", "coverage_score", "traceability_score",
+                       "argument_support_score",
                        "contradiction_handling_score", "recommendation_support_score")
 
     def _make_bundle(self, base: Path):
@@ -1199,7 +1446,7 @@ class TripwireTest(unittest.TestCase):
                 direction="maybe", reversal_cost="extreme",
                 monitor_kind="auto_recheckable", monitoring_source="not resolvable")])
             clean = self._run(tmp_c, [self._tripwire()])
-            keys = ("coverage_score", "traceability_score",
+            keys = ("coverage_score", "traceability_score", "argument_support_score",
                     "contradiction_handling_score", "recommendation_support_score")
             self.assertEqual(broken["blocking_issues"], [])
             self.assertEqual(broken["major_issues"], clean["major_issues"])
@@ -1357,6 +1604,7 @@ class ResolutionPlanTest(unittest.TestCase):
                             probability=0.3)
         clean = self._plan()
         keys = ("status", "blocking_issues", "coverage_score", "traceability_score",
+                "argument_support_score",
                 "contradiction_handling_score", "recommendation_support_score")
         with tempfile.TemporaryDirectory() as tmp_b, tempfile.TemporaryDirectory() as tmp_c:
             gb = self._run(tmp_b, [self._cx(resolution_plan=broken)])

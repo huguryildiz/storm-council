@@ -1,0 +1,4 @@
+{
+  "expected_verdict": "PASS",
+  "failure_mode": "metadata_only_real_doi"
+}

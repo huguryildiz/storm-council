@@ -1,0 +1,2 @@
+source_id,title,url,publisher,publication_date,source_type,accessed_at,credibility_notes,relevance_notes,doi,full_text_status,publication_status,source_class
+S-001,Benchmark Paper,https://doi.org/10.5555/benchmark.paper,Test Publisher,2026,peer_reviewed,2026-01-01T00:00:00+00:00,DOI resolves,Relevant benchmark paper,10.5555/benchmark.paper,full_text,PUBLISHED_VERIFIED,peer_reviewed

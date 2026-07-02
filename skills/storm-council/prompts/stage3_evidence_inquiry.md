@@ -6,10 +6,12 @@
 > finding.
 >
 > Writes: `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`,
-> `03_source_registry.csv`, `03_evidence.jsonl`. Shapes:
+> `03_source_registry.csv`, `03_evidence.jsonl`, `03_support_packets.jsonl`,
+> and local files under `source_material/`. Shapes:
 > [`../templates/claim_record.json`](../templates/claim_record.json),
 > [`../templates/source_record.json`](../templates/source_record.json),
-> [`../templates/evidence_record.json`](../templates/evidence_record.json).
+> [`../templates/evidence_record.json`](../templates/evidence_record.json),
+> [`../templates/support_packet.json`](../templates/support_packet.json).
 
 ---
 
@@ -99,6 +101,21 @@ equation, clause, or paragraph hint), and a short `evidence_excerpt`. A claim
 marked `direct_support` **must** point at an evidence record that has a concrete
 locator — relevance or topic-similarity alone is not support.
 
+**Build passage support packets.** For every `direct_support`, strong,
+comparative, causal, quantitative, recommendation, or load-bearing finding,
+save the local text material used for the support judgement under
+`source_material/` and write one `03_support_packets.jsonl` row per judged
+`(claim_id, evidence_id)` pair. Each packet must include a `P-###` id, the
+linked claim/evidence/source IDs, a relative `source_material_path` under
+`source_material/`, the file's SHA-256 hash, a concrete locator, the exact
+`quoted_passage`, `source_access` (`full_text`, `abstract_only`, or
+`metadata_only`), `extraction_method`, optional `retrieval_log_id`, and a
+short `context_note`.
+
+Do not write support packets from bibliographic metadata alone unless
+`source_access` is `metadata_only`. Metadata-only packets may identify a source,
+but they do not make the argument passage-checked.
+
 Register every source once in `03_source_registry.csv` and `03_sources.bib`
 using the source shape: `source_id`, `title`, `author/publisher`, `year`,
 `url`, `source_type`, identifiers (`doi`, `arxiv_id`, …), a publication
@@ -131,6 +148,7 @@ claim — default an unknown class to `gray`, never `peer_reviewed`), and a
   lenses did not raise.
 
 `scripts/verify.py` enforces the deterministic half of these rules
-(locator required for `direct_support`, abstract-only gating, comparative scope
-fields, duplicate/retracted sources, overclaiming language). Run it after
+(locator required for `direct_support`, support packet path/hash/quote checks,
+abstract-only gating, comparative scope fields, duplicate/retracted sources,
+overclaiming language). Run it after
 Stage 6.

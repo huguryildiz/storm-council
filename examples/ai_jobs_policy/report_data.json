@@ -36,6 +36,7 @@
     "scores": {
       "coverage": 100,
       "traceability": 100,
+      "argument_support": 0,
       "contradiction": 38,
       "recommendation": 100
     }
@@ -410,9 +411,11 @@
     "scores": {
       "coverage": 100,
       "traceability": 100,
+      "argument_support": 0,
       "contradiction": 38,
       "recommendation": 100
     },
+    "argument_support_status": "not_checked",
     "blocking": [],
     "major": [
       "Supported claims rest only on run-log provenance (no external source): C-026"

@@ -9,6 +9,8 @@ Storm Council separates artifact integrity from factual truth.
 - claim/source/evidence/contradiction IDs resolve;
 - supported facts and inferences cite registered sources;
 - direct-support claims have concrete evidence locators;
+- passage support packets stay under `source_material/`, hash the local text
+  file, and quote text that is present in that file;
 - required evidence verdicts exist and use valid enum values;
 - `does_not_entail` and `overclaimed` verdicts block direct/strong/comparative support;
 - DOI normalization, duplicate source versions, retractions, corrections, and
@@ -19,7 +21,8 @@ Storm Council separates artifact integrity from factual truth.
 - recommendations and next actions point back to evidence or conflict IDs.
 
 It computes `coverage_score`, `traceability_score`,
-`contradiction_handling_score`, `recommendation_support_score`, and a status:
+`argument_support_score`, `contradiction_handling_score`,
+`recommendation_support_score`, `argument_support_status`, and a status:
 `PASS`, `PASS_WITH_CAVEATS`, `REVISE`, or `BLOCKED_PENDING_EVIDENCE`.
 
 ## What It Does Not Prove
@@ -28,6 +31,8 @@ It computes `coverage_score`, `traceability_score`,
 
 - a model found every relevant source;
 - a cited passage semantically entails a claim;
+- a DOI-resolved source supports the cited claim unless a support packet and
+  verdict exist for that claim/evidence pair;
 - a recommendation is true or sufficient;
 - a source remains current unless rechecked;
 - a seal was created by a trusted person.

@@ -15,7 +15,8 @@ folder for the rendered report.
 
 Five lenses · 28 claims · 9 sources · 20 evidence records · 48 evidence
 verdicts · 8 explicit contradictions. This run demonstrates the **v2 evidence
-path** — `03_evidence.jsonl` with locators and `03_evidence_verdicts.jsonl`
+path** — `03_evidence.jsonl` with locators, `03_support_packets.jsonl` with
+local quoted passages, and `03_evidence_verdicts.jsonl`
 entailment/scope judgements.
 
 **The (honest) outcome.** The synthesis does not force a verdict: do **not** replace

@@ -10,7 +10,8 @@ On Apple Silicon, prefer native arm64 Python. On the audit machine:
 
 - `/opt/homebrew/bin/python3.12` reported `arm64`;
 - default `python3` reported Anaconda `x86_64` but had pytest installed;
-- the project `.venv/bin/python` reported `arm64` but did not have pytest.
+- the project `.venv/bin/python` was recreated from `requirements-docs.txt` for
+  MkDocs and reported `arm64`; it does not install pytest.
 
 ## Tests
 
@@ -22,6 +23,17 @@ python3 -m pytest tests/
 ```
 
 `unittest` requires no extra package. `pytest` requires pytest to be installed.
+
+## Documentation Build
+
+MkDocs is a documentation-only dependency. Install it into the ignored local
+virtual environment with:
+
+```bash
+/opt/homebrew/bin/python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements-docs.txt
+.venv/bin/python -m mkdocs build --strict
+```
 
 ## MCP Servers
 

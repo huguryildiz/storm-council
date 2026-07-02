@@ -73,27 +73,48 @@ equation, clause, or paragraph and include a short excerpt. A claim may cite a
 source because it is relevant, but it cannot be marked `direct_support` unless
 the supporting evidence has a concrete locator.
 
+## Passage support packets
+
+Stage 3b adds `03_support_packets.jsonl`: one local passage packet for each
+judged `(claim_id, evidence_id)` pair that can affect argument reliability. A
+packet points at a text file under `source_material/`, records that file's
+SHA-256 hash, names the exact `quoted_passage`, and declares whether the source
+access was `full_text`, `abstract_only`, or `metadata_only`.
+
+The deterministic verifier checks that packet paths stay under
+`source_material/`, the hash matches the local text file, and the quoted passage
+is actually present in that local material. This proves local packet integrity,
+not truth. A DOI-resolved source with no packet stays publication-identity
+checked but `argument_support_status: not_checked`.
+
 ## Evidence verdicts
 
-Phase 4 adds `03_evidence_verdicts.jsonl`: one LLM-assisted verdict for each
-judged `(claim_id, evidence_id)` pair. The verdict layer answers the question
-"does this cited passage support this atomic claim at this scope?" in an
+Phase 4 / Stage 3b adds `03_evidence_verdicts.jsonl`: one LLM-assisted or human
+verdict for each support packet. The verdict layer answers the question "does
+this quoted packet passage support this atomic claim at this scope?" in an
 inspectable artifact:
 
 | Field | Values |
 | --- | --- |
+| `packet_id` | Existing `P-###` support packet |
 | `verdict` | `entails`, `partial`, `does_not_entail`, `uncertain` |
 | `scope_preserved` | `yes`, `narrowed`, `overclaimed`, `uncertain` |
+| `judge_type` | `llm_assisted`, `human` |
 
 `uncertain` is a first-class outcome. It downgrades confidence and requires
 review; it must not be rewritten as support. `does_not_entail` and
 `overclaimed` are blocking for direct/strong/comparative support.
 
 The deterministic verifier checks that required verdicts exist, have valid enum
-values, name real claim/evidence IDs, include a rationale, and use a boolean
-`human_review_required`. It does **not** prove semantic entailment itself; the
-entailment and scope judgement is LLM-assisted and should remain visible for
-human review.
+values, name real claim/evidence/packet IDs, include atom lists and a rationale,
+and use a boolean `human_review_required`. It does **not** prove semantic
+entailment itself; the entailment and scope judgement remains visible for human
+review.
+
+`argument_support_score` is separate from `traceability_score`. Traceability
+means claim/source/evidence IDs resolve. Argument support counts only claims
+whose local packet quote is present, full-text, and judged `entails` with
+`scope_preserved: yes`.
 
 Content-verification statuses:
 

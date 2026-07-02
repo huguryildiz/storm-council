@@ -1,0 +1,4 @@
+{
+  "expected_verdict": "PASS",
+  "failure_mode": "clean_passage_entails"
+}

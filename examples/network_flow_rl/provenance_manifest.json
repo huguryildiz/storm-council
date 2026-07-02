@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "generator_version": "storm-council/verify.py",
-  "sealed_at": "2026-07-01T18:22:27+00:00",
+  "sealed_at": "2026-07-02T00:59:09+00:00",
   "tool": {
     "name": "verify.py",
     "invocation": "seal"
@@ -10,6 +10,7 @@
     "status": "PASS_WITH_CAVEATS",
     "coverage_score": 100,
     "traceability_score": 100,
+    "argument_support_score": 0,
     "contradiction_handling_score": 25,
     "recommendation_support_score": 100
   },
@@ -102,8 +103,8 @@
     },
     {
       "path": "06_quality_gate.json",
-      "sha256": "682f56315a61868ed0673496be48d0fe540f49e691b0502f20dd8a2af070e17c",
-      "bytes": 958
+      "sha256": "c6deeb834d2e37b4abe7bedbf83989a78befc8ef07a6d84fe1148c862300735c",
+      "bytes": 1052
     },
     {
       "path": "decision_criticality.json",
@@ -117,8 +118,8 @@
     },
     {
       "path": "report_data.json",
-      "sha256": "b5f7ed6b90d3034590a3c9dcd797501bad0e487141acc5a673b55af6161e246d",
-      "bytes": 11827
+      "sha256": "fc9e78d5f85a387974e631d125f98b43494b3e1211d757aa4c7928c22209af40",
+      "bytes": 11931
     },
     {
       "path": "run_manifest.json",
@@ -127,8 +128,8 @@
     },
     {
       "path": "storm_council_report.html",
-      "sha256": "f0e1b4c2592b3e1aeef3d2586b2d4b13e2cc59dfc0f56e11077a1960bf4257f7",
-      "bytes": 625071
+      "sha256": "7b32971191441264b137992438ca90906b5f4f1b95f59d57a749154449189470",
+      "bytes": 625835
     }
   ],
   "signature": null,

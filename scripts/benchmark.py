@@ -32,6 +32,8 @@ OVERCLAIM_MODES = {
     "benchmark_generalization",
     "average_to_best_overall",
     "real_paper_wrong_claim",
+    "real_paper_wrong_claim_packet",
+    "abstract_only_overclaim",
 }
 
 
@@ -100,9 +102,24 @@ def _detected(failure_mode: str, gate: dict) -> dict:
             and any(term in issues for term in ("overclaim", "does_not_entail"))
         ),
         "abstract_only_downgrade": (
-            failure_mode == "abstract_only_downgrade"
+            failure_mode in {"abstract_only_downgrade", "abstract_only_overclaim"}
             and actual != "PASS"
             and "abstract" in issues
+        ),
+        "passage_entailment_clean": (
+            failure_mode == "clean_passage_entails"
+            and gate.get("argument_support_status") == "passage_checked"
+            and gate.get("argument_support_score") == 100
+        ),
+        "passage_quote_integrity": (
+            failure_mode == "quote_not_in_source"
+            and "quoted passage not found" in issues
+            and actual in BLOCKING_VERDICTS
+        ),
+        "metadata_only_not_passage_checked": (
+            failure_mode == "metadata_only_real_doi"
+            and gate.get("argument_support_status") == "not_checked"
+            and gate.get("argument_support_score") == 0
         ),
         "contradiction_carry_through": (
             failure_mode == "contradiction_carry_through"
@@ -145,6 +162,8 @@ def run_benchmark(fixtures: list[Fixture], *, root: Path | None = None) -> dict:
             "scores": {
                 "coverage": gate["coverage_score"],
                 "traceability": gate["traceability_score"],
+                "argument_support": gate["argument_support_score"],
+                "argument_support_status": gate["argument_support_status"],
                 "contradiction_handling": gate["contradiction_handling_score"],
                 "recommendation_support": gate["recommendation_support_score"],
             },
@@ -186,7 +205,14 @@ def run_benchmark(fixtures: list[Fixture], *, root: Path | None = None) -> dict:
             "missing_locator": detection_metric("missing_locator", {"missing_locator"}),
             "source_identity_mismatch": detection_metric("source_identity_mismatch", SOURCE_IDENTITY_MODES),
             "overclaim_detection": detection_metric("overclaim_detection", OVERCLAIM_MODES),
-            "abstract_only_downgrade": detection_metric("abstract_only_downgrade", {"abstract_only_downgrade"}),
+            "abstract_only_downgrade": detection_metric(
+                "abstract_only_downgrade", {"abstract_only_downgrade", "abstract_only_overclaim"}
+            ),
+            "passage_entailment_clean": detection_metric("passage_entailment_clean", {"clean_passage_entails"}),
+            "passage_quote_integrity": detection_metric("passage_quote_integrity", {"quote_not_in_source"}),
+            "metadata_only_not_passage_checked": detection_metric(
+                "metadata_only_not_passage_checked", {"metadata_only_real_doi"}
+            ),
             "contradiction_carry_through": detection_metric(
                 "contradiction_carry_through", {"contradiction_carry_through"}
             ),

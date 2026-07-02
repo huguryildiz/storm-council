@@ -60,6 +60,7 @@
     "status": "PASS_WITH_CAVEATS",
     "coverage_score": 100,
     "traceability_score": 100,
+    "argument_support_score": 64,
     "contradiction_handling_score": 25,
     "recommendation_support_score": 100
   },
@@ -67,6 +68,7 @@
     "status": "REVISE",
     "coverage_score": 100,
     "traceability_score": 100,
+    "argument_support_score": 64,
     "contradiction_handling_score": 25,
     "recommendation_support_score": 100
   },

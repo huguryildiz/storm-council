@@ -219,6 +219,74 @@ def _tripwire_monitor_badge(kind) -> str:
     return f'<span class="tag kind">{e(kind or "unknown")}</span>'
 
 
+_ARG_SUPPORT_BADGE = {
+    "passage_checked": ("done", "passage-checked"),
+    "partial_review": ("part", "partial/review"),
+    "metadata_only": ("kind", "metadata only"),
+    "not_checked": ("kind", "not checked"),
+}
+
+
+def _argument_support_row_status(packet: dict, verdict: dict | None) -> tuple[str, str]:
+    access = str(packet.get("source_access") or "").lower()
+    if access == "metadata_only":
+        return ("kind", "metadata only")
+    if (access == "full_text" and isinstance(verdict, dict)
+            and str(verdict.get("verdict") or "").lower() == "entails"
+            and str(verdict.get("scope_preserved") or "").lower() == "yes"):
+        return ("done", "passage-checked")
+    return ("part", "partial/review")
+
+
+def _argument_support_html(review: dict, support_packets, verdicts, scores: dict) -> str:
+    status = str(review.get("argument_support_status") or "").lower()
+    score = scores.get("argument_support")
+    if not status and score is None and not support_packets:
+        return ""
+    tone, label = _ARG_SUPPORT_BADGE.get(status, ("kind", status.replace("_", " ") or "not checked"))
+    score_html = "" if score is None else f' <b>{e(score)}</b>/100'
+    body = (
+        '<p class="lead"><span class="tag %s">%s</span>%s. '
+        'This score is separate from traceability: it requires a local quoted passage, '
+        'a support packet, and an explicit entailment/scope verdict. It does not prove truth.</p>'
+        % (tone, e(label), score_html)
+    )
+    if not isinstance(support_packets, list) or not support_packets:
+        return body
+    by_packet = {
+        v.get("packet_id"): v
+        for v in (verdicts or [])
+        if isinstance(v, dict) and v.get("packet_id")
+    }
+    rows = ""
+    for packet in support_packets:
+        if not isinstance(packet, dict):
+            continue
+        pid = packet.get("packet_id") or ""
+        verdict = by_packet.get(pid)
+        rtone, rlabel = _argument_support_row_status(packet, verdict)
+        refs_html = refs([x for x in (packet.get("claim_id"), packet.get("evidence_id"), packet.get("source_id")) if x])
+        rationale = ""
+        if isinstance(verdict, dict) and verdict.get("rationale"):
+            rationale = f'<span class="verdict-rationale">{text_refs(verdict.get("rationale"))}</span>'
+        rows += (
+            '<tr id="ref-%s"><td class="mono">%s</td><td>%s</td>'
+            '<td><span class="tag %s">%s</span></td><td>%s</td><td>%s%s</td></tr>'
+            % (
+                e(pid), e(pid), refs_html or "—", rtone, e(rlabel),
+                e(packet.get("source_material_path") or "—"),
+                text_refs(packet.get("quoted_passage") or "—"), rationale,
+            )
+        )
+    if rows:
+        body += (
+            '<table class="support-packet-table"><thead><tr><th>Packet</th><th>Refs</th>'
+            '<th>Status</th><th>Material</th><th>Quoted passage</th></tr></thead><tbody>'
+            + rows + "</tbody></table>"
+        )
+    return body
+
+
 def _tripwire_cost_chip(cost) -> str:
     tone = {"high": "open", "medium": "part", "low": "done"}.get(
         str(cost or "").lower(), "kind")
@@ -276,6 +344,8 @@ def build(data: dict, layer: str = "all") -> str:
     counts = data.get("counts", {})
     st = data.get("status", {})
     scores = st.get("scores", {})
+    if not scores and isinstance(data.get("review"), dict):
+        scores = data["review"].get("scores", {}) or {}
     p: list[str] = []
     a = p.append
 
@@ -346,6 +416,7 @@ def build(data: dict, layer: str = "all") -> str:
             score_items = [
                 (scores.get("coverage", "-"), "Coverage"),
                 (scores.get("traceability", "-"), "Traceability"),
+                (scores.get("argument_support", "-"), "Argument Support"),
                 (scores.get("contradiction", "-"), "Contradiction"),
                 (scores.get("recommendation", "-"), "Rec. Support"),
             ]
@@ -534,6 +605,11 @@ def build(data: dict, layer: str = "all") -> str:
     evidence_html = _evidence_table_html(
         data.get("evidence"), _sources_by_id or None, data.get("evidence_verdicts")
     )
+    argument_support_html = _argument_support_html(
+        data.get("review") or {}, data.get("support_packets"), data.get("evidence_verdicts"), scores
+    )
+    if argument_support_html:
+        sec("Argument support", argument_support_html, "report")
     if evidence_html:
         sec("Evidence registry", evidence_html, "report")
 
@@ -750,6 +826,7 @@ def build(data: dict, layer: str = "all") -> str:
         chips = ""
         if scores:
             for k, lbl in (("coverage","coverage"),("traceability","traceability"),
+                           ("argument_support","argument-support"),
                            ("contradiction","contradiction-handling"),("recommendation","recommendation-support")):
                 if k in scores:
                     chips += f'<span class="score">{lbl} <b>{e(scores[k])}</b></span>'
@@ -913,6 +990,13 @@ def _fold_in_artifacts(data: dict, base: Path, layer: str = "all") -> None:
             if evidence:
                 data["evidence"] = evidence
 
+    if not data.get("support_packets"):
+        f = base / "03_support_packets.jsonl"
+        if f.exists():
+            packets = _read_jsonl(f)
+            if packets:
+                data["support_packets"] = packets
+
     if not data.get("evidence_verdicts"):
         f = base / "03_evidence_verdicts.jsonl"
         if f.exists():
@@ -1020,6 +1104,15 @@ def _fold_in_artifacts(data: dict, base: Path, layer: str = "all") -> None:
                 if qgate.get("review_summary"):
                     review = data.setdefault("review", {})
                     review.setdefault("summary", qgate["review_summary"])
+                    review.setdefault("verdict", qgate.get("status"))
+                    review.setdefault("argument_support_status", qgate.get("argument_support_status"))
+                    review.setdefault("scores", {
+                        "coverage": qgate.get("coverage_score"),
+                        "traceability": qgate.get("traceability_score"),
+                        "argument_support": qgate.get("argument_support_score"),
+                        "contradiction": qgate.get("contradiction_handling_score"),
+                        "recommendation": qgate.get("recommendation_support_score"),
+                    })
 
     f = base / "source_versions.jsonl"
     if f.exists():

@@ -948,6 +948,105 @@ class RenderReportTest(unittest.TestCase):
             render_report._fold_in_artifacts(data, base)
             self.assertEqual(data["evidence_verdicts"][0]["verdict"], "does_not_entail")
 
+    def test_fold_in_artifacts_reads_support_packets_jsonl(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / "03_support_packets.jsonl").write_text(
+                json.dumps({
+                    "packet_id": "P-001",
+                    "claim_id": "C-001",
+                    "evidence_id": "E-001",
+                    "source_id": "S-001",
+                    "source_material_path": "source_material/S-001.txt",
+                    "source_material_sha256": "abc",
+                    "quoted_passage": "The exact passage.",
+                    "source_access": "full_text",
+                    "extraction_method": "manual",
+                }) + "\n",
+                encoding="utf-8",
+            )
+            data = {}
+            render_report._fold_in_artifacts(data, base)
+            self.assertEqual(data["support_packets"][0]["packet_id"], "P-001")
+
+    def test_argument_support_panel_distinguishes_passage_checked_from_metadata(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "review": {
+                    "verdict": "PASS_WITH_CAVEATS",
+                    "scores": {
+                        "coverage": 100,
+                        "traceability": 100,
+                        "argument_support": 50,
+                        "contradiction": 50,
+                        "recommendation": 100,
+                    },
+                    "argument_support_status": "partial_review",
+                    "summary": "Review summary.",
+                },
+                "support_packets": [
+                    {
+                        "packet_id": "P-001",
+                        "claim_id": "C-001",
+                        "evidence_id": "E-001",
+                        "source_id": "S-001",
+                        "source_material_path": "source_material/S-001.txt",
+                        "source_access": "full_text",
+                        "quoted_passage": "The table reports the cited result.",
+                    },
+                    {
+                        "packet_id": "P-002",
+                        "claim_id": "C-002",
+                        "evidence_id": "E-002",
+                        "source_id": "S-002",
+                        "source_material_path": "source_material/S-002.txt",
+                        "source_access": "metadata_only",
+                        "quoted_passage": "Crossref metadata identifies the paper.",
+                    },
+                ],
+                "evidence_verdicts": [
+                    {"claim_id": "C-001", "evidence_id": "E-001", "packet_id": "P-001",
+                     "verdict": "entails", "scope_preserved": "yes",
+                     "rationale": "Passage matches the claim.", "human_review_required": False},
+                    {"claim_id": "C-002", "evidence_id": "E-002", "packet_id": "P-002",
+                     "verdict": "partial", "scope_preserved": "uncertain",
+                     "rationale": "Metadata identifies the source only.", "human_review_required": True},
+                ],
+            }
+        )
+
+        self.assertIn("Argument support", html)
+        self.assertIn("partial/review", html)
+        self.assertIn("passage-checked", html)
+        self.assertIn("metadata only", html)
+        self.assertNotIn("Metadata identifies the source only.</span><span class=\"tag verdict-ok\">passage-checked", html)
+
+    def test_argument_support_not_checked_when_only_metadata_verified(self):
+        html = render_report.build(
+            {
+                "title": "A decision",
+                "review": {
+                    "verdict": "PASS_WITH_CAVEATS",
+                    "scores": {
+                        "coverage": 100,
+                        "traceability": 100,
+                        "argument_support": 0,
+                        "contradiction": 50,
+                        "recommendation": 100,
+                    },
+                    "argument_support_status": "not_checked",
+                },
+                "sources": [
+                    {"id": "S-001", "title": "DOI verified paper",
+                     "publication_identity": {"status": "PUBLISHED_VERIFIED"}},
+                ],
+            }
+        )
+        self.assertIn("Argument support", html)
+        self.assertIn("not checked", html)
+        self.assertNotIn("passage-checked", html)
+
     def test_evidence_source_status_badges(self):
         ev_abstract = {"evidence_id": "E-001", "source_id": "S-001", "extraction_method": "abstract"}
         ev_retracted = {"evidence_id": "E-002", "source_id": "S-002", "extraction_method": "full_text"}

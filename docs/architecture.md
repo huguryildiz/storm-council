@@ -24,7 +24,7 @@ User input
 | --- | --- | --- | --- | --- | --- |
 | Orchestration | `skills/storm-council/SKILL.md`, `skills/storm-council/prompts/` | User task, optional sources/context | Stage artifacts in an output directory | Model/orchestrator must mark unavailable evidence rather than inventing it | Implemented as skill instructions |
 | Role execution | `agents/*.md`, `agents/README.md` | Lens charter plus task framing | Structured claims, sources, and council moves returned to orchestrator | Agents are instructed not to write files; missing retrieval downgrades claims | Implemented as Claude Code subagents |
-| Evidence/source handling | `03_claims.jsonl`, `03_evidence.jsonl`, `03_source_registry.csv`, templates | Retrieved or user-provided source material | Claims, sources, locators, verdict records | Unsupported or abstract-only support remains visible | Implemented through artifacts and verifier checks |
+| Evidence/source handling | `03_claims.jsonl`, `03_evidence.jsonl`, `03_support_packets.jsonl`, `source_material/`, `03_source_registry.csv`, templates | Retrieved or user-provided source material | Claims, sources, locators, local passage packets, verdict records | Unsupported, metadata-only, or abstract-only support remains visible | Implemented through artifacts and verifier checks |
 | Contradictions | `04_contradictions.json`, `04_council_deliberation.*` | Claims across lenses | Conflict records and bounded deliberation log | Open conflicts are allowed and reported | Implemented as artifacts; deliberation effects are recorded/displayed, not automatically applied to claims |
 | Verification | `scripts/verify.py`, `scripts/report/thresholds.py` | Output directory | `06_quality_gate.json`, patched `report_data.json` | Exits nonzero for invalid path; `--strict` exits 2 on `REVISE`/`BLOCKED_PENDING_EVIDENCE` | Implemented |
 | Publication identity | `scripts/metadata_adapters.py` | Output directory source registry | `metadata_verification.jsonl`, `source_versions.jsonl`, `retrieval_log.jsonl` | Offline/unavailable sources become explicit unresolved/not checked states | Implemented, opt-in |
@@ -38,6 +38,9 @@ User input
   preconditions and guardrails; it does not perform LLM reasoning.
 - `scripts/metadata_adapters.py` uses standard-library network calls and a local
   cache. It verifies publication identity, not passage-to-claim support.
+- Passage support requires local `source_material/` text plus a support packet
+  and packet-linked verdict; DOI/Semantic Scholar metadata alone does not make
+  an argument passage-checked.
 - `scripts/render_report.py` is a compatibility facade over `scripts/report/`.
   Layer rendering supports `brief`, `report`, `appendix`, and `all`.
 - `.mcp.json` configures optional MCP servers. Current documentation must not

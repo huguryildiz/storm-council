@@ -12,7 +12,9 @@
   ],
   "coverage_score": 100,
   "traceability_score": 100,
+  "argument_support_score": 0,
+  "argument_support_status": "not_checked",
   "contradiction_handling_score": 25,
   "recommendation_support_score": 100,
-  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 1 major, 4 minor (computed by verify.py over 28 claims, 9 sources, 20 evidence records, 48 evidence verdicts, 8 contradictions)."
+  "review_summary": "PASS_WITH_CAVEATS — 0 blocking, 1 major, 4 minor (computed by verify.py over 28 claims, 9 sources, 20 evidence records, 0 support packets, 48 evidence verdicts, 8 contradictions)."
 }

@@ -15,7 +15,9 @@ report is a rendered view over the same data; it is not the only record.
 | `03_sources.bib` | 3 | BibTeX source list | Yes |
 | `03_source_registry.csv` | 3 | Source registry keyed by `S-###` | Yes |
 | `03_evidence.jsonl` | 3 | Evidence records keyed by `E-###` with locators/excerpts | Recommended; required for direct support |
-| `03_evidence_verdicts.jsonl` | 3b | LLM-assisted entailment/scope verdicts | Required when direct/strong/comparative support is claimed |
+| `03_support_packets.jsonl` | 3b | Local quoted-passage packets keyed by `P-###` | Required for passage-checked argument support |
+| `source_material/` | 3b | Local text files hashed by support packets | Required when support packets exist |
+| `03_evidence_verdicts.jsonl` | 3b | LLM-assisted or human entailment/scope verdicts over support packets | Required when direct/strong/comparative support is claimed |
 | `04_contradiction_ledger.md` | 4 | Human-readable conflict ledger | Yes |
 | `04_contradictions.json` | 4 | Structured contradiction records keyed by `X-###` | Yes |
 | `04_council_deliberation.md` | 4 | Council Mode cross-examination log | Council Mode only |
@@ -47,4 +49,5 @@ report is a rendered view over the same data; it is not the only record.
 The repository uses templates under `skills/storm-council/templates/` rather than
 a single centralized JSON Schema. The deterministic verifier is the practical
 schema enforcer for IDs, enums, source linkage, evidence locators, evidence
-verdicts, source identity flags, and recommendation support.
+verdicts, support packet path/hash/quote integrity, source identity flags,
+argument support, and recommendation support.

@@ -19,6 +19,7 @@ env/
 .playwright-cli/
 .coverage
 htmlcov/
+site/
 
 # Workflow output
 /out/

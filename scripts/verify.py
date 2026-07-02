@@ -8,6 +8,7 @@ half of the workflow's honesty guarantee: the *reasoning* is the model's, but th
 Reads (from the output directory):
   - 03_claims.jsonl          one claim record per line
   - 03_evidence.jsonl        (optional) one evidence record per line (schema v2)
+  - 03_support_packets.jsonl (optional) local passage packets for claim support
   - 03_evidence_verdicts.jsonl (optional) LLM-assisted entailment/scope verdicts
   - 04_contradictions.json   array of contradiction records
   - 03_source_registry.csv   the source registry (source_id, source_type, ...)
@@ -21,6 +22,7 @@ Checks (structural + deterministic publication/content guards):
   - placeholder / unverifiable source URLs
   - schema v2 direct_support requires an evidence locator
   - direct / strong / comparative located evidence requires a well-formed verdict
+  - support packets stay under source_material/, hash local text, and quote it
   - abstract-only sources cannot directly support strong claims
   - comparative claims require scope fields (metric / baseline / dataset)
   - unsupported absolute / overclaiming language
@@ -102,6 +104,8 @@ _TRIPWIRE_MONITOR_KINDS = {"auto_recheckable", "manual_watch"}
 _DIRECT = "direct_support"
 _VERDICT_VALUES = {"entails", "partial", "does_not_entail", "uncertain"}
 _SCOPE_VERDICT_VALUES = {"yes", "narrowed", "overclaimed", "uncertain"}
+_JUDGE_TYPES = {"llm_assisted", "human"}
+_SOURCE_ACCESS_VALUES = {"full_text", "abstract_only", "metadata_only"}
 
 # A locator is satisfied by any one of these (evidence record or inline).
 _LOCATOR_KEYS = ("page", "section", "subsection", "table", "figure",
@@ -261,6 +265,25 @@ def _claim_requires_entailment_verdict(c: dict) -> bool:
     return _claim_is_comparative(c)
 
 
+def _claim_requires_argument_support(c: dict, strongest_claim_ids: set | None = None) -> bool:
+    """Claims that can only be counted as passage-checked when a local support
+    packet exists. This deliberately includes recommendations and strongest
+    findings; source identity or topical relevance is not argument support."""
+    strongest_claim_ids = strongest_claim_ids or set()
+    cid = c.get("claim_id") or c.get("id")
+    if cid in strongest_claim_ids:
+        return True
+    cv = c.get("content_verification") if isinstance(c.get("content_verification"), dict) else {}
+    if (cv.get("status") or "").lower() == _DIRECT:
+        return True
+    if (c.get("claim_type") or "").lower() == "recommendation":
+        return True
+    strength = (c.get("claim_strength") or "").lower()
+    if strength in {"strong", "comparative", "causal", "quantitative", "recommendation"}:
+        return True
+    return _claim_is_strong(c)
+
+
 def _locator_present(loc) -> bool:
     if not isinstance(loc, dict):
         return False
@@ -285,6 +308,7 @@ def _read_jsonl(path: Path) -> list:
 def _load(d: Path):
     claims = _read_jsonl(d / "03_claims.jsonl")
     evidence = _read_jsonl(d / "03_evidence.jsonl")
+    support_packets = _read_jsonl(d / "03_support_packets.jsonl")
     verdicts = _read_jsonl(d / "03_evidence_verdicts.jsonl")
     contradictions = []
     xf = d / "04_contradictions.json"
@@ -307,7 +331,7 @@ def _load(d: Path):
             parsed = []
         if isinstance(parsed, list):
             tripwires = parsed
-    return claims, evidence, verdicts, contradictions, sources, report, tripwires
+    return claims, evidence, support_packets, verdicts, contradictions, sources, report, tripwires
 
 
 def _load_source_versions(d: Path) -> dict:
@@ -317,6 +341,145 @@ def _load_source_versions(d: Path) -> dict:
         if sid:
             rows[sid] = row
     return rows
+
+
+def _strongest_finding_claim_ids(report: dict) -> set:
+    out: set = set()
+    findings = report.get("strongest_findings") if isinstance(report, dict) else []
+    if not isinstance(findings, list):
+        return out
+    for f in findings:
+        if not isinstance(f, dict):
+            continue
+        claims = f.get("claims")
+        if isinstance(claims, list):
+            out.update(c for c in claims if isinstance(c, str))
+    return out
+
+
+def _sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _support_material_path(run_dir: Path, raw_path) -> tuple[Path | None, str | None]:
+    if not isinstance(raw_path, str) or not raw_path.strip():
+        return None, "missing source_material_path"
+    rel = Path(raw_path)
+    parts = rel.parts
+    if rel.is_absolute() or ".." in parts or not parts or parts[0] != "source_material":
+        return None, f"source_material_path outside source_material: {raw_path}"
+    full = (run_dir / rel)
+    try:
+        full.resolve(strict=False).relative_to((run_dir / "source_material").resolve(strict=False))
+    except ValueError:
+        return None, f"source_material_path outside source_material: {raw_path}"
+    return full, None
+
+
+def _claim_direct_support(claim: dict | None) -> bool:
+    cv = claim.get("content_verification") if isinstance(claim, dict) and isinstance(claim.get("content_verification"), dict) else {}
+    return (cv.get("status") or "").lower() == _DIRECT
+
+
+def _packet_label(packet: dict) -> str:
+    return packet.get("packet_id") or f"{packet.get('claim_id', '?')}->{packet.get('evidence_id', '?')}"
+
+
+def _validate_support_packets(
+    run_dir: Path,
+    support_packets: list,
+    claims_by_id: dict,
+    evidence_by_id: dict,
+    sources_by_id: dict,
+    verdicts_by_packet: dict,
+) -> tuple[dict, dict]:
+    """Validate local passage packets and return (results_by_packet_id,
+    packets_by_pair). A packet is clean only when the local material path is
+    constrained, its hash matches, the quoted passage is present, access is
+    full_text, and the packet-linked verdict is entails/yes."""
+    results: dict = {}
+    by_pair: dict = {}
+    for packet in support_packets:
+        if not isinstance(packet, dict):
+            continue
+        pid = packet.get("packet_id")
+        label = _packet_label(packet)
+        cid, eid, sid = packet.get("claim_id"), packet.get("evidence_id"), packet.get("source_id")
+        issues = {"blocking": [], "major": [], "minor": []}
+        clean_preconditions = True
+        access = (packet.get("source_access") or "").lower()
+
+        if not isinstance(pid, str) or not pid.strip():
+            issues["blocking"].append(f"Support packet {label} missing packet_id")
+            clean_preconditions = False
+        if cid not in claims_by_id:
+            issues["blocking"].append(f"Support packet {label} references missing claim {cid}")
+            clean_preconditions = False
+        if eid not in evidence_by_id:
+            issues["blocking"].append(f"Support packet {label} references missing evidence {eid}")
+            clean_preconditions = False
+        if sid not in sources_by_id:
+            issues["blocking"].append(f"Support packet {label} references missing source {sid}")
+            clean_preconditions = False
+        if access not in _SOURCE_ACCESS_VALUES:
+            issues["blocking"].append(
+                f"Support packet {label} has invalid source_access '{packet.get('source_access')}'")
+            clean_preconditions = False
+
+        material_path, path_error = _support_material_path(run_dir, packet.get("source_material_path"))
+        if path_error:
+            issues["blocking"].append(f"Support packet {label} {path_error}")
+            clean_preconditions = False
+        material_text = ""
+        if material_path and not material_path.exists():
+            issues["major"].append(f"Support packet {label} source material file is missing")
+            clean_preconditions = False
+        elif material_path:
+            raw = material_path.read_bytes()
+            expected_sha = packet.get("source_material_sha256")
+            actual_sha = _sha256_bytes(raw)
+            if not (isinstance(expected_sha, str) and expected_sha.strip()):
+                issues["blocking"].append(f"Support packet {label} missing source_material_sha256")
+                clean_preconditions = False
+            elif expected_sha.lower() != actual_sha:
+                issues["major"].append(f"Support packet {label} source_material_sha256 mismatch")
+                clean_preconditions = False
+            try:
+                material_text = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                issues["major"].append(f"Support packet {label} source material is not UTF-8 text")
+                clean_preconditions = False
+
+        quote = packet.get("quoted_passage")
+        if not isinstance(quote, str) or not quote.strip():
+            issues["blocking"].append(f"Support packet {label} missing quoted_passage")
+            clean_preconditions = False
+        elif material_text and quote not in material_text:
+            msg = f"Support packet {label} quoted passage not found in source material"
+            if _claim_direct_support(claims_by_id.get(cid)):
+                issues["blocking"].append(msg)
+            else:
+                issues["major"].append(msg)
+            clean_preconditions = False
+
+        verdict = verdicts_by_packet.get(pid)
+        if not verdict:
+            issues["major"].append(f"Support packet {label} has no packet-linked entailment verdict")
+            clean_preconditions = False
+            verdict_clean = False
+        else:
+            verdict_clean = (
+                (verdict.get("verdict") or "").lower() == "entails"
+                and (verdict.get("scope_preserved") or "").lower() == "yes"
+            )
+
+        clean = clean_preconditions and access == "full_text" and verdict_clean
+        result = {"clean": clean, "access": access, "issues": issues}
+        if pid:
+            results[pid] = result
+        if cid and eid:
+            by_pair.setdefault((cid, eid), []).append(packet)
+    return results, by_pair
 
 
 def _merge_source_versions(sources_by_id: dict, versions_by_id: dict) -> None:
@@ -649,8 +812,9 @@ def _tripwire_minor_issues(tripwires, claim_ids: set, src_ids: set, report: dict
 # --------------------------------------------------------------------------- #
 
 def verify(d: Path) -> dict:
-    claims, evidence, verdicts, contradictions, sources, report, tripwires = _load(d)
+    claims, evidence, support_packets, verdicts, contradictions, sources, report, tripwires = _load(d)
     claim_ids = {c.get("claim_id") for c in claims}
+    claims_by_id = {c.get("claim_id"): c for c in claims if c.get("claim_id")}
     src_ids = {s.get("source_id") for s in sources}
     sources_by_id = {s.get("source_id"): s for s in sources}
     _merge_source_versions(sources_by_id, _load_source_versions(d))
@@ -660,6 +824,14 @@ def verify(d: Path) -> dict:
         for v in verdicts
         if isinstance(v, dict)
     }
+    verdicts_by_packet = {
+        v.get("packet_id"): v
+        for v in verdicts
+        if isinstance(v, dict) and v.get("packet_id")
+    }
+    support_packets_present = (d / "03_support_packets.jsonl").exists()
+    support_results, support_packets_by_pair = _validate_support_packets(
+        d, support_packets, claims_by_id, evidence_by_id, sources_by_id, verdicts_by_packet)
 
     blocking, major, minor = [], [], []
 
@@ -694,6 +866,7 @@ def verify(d: Path) -> dict:
         vid = f"{v.get('claim_id', '?')}->{v.get('evidence_id', '?')}"
         cid = v.get("claim_id")
         eid = v.get("evidence_id")
+        pid = v.get("packet_id")
         verdict = (v.get("verdict") or "").lower()
         scope_verdict = (v.get("scope_preserved") or "").lower()
         if cid not in claim_ids:
@@ -710,6 +883,26 @@ def verify(d: Path) -> dict:
             blocking.append(f"Evidence verdict {vid} is missing a rationale")
         if not isinstance(v.get("human_review_required"), bool):
             blocking.append(f"Evidence verdict {vid} has non-boolean human_review_required")
+        if pid is not None:
+            if pid not in support_results:
+                blocking.append(f"Evidence verdict {vid} references missing support packet {pid}")
+            for key in ("claim_atoms", "entailed_atoms", "unsupported_atoms"):
+                if not isinstance(v.get(key), list):
+                    blocking.append(f"Evidence verdict {vid} has non-list {key}")
+            if not isinstance(v.get("claim_atoms"), list) or not v.get("claim_atoms"):
+                blocking.append(f"Evidence verdict {vid} has no claim_atoms")
+            judge_type = v.get("judge_type")
+            if judge_type not in _JUDGE_TYPES:
+                blocking.append(
+                    f"Evidence verdict {vid} has invalid judge_type '{judge_type}'")
+            if not isinstance(v.get("judge_prompt_version"), str) or not v.get("judge_prompt_version", "").strip():
+                blocking.append(f"Evidence verdict {vid} is missing judge_prompt_version")
+
+    for pid, result in support_results.items():
+        issues = result.get("issues") or {}
+        blocking.extend(issues.get("blocking") or [])
+        major.extend(issues.get("major") or [])
+        minor.extend(issues.get("minor") or [])
 
     # --- anti-rubber-stamp: identical rationales --------------------------- #
     # A verifier that reuses one rationale string across many verdicts is not
@@ -913,6 +1106,43 @@ def verify(d: Path) -> dict:
     if link_errors:
         traceability = max(0, traceability - 25)
 
+    strongest_claim_ids = _strongest_finding_claim_ids(report)
+    argument_required = [
+        c for c in claims
+        if c.get("evidence_status") in _EVIDENCE_BEARING
+        and _claim_requires_argument_support(c, strongest_claim_ids)
+    ]
+    clean_argument_claims = []
+    argument_accesses = []
+    if support_packets_present:
+        for c in argument_required:
+            cid = c.get("claim_id")
+            linked_packets = []
+            for eid in c.get("evidence_ids", []) or []:
+                linked_packets.extend(support_packets_by_pair.get((cid, eid), []))
+            if not linked_packets:
+                major.append(f"{cid} requires a passage support packet but none was found")
+                continue
+            claim_clean = False
+            for packet in linked_packets:
+                result = support_results.get(packet.get("packet_id"), {})
+                if result.get("access"):
+                    argument_accesses.append(result["access"])
+                if result.get("clean"):
+                    claim_clean = True
+            if claim_clean:
+                clean_argument_claims.append(cid)
+
+    argument_support = _pct(len(clean_argument_claims), len(argument_required))
+    if not argument_required or not support_packets_present:
+        argument_support_status = "not_checked"
+    elif len(clean_argument_claims) == len(argument_required):
+        argument_support_status = "passage_checked"
+    elif argument_accesses and set(argument_accesses) <= {"metadata_only"}:
+        argument_support_status = "metadata_only"
+    else:
+        argument_support_status = "partial_review"
+
     if contradictions:
         handled = [x for x in contradictions if _resolution_is_credited(x)]
         contradiction_handling = _pct(len(handled), len(contradictions))
@@ -1059,11 +1289,14 @@ def verify(d: Path) -> dict:
         "minor_issues": minor,
         "coverage_score": coverage,
         "traceability_score": traceability,
+        "argument_support_score": argument_support,
+        "argument_support_status": argument_support_status,
         "contradiction_handling_score": contradiction_handling,
         "recommendation_support_score": recommendation,
         "review_summary": f"{verdict} — {len(blocking)} blocking, {len(major)} major, {len(minor)} minor "
                           f"(computed by verify.py over {len(claims)} claims, {len(sources)} sources, "
-                          f"{len(evidence)} evidence records, {len(verdicts)} evidence verdicts, "
+                          f"{len(evidence)} evidence records, {len(support_packets)} support packets, "
+                          f"{len(verdicts)} evidence verdicts, "
                           f"{len(contradictions)} contradictions).",
     }
 
@@ -1085,7 +1318,7 @@ _SEAL_HASH_ALGO = "sha256"
 _SEAL_SCHEMA_VERSION = "1.0"
 _SEAL_GENERATOR = "storm-council/verify.py"
 # Copied verbatim from 06_quality_gate.json — never recomputed here.
-_SEAL_VERDICT_FIELDS = ("status", "coverage_score", "traceability_score",
+_SEAL_VERDICT_FIELDS = ("status", "coverage_score", "traceability_score", "argument_support_score",
                         "contradiction_handling_score", "recommendation_support_score")
 _SEAL_SCHEMA_NOTES = (
     "Content hashes prove the bundle is BYTE-IDENTICAL to what verify.py graded at "
@@ -1270,9 +1503,9 @@ _RECHECK_ADAPTERS = ["publisher", "crossref", "openalex", "semantic_scholar", "a
 _NEGATIVE_CHANGE = {"retracted", "superseded", "corrected", "unavailable"}
 _VERIFIED_STATUSES = {"PUBLISHED_VERIFIED", "PREPRINT_VERIFIED"}
 _UNRESOLVED_STATUSES = {"UNRESOLVED", "METADATA_PARTIAL"}
-_GATE_SUMMARY_KEYS = ("status", "coverage_score", "traceability_score",
+_GATE_SUMMARY_KEYS = ("status", "coverage_score", "traceability_score", "argument_support_score",
                       "contradiction_handling_score", "recommendation_support_score")
-# gate_changed compares the six keys verify() returns — status + four scores +
+# gate_changed compares the summary keys verify() returns — status + scores +
 # the three issue lists (§7.4) — so a same-tier-but-new-issue change still shows.
 _GATE_COMPARE_KEYS = _GATE_SUMMARY_KEYS + ("blocking_issues", "major_issues", "minor_issues")
 
@@ -1458,7 +1691,7 @@ def recheck(d, *, as_of=None, fetcher=None, no_retrieve=False, cache_dir=None) -
     gate_after = verify(d)
 
     # 5. deterministic diff.
-    claims, _, _, contradictions, sources, _, _ = _load(d)
+    claims, _, _, _, contradictions, sources, _, _ = _load(d)
     source_changes = []
     change_by_source: dict = {}
     for s in sources:
@@ -1621,11 +1854,13 @@ def _write_quality_gate(d: Path, gate: dict) -> None:
     if rf.exists():
         report = json.loads(rf.read_text(encoding="utf-8"))
         scores = {"coverage": gate["coverage_score"], "traceability": gate["traceability_score"],
+                  "argument_support": gate["argument_support_score"],
                   "contradiction": gate["contradiction_handling_score"],
                   "recommendation": gate["recommendation_support_score"]}
         report.setdefault("status", {})["verdict"] = gate["status"]
         report["status"]["scores"] = scores
         report["review"] = {"verdict": gate["status"], "scores": scores,
+                            "argument_support_status": gate["argument_support_status"],
                             "blocking": gate["blocking_issues"], "major": gate["major_issues"],
                             "minor": gate["minor_issues"]}
         rf.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -1718,6 +1953,7 @@ def main(argv=None) -> int:
 
     print(f"verdict: {gate['status']}")
     print(f"  coverage {gate['coverage_score']} · traceability {gate['traceability_score']} · "
+          f"argument-support {gate['argument_support_score']} ({gate['argument_support_status']}) · "
           f"contradiction-handling {gate['contradiction_handling_score']} · "
           f"recommendation-support {gate['recommendation_support_score']}")
     for sev in ("blocking_issues", "major_issues", "minor_issues"):

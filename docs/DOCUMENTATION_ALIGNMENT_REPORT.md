@@ -3,7 +3,7 @@
 ## Executive Summary
 
 - Documentation status: ALIGNED WITH CONDITIONS
-- Repository revision: local working tree, `main` checkout on 2026-07-01
+- Repository revision: local working tree, `main` checkout on 2026-07-02
 - Scope reviewed: README, CLAUDE/AGENTS/CONTRIBUTING instructions, skill and
   prompt docs, agent docs, docs wiki, plugin/MCP manifests, scripts, tests,
   examples, templates, and committed sample bundles.
@@ -64,6 +64,7 @@ monitor, or multi-model consensus system.
 | `docs/compatibility.md` | Users/contributors | Python/MCP compatibility | Yes | MISSING -> CREATED |
 | `docs/CLAIMS_VS_IMPLEMENTATION.md` | Release auditors | Public-claim audit | Yes | MISSING -> CREATED |
 | `mkdocs.yml` | Docs site builder | Navigation | Yes | UPDATE |
+| `requirements-docs.txt` | Docs builders | MkDocs dependency pin | Yes | CREATED |
 | `scripts/*.py` | Developers/users | CLIs | Yes | KEEP |
 | `tests/` | Developers/auditors | Offline regression suite | Yes | KEEP |
 | `examples/*` | Users/auditors | Worked bundles | Yes | KEEP |
@@ -88,6 +89,7 @@ monitor, or multi-model consensus system.
 - `docs/examples.md`
 - `docs/safety-and-limitations.md`
 - `mkdocs.yml`
+- `requirements-docs.txt`
 
 ## Removed or Marked-Legacy Files
 
@@ -130,20 +132,21 @@ No useful documentation was removed.
 
 | Command | Result |
 | --- | --- |
-| `python3 scripts/verify.py examples/network_flow_rl --write` | PASS_WITH_CAVEATS; coverage 100, traceability 100, contradiction-handling 25, recommendation-support 100 |
+| `python3 scripts/verify.py examples/network_flow_rl --write` | PASS_WITH_CAVEATS; coverage 100, traceability 100, argument-support 0 `not_checked`, contradiction-handling 25, recommendation-support 100 |
 | `python3 scripts/render_report.py examples/network_flow_rl/report_data.json -o examples/network_flow_rl/storm_council_report.html` | Wrote HTML report on temp and example paths |
 | `python3 scripts/metadata_adapters.py <output_dir>` | Wrote metadata artifacts for 9 sources on temp copy |
 | `python3 scripts/metadata_adapters.py <output_dir> --no-retrieve` | Wrote metadata artifacts for 9 sources on temp copy |
 | `python3 scripts/verify.py <output_dir> --seal` | Wrote `provenance_manifest.json`; requires prior gate |
 | `python3 scripts/verify.py <output_dir> --check-seal` | PASS on unchanged temp bundle |
 | `python3 scripts/verify.py <output_dir> --recheck --offline --write` | 0 of 9 sources rechecked, 9 `not_rechecked`, gate unchanged, resealed |
-| `python3 scripts/benchmark.py` | 12 fixtures; false_pass 0/12, false_block 0/3 |
+| `python3 scripts/benchmark.py` | 17 fixtures; false_pass 0/15, false_block 0/5; passage_entailment_clean 1/1, passage_quote_integrity 1/1, metadata_only_not_passage_checked 1/1 |
 | `python3 scripts/benchmark.py --json` | Emitted JSON benchmark report |
 | `python3 scripts/benchmark.py --limit 2` | Ran first 2 fixtures and logged dropped cases |
-| `python3 -m unittest discover -s tests` | 191 tests OK under `/opt/homebrew/bin/python3.12` |
-| `python3 -m pytest tests/` | 191 passed under default Anaconda `python3`; failed under Homebrew/.venv because pytest is not installed there |
-| `.venv/bin/python -m mkdocs build --strict` | Documentation built successfully; informational notes remain for repo-relative example links |
+| `/opt/homebrew/bin/python3.12 -m unittest discover -s tests` | 204 tests OK |
+| `python3 -m pytest tests/` | 204 passed under default Anaconda `python3` |
+| `.venv/bin/python -m mkdocs build --strict` | Documentation built successfully after recreating `.venv` from `requirements-docs.txt`; informational notes remain for repo-relative example links |
 | `python3 -m mkdocs build --strict` | Failed under default Anaconda `python3`: `No module named mkdocs` |
+| `git diff --check` | No whitespace errors |
 | `python3 scripts/verify.py --help` | Help output matched documented options |
 | `python3 scripts/render_report.py --help` | Help output included `--layer {brief,report,appendix,all}` |
 | `python3 scripts/metadata_adapters.py --help` | Help output matched documented options |
@@ -163,6 +166,8 @@ validated with `claude plugin validate .`.
 ## Known Limitations Now Disclosed
 
 - Verification checks artifacts and guardrails, not objective truth.
+- Argument support checks local passage packets and verdicts, not objective
+  truth.
 - Evidence verdicts are LLM-assisted/human-review artifacts; deterministic code
   checks their shape and outcomes.
 - MCP retrieval is optional and environment dependent.
@@ -181,9 +186,10 @@ validated with `claude plugin validate .`.
 - `paper-search-mcp` is configured but failed launch validation in this
   environment. Public docs now disclose this, but release readiness should either
   fix the package command or remove/replace that MCP config.
-- `pytest` availability depends on interpreter; docs now name `unittest` as the
+- `pytest` availability depends on interpreter; docs name `unittest` as the
   stdlib check and `pytest` as optional.
-- MkDocs is available in `.venv`, not in the default Anaconda `python3`.
+- MkDocs is available in `.venv` after installing `requirements-docs.txt`, not in
+  the default Anaconda `python3`.
 
 ## Recommended Next Step
 

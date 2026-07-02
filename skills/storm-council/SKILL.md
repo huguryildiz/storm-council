@@ -65,14 +65,17 @@ into the output folder before the next begins.
    Charter each lens (see the table above): priority questions, expected evidence,
    blind spots, conflicts with other lenses, escalation triggers.
 3. **Evidence-Grounded Inquiry** → `03_evidence_plan.md`, `03_claims.jsonl`,
-   `03_sources.bib`, `03_source_registry.csv`, `03_evidence.jsonl`
+   `03_sources.bib`, `03_source_registry.csv`, `03_evidence.jsonl`,
+   `03_support_packets.jsonl`, `source_material/`
    Each lens produces an evidence plan and source-grounded claims (fact / inference
    / forecast / assumption / recommendation kept distinct; sources and exact
    evidence locators by ID). You may dispatch each lens as its subagent so they
    reason in independent contexts.
-   Optional Phase-4 content verification writes `03_evidence_verdicts.jsonl`,
-   an LLM-assisted entailment/scope verdict artifact. `verify.py` checks verdict
-   presence, shape, and declared outcomes; it does not decide entailment itself.
+   Stage 3b passage support audit writes `03_support_packets.jsonl` and
+   `03_evidence_verdicts.jsonl`: local quoted-passage packets plus
+   LLM-assisted or human entailment/scope verdicts. `verify.py` checks packet
+   path/hash/quote integrity, verdict presence, shape, and declared outcomes; it
+   does not decide entailment itself.
 4. **Contradiction Ledger** → `04_contradiction_ledger.md` + `04_contradictions.json`
    Compare claims across lenses and classify each conflict. In **Council Mode**, run
    bounded cross-examination and log it in `04_council_deliberation.md` / `.jsonl`.
@@ -128,8 +131,8 @@ Create these in the user's chosen output folder:
 | --- | --- |
 | 1 Decision Frame | `01_decision_frame.md` (+ optional `decision_tripwires.json`: flat `T-###` revisit conditions bound to real claims/options) |
 | 2 Perspective Scan | `02_perspective_scan.md`, `02_perspective_scan.json` |
-| 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv`, `03_evidence.jsonl` |
-| 3b Content Verification | `03_evidence_verdicts.jsonl` |
+| 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv`, `03_evidence.jsonl`, `03_support_packets.jsonl`, `source_material/` |
+| 3b Passage Support Audit | `03_evidence_verdicts.jsonl` |
 | 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.md`/`.jsonl` in Council Mode) (+ optional `resolution_plan` on any non-`resolved` record) |
 | 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` (+ optional `decision_criticality.json`: ordinal `pivotal/contributing/peripheral` load-bearing ranking) |
 | 6 Adversarial Review | `06_adversarial_review.md`, `06_quality_gate.json` |
@@ -147,8 +150,8 @@ neither is hand-asserted by the model. After stage 6:
    findings, contradictions, decision options with evidence strength, next actions,
    gaps, sources, counts), alongside the structured stage artifacts
    (`03_claims.jsonl`, `03_evidence.jsonl`, optional
-   `03_evidence_verdicts.jsonl`, `04_contradictions.json`,
-   `03_source_registry.csv`). See
+   `03_support_packets.jsonl`, `03_evidence_verdicts.jsonl`,
+   `04_contradictions.json`, `03_source_registry.csv`). See
    [the example](../../examples/network_flow_rl/report_data.json).
 
    For each entry in `strongest_findings`, optionally add perspective attribution:
@@ -195,10 +198,12 @@ neither is hand-asserted by the model. After stage 6:
    This checks reference integrity (IDs resolve, supported facts cite sources,
    evidence IDs resolve, contradictions reference real claims), plus deterministic
    publication/content guards: duplicate/malformed DOI, retracted or superseded
-   sources, direct-support locator requirements, abstract-only gating,
+   sources, direct-support locator requirements, support packet
+   `source_material/` path/hash/quote checks, abstract-only gating,
    comparative-claim scope fields, obvious overclaiming language, and
-   LLM-assisted evidence-verdict presence/shape/outcome. It computes the four
-   scores and the verdict, writes `06_quality_gate.json`, and patches
+   LLM-assisted/human evidence-verdict presence/shape/outcome. It computes the
+   coverage, traceability, argument-support, contradiction-handling, and
+   recommendation-support scores and the verdict, writes `06_quality_gate.json`, and patches
    `report_data.json`. **Do not hand-set the scores** — let `verify.py` compute them.
    Optionally, before this step, run the Phase-3 publication metadata adapters:
 
