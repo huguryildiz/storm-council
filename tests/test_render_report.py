@@ -194,7 +194,9 @@ class RenderReportTest(unittest.TestCase):
             }
         )
 
-        self.assertIn("The five council lenses", html)
+        self.assertIn("The question and the council", html)
+        self.assertIn("Meet the five lenses", html)
+        self.assertIn("<details", html)
         self.assertIn('class="charter charter--skeptic"', html)
         self.assertIn("Stress-test claims about safety", html)
         self.assertIn("Priority questions", html)
@@ -204,7 +206,8 @@ class RenderReportTest(unittest.TestCase):
 
     def test_lens_charters_omitted_when_absent(self):
         html = render_report.build({"title": "A decision"})
-        self.assertNotIn("The five council lenses", html)
+        self.assertNotIn("The question and the council", html)
+        self.assertNotIn("Meet the five lenses", html)
         self.assertNotIn('class="charter charter--', html)
 
     def test_claims_ledger_renders_and_owns_anchor(self):
@@ -750,7 +753,7 @@ class RenderReportTest(unittest.TestCase):
             }
         )
 
-        self.assertIn("Decision frame", html)
+        self.assertIn("The question and the council", html)
         self.assertIn("Meets or beats a strong classical baseline.", html)
         self.assertIn("<ol>", html)
         self.assertIn("Contradiction ledger notes", html)
@@ -1115,18 +1118,20 @@ class LayerRenderingTest(unittest.TestCase):
         self.assertNotIn("Cytoscape Consortium", html)
         self.assertNotIn("am-cy-data", html)  # the interactive-map data script
 
-    def test_report_layer_keeps_ledger_drops_raw_and_cytoscape(self):
+    def test_report_layer_keeps_frame_and_ledger_drops_cytoscape(self):
         html = render_report.build(self._rich_data(), "report")
+        self.assertIn("The question and the council", html)
+        self.assertIn("Raw stage markdown.", html)
         self.assertIn("Claims &amp; evidence ledger", html)
         self.assertNotIn("Cytoscape Consortium", html)
         self.assertNotIn("Run manifest", html)
-        self.assertNotIn("Raw stage markdown.", html)
 
     def test_appendix_hosts_cytoscape_and_manifest(self):
         html = render_report.build(self._rich_data(), "appendix")
         self.assertIn("am-cy-data", html)
         self.assertIn("Run manifest", html)
         self.assertNotIn("Proceed with care.", html)
+        self.assertNotIn("Raw stage markdown.", html)
 
     def test_run_manifest_renders_in_appendix(self):
         html = render_report.build(self._rich_data(), "appendix")

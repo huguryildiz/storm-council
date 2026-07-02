@@ -530,12 +530,20 @@ def build(data: dict, layer: str = "all") -> str:
     if refresh_appendix_html:
         sec("What changed — full re-check detail", refresh_appendix_html, "appendix")
 
-    if data.get("decision_frame"):
-        sec("Decision frame", f'<div class="artifact">{_md_block(data["decision_frame"])}</div>', "appendix")
-
     charters_html = _lens_charters_html(data.get("lens_charters"))
+    frame_html = ""
+    if data.get("decision_frame"):
+        frame_html = f'<div class="artifact">{_md_block(data["decision_frame"])}</div>'
+    council_parts = []
+    if frame_html:
+        council_parts.append(frame_html)
     if charters_html:
-        sec("The five council lenses", charters_html, "report")
+        council_parts.append(
+            '<details class="block-detail"><summary>Meet the five lenses</summary>'
+            f'{charters_html}</details>'
+        )
+    if council_parts:
+        sec("The question and the council", "".join(council_parts), "report")
 
     def _attr(cls, label, d):
         persp = e(" + ".join(p.title() for p in d.get("perspectives", []))) if d.get("perspectives") else ""
@@ -1002,8 +1010,13 @@ def _fold_in_artifacts(data: dict, base: Path, layer: str = "all") -> None:
             elif isinstance(parsed, dict) and isinstance(parsed.get("lenses"), list):
                 data["lens_charters"] = parsed["lenses"]
 
+    if not data.get("decision_frame"):
+        f = base / "01_decision_frame.md"
+        if f.exists():
+            data["decision_frame"] = f.read_text(encoding="utf-8")
+
     # BibTeX feeds the report-tier Sources section (APA formatting), so it is
-    # folded for every layer; the raw stage-markdown dumps are appendix-only.
+    # folded for every layer; the remaining raw stage-markdown dumps are appendix-only.
     if not data.get("source_bibtex"):
         f = base / "03_sources.bib"
         if f.exists():
@@ -1011,7 +1024,6 @@ def _fold_in_artifacts(data: dict, base: Path, layer: str = "all") -> None:
 
     if want_appendix:
         for key, filename in (
-            ("decision_frame", "01_decision_frame.md"),
             ("contradiction_ledger", "04_contradiction_ledger.md"),
             ("source_mapped_synthesis", "05_synthesis.md"),
             ("decision_brief", "05_decision_brief.md"),
