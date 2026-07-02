@@ -109,7 +109,8 @@ stage's question into a source-traceable, artifact-producing pipeline.
 
 Every external factual claim must carry a stable source ID and (where it exists)
 a URL. Sources get IDs like `S-001`; claims get IDs like `C-001`; contradictions
-get `X-001`. Claims reference sources and each other **only by ID**.
+get `X-001`; evidence records get `E-001`; deliberation moves get `M-001`; and
+optional tripwires get `T-001`. Claims reference sources and each other **only by ID**.
 
 ## 4. Separate fact, inference, and recommendation
 
@@ -125,12 +126,12 @@ Create these in the user's chosen output folder:
 
 | Stage | Artifact(s) |
 | --- | --- |
-| 1 Decision Frame | `01_decision_frame.md` |
+| 1 Decision Frame | `01_decision_frame.md` (+ optional `decision_tripwires.json`: flat `T-###` revisit conditions bound to real claims/options) |
 | 2 Perspective Scan | `02_perspective_scan.md`, `02_perspective_scan.json` |
 | 3 Evidence | `03_evidence_plan.md`, `03_claims.jsonl`, `03_sources.bib`, `03_source_registry.csv`, `03_evidence.jsonl` |
 | 3b Content Verification | `03_evidence_verdicts.jsonl` |
-| 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.md`/`.jsonl` in Council Mode) |
-| 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` |
+| 4 Contradiction Ledger | `04_contradiction_ledger.md`, `04_contradictions.json` (+ `04_council_deliberation.md`/`.jsonl` in Council Mode) (+ optional `resolution_plan` on any non-`resolved` record) |
+| 5 Synthesis | `05_synthesis.md`, `05_argument_map.mmd`, `05_decision_brief.md` (+ optional `decision_criticality.json`: ordinal `pivotal/contributing/peripheral` load-bearing ranking) |
 | 6 Adversarial Review | `06_adversarial_review.md`, `06_quality_gate.json` |
 
 Use the JSON shapes in [`templates/`](templates/). Keep IDs consistent across
@@ -221,6 +222,14 @@ neither is hand-asserted by the model. After stage 6:
    ```
 
 4. Give the user the path to the HTML.
+5. **Optional — seal and re-check** (integrity, not authenticity):
+   - `verify.py <output_dir> --seal` hashes every artifact into
+     `provenance_manifest.json`; `--check-seal` later reports PASS / ALTERED.
+     Run sealing as the true last step (composes with `--write`).
+   - `verify.py <output_dir> --recheck` re-resolves each source's publication
+     identity and emits a deterministic before/after diff (`refresh_diff.json`
+     + `refresh_report.md`); `--write` re-seals afterward, `--offline` uses only
+     cached responses. This is manual and point-in-time, not monitoring.
 
 **Honesty rule for the status banner:** set `status.level` to reflect whether
 sources were actually verified. Use a green / `PASS` state **only** if live
@@ -257,7 +266,13 @@ Academic MCP servers are configured in this project (`.mcp.json`) for optional
 retrieval. Prefer them over general web search whenever peer-reviewed evidence is
 needed and the server actually launches in the current environment. They are not
 guaranteed infrastructure; if a configured MCP is absent or fails to launch, mark
-retrieval quality accordingly and do not invent sources.
+retrieval quality accordingly and do not invent sources. The `semantic-scholar`
+server sources `.env` on launch, so set `SEMANTIC_SCHOLAR_API_KEY` there (see
+`.env.example`) if you're hitting rate limits.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first for academic
+retrieval, citation graph, or exact-paper metadata work. If no Semantic Scholar
+API key is configured, fall back to `WebSearch` / `WebFetch` and record the
+reduced retrieval quality.
 
 ### Tool selection guide
 
@@ -287,8 +302,9 @@ Usage notes:
   `doi_normalized` to DOI resolver, Crossref, and OpenAlex; `arxiv_id` to
   arXiv; `pmid` to PubMed; and `pmcid` to PMC / PubMed E-utilities. Do not
   treat Semantic Scholar alone as publication truth.
-- If MCPs are absent or fail to launch, fall back to `WebSearch` / `WebFetch` and mark
-  retrieval quality accordingly in the status banner (`ILLUSTRATIVE`).
+- If no Semantic Scholar API key is configured, or if MCPs are absent or fail to
+  launch, fall back to `WebSearch` / `WebFetch` and mark retrieval quality
+  accordingly in the status banner (`ILLUSTRATIVE`).
 
 ## 8. Require source identifiers for external facts
 

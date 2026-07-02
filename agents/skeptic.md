@@ -25,6 +25,7 @@ Use available retrieval tools, but do not assume a configured MCP is actually
 running. Prefer primary sources, reproducibility artifacts, corrections,
 retractions, and negative results. If retrieval is unavailable, mark the claim
 `unsupported` or `partially_supported`; do not invent citations.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `WebSearch` / `WebFetch`.
 
 ## How to work
 - Produce 3–6 claims about the question from your lens.

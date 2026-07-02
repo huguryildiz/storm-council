@@ -34,13 +34,19 @@ docs/                                  # methodology, safety-and-limitations, cl
 | Seal (optional) | `provenance_manifest.json` (`verify.py --seal`; integrity, not authenticity) |
 | Recheck (optional) | `refresh_diff.json`, `refresh_report.md` (`verify.py --recheck`; before/after diff, re-seals on `--write`) |
 
-## ID conventions (enforced by verify.py)
+## ID conventions
 
 - Sources: `S-001`, `S-002`, …
 - Claims: `C-001`, `C-002`, …
 - Contradictions: `X-001`, `X-002`, …
+- Evidence: `E-001`, …; deliberation moves: `M-001`, …; tripwires: `T-001`, …
 - Every `fact`/`inference` claim marked `supported` or `partially_supported` must reference at least one `S-###` source.
 - IDs must be consistent across all stage files.
+
+`verify.py` enforces the referential-integrity rules here — cross-file ID
+consistency, unresolved-reference detection, and the "supported claim must cite a
+source" rule — plus strict `T-###` tripwire-format validation. It does **not**
+regex-validate the literal `S-/C-/X-/E-/M-###` string shape of the other IDs.
 
 ## Running the scripts
 
@@ -97,9 +103,8 @@ Prefer `/opt/homebrew/bin/python3.12`. Never use `/opt/anaconda3/bin/python3` (R
 
 ## Git workflow
 
-Do not commit or push unless the user explicitly asks. If the user asks to publish,
-inspect status/diff first, then push directly to `main` unless they request a
-different branch or PR flow.
+If the user asks to publish, inspect status/diff first, then push directly to
+`main` unless they request a different branch or PR flow.
 
 ## What's gitignored
 
@@ -115,7 +120,8 @@ different branch or PR flow.
 
 ## Evidence plan paper rendering (APA-lite)
 
-In `_evidence_plan_html` (`scripts/render_report.py`), `selected/top result` lines are rendered as APA-lite:
+In `_evidence_plan_html` (`scripts/report/layers/lenses.py`, re-exported by
+`scripts/render_report.py`), `selected/top result` lines are rendered as APA-lite:
 
 ```text
 Authors (Year). Title. Venue.   [cited by N]
@@ -138,9 +144,9 @@ selected/top result: <title> | authors: <Last, F.> | venue: <Journal> | paperId=
 ## Lens icons (single global source of truth)
 
 The five research-lens icons (academic, economist, historian, practitioner, skeptic)
-are defined **once** in `LENS_ICONS` in `scripts/render_report.py` — one canonical icon
-per lens, as Lucide line-icon geometry on a `0 0 24 24` viewBox, drawn in the lens accent
-via `currentColor`.
+are defined **once** in `LENS_ICONS` in `scripts/report/components/icons.py` (re-exported
+by `scripts/render_report.py`) — one canonical icon per lens, as Lucide line-icon geometry
+on a `0 0 24 24` viewBox, drawn in the lens accent via `currentColor`.
 
 - **Never** add a second, divergent lens-icon set. Every place the report shows a lens
   icon must read from `LENS_ICONS`.

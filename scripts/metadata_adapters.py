@@ -53,9 +53,10 @@ def _load_env_file(path: Path) -> dict[str, str]:
 
 
 def _semantic_scholar_headers() -> dict[str, str] | None:
-    api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
+    api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY") or os.environ.get("S2_API_KEY")
     if not api_key:
-        api_key = _load_env_file(_DEFAULT_ENV_PATH).get("SEMANTIC_SCHOLAR_API_KEY")
+        env_values = _load_env_file(_DEFAULT_ENV_PATH)
+        api_key = env_values.get("SEMANTIC_SCHOLAR_API_KEY") or env_values.get("S2_API_KEY")
     if not api_key:
         return None
     return {"x-api-key": api_key}

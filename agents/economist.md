@@ -23,6 +23,7 @@ Cost models, labor and infrastructure estimates, adoption/procurement data, and 
 ## How to retrieve evidence
 Economic evidence rarely lives in one peer-reviewed PDF; triangulate figures and
 record their provenance.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `WebSearch` / `WebFetch`.
 
 1. **Working-paper and economics indexes** — NBER, SSRN, RePEc/IDEAS, CEPR — via
    `paper-search`/`search_papers` when available, or `WebSearch`. Use these for cost models,

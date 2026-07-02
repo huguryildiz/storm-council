@@ -65,8 +65,10 @@ rewrite committed example artifacts.
 - The verification and rendering scripts use the Python standard library.
 - `pytest` is optional and only needed for `python3 -m pytest tests/`.
 - `uv` is needed only for optional MCP servers configured in `.mcp.json`.
-- `SEMANTIC_SCHOLAR_API_KEY` or `S2_API_KEY` can improve Semantic Scholar rate
-  limits if your adapter/tooling supports it; do not commit secrets.
+- `SEMANTIC_SCHOLAR_API_KEY` or `S2_API_KEY` enables keyed Semantic Scholar
+  lookups. Storm Council research prompts try Semantic Scholar first when a key
+  is configured, then fall back to `WebSearch` / `WebFetch` when no key is
+  available; do not commit secrets.
 
 On this audit machine, `/opt/homebrew/bin/python3.12` is native arm64. The
 default `python3` is Anaconda `x86_64` but has pytest installed.

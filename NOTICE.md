@@ -3,9 +3,10 @@
 ## Attribution
 
 Storm Council is **inspired by** research-first knowledge-curation systems such
-as Stanford OVAL's **STORM** (*Synthesis of Topic Outlines through Retrieval and
-Multi-perspective Question Asking*). The conceptual debt is to the broader idea
-of multi-perspective inquiry grounded in retrieval and bounded deliberation.
+as [Stanford OVAL's **STORM** (*Synthesis of Topic Outlines through Retrieval
+and Multi-perspective Question Asking*)](https://github.com/stanford-oval/storm).
+The conceptual debt is to the broader idea of multi-perspective inquiry grounded
+in retrieval and bounded deliberation.
 
 ## Non-affiliation
 

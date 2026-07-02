@@ -27,11 +27,14 @@ Peer-reviewed surveys and studies, benchmark results, reproducibility analyses.
 
 Academic MCP servers may be configured in `.mcp.json` (see SKILL.md §7.1), but
 availability is environment-dependent. Validate a tool before relying on it.
-Treat Semantic Scholar primarily as discovery / citation-graph support, not the
+The `semantic-scholar` server sources `.env` on launch, so set
+`SEMANTIC_SCHOLAR_API_KEY` there (see `.env.example`) if you're hitting rate
+limits. Treat Semantic Scholar primarily as discovery / citation-graph support, not the
 sole source of bibliographic truth. For publication identity, prefer publisher
 landing page / DOI resolver, Crossref, OpenAlex, then Semantic Scholar, with
 domain-specific indexes (PubMed/PMC, arXiv, IEEE Xplore, ACM DL, SSRN/NBER/RePEc,
 standards bodies) where relevant.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `WebSearch` / `WebFetch`.
 
 1. **`paper-search` → `search_papers`** — start here if the server launches.
    Queries arXiv, OpenAlex,
@@ -47,9 +50,9 @@ standards bodies) where relevant.
    set `fields=title,abstract,year,authors,citationCount,externalIds`.
 
 Use `externalIds` (DOI, arXiv ID, PubMed ID) as identifiers to verify through
-the hierarchy above, not as proof of support. If MCPs are absent or fail to
-launch, fall back to `WebSearch` / `WebFetch` and note the reduced retrieval quality in the source
-record. Record which metadata source(s) were checked in
+the hierarchy above, not as proof of support. If the API key is missing, MCPs are
+absent, or a tool fails to launch, use the web fallback and note the reduced
+retrieval quality in the source record. Record which metadata source(s) were checked in
 `publication_identity.metadata_sources_checked`; if no metadata adapter or
 retrieval tool ran, keep publication identity `UNRESOLVED`.
 

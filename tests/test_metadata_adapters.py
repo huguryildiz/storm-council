@@ -93,6 +93,25 @@ class MetadataAdapterTest(unittest.TestCase):
 
         self.assertEqual(fetcher.calls[0]["headers"].get("x-api-key"), "s2k-test-key")
 
+    def test_semantic_scholar_discovery_accepts_s2_api_key_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = metadata_adapters.MetadataCache(Path(tmp))
+            fetcher = FakeFetcher({
+                "semanticscholar.org/graph/v1/paper/DOI:10.5555%2Fexample.duplicate": "semantic_scholar_duplicate.json",
+            })
+
+            with (
+                mock.patch.dict(os.environ, {"S2_API_KEY": "s2k-alias-key"}, clear=True),
+                mock.patch.object(metadata_adapters, "_DEFAULT_ENV_PATH", Path(tmp) / "missing.env"),
+            ):
+                metadata_adapters.semantic_scholar_discovery(
+                    "DOI:10.5555/example.duplicate",
+                    cache,
+                    fetcher=fetcher,
+                )
+
+        self.assertEqual(fetcher.calls[0]["headers"].get("x-api-key"), "s2k-alias-key")
+
     def test_cache_returns_second_response_without_fetcher_call(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = metadata_adapters.MetadataCache(Path(tmp))

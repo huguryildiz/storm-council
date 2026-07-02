@@ -23,6 +23,7 @@ Deployment case studies, tool/solver documentation and changelogs, operational p
 ## How to retrieve evidence
 Operational truth lives largely *outside* the peer-reviewed literature; weight
 primary-operational sources over papers.
+Always try `semantic-scholar` with `SEMANTIC_SCHOLAR_API_KEY` first; if no Semantic Scholar API key is configured, fall back to `WebSearch` / `WebFetch`.
 
 1. **Vendor and tool documentation** — official docs, release notes, and
    changelogs via `WebFetch`. Behavior is version-specific, so read the version
